@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon shortcut" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+<link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
+<link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link fetchpriority="low" href="/site.webmanifest" rel="manifest" />
+
+  <title>用户体验要素 - 总结 – 中文手册</title>
+  <meta name="description" content="初识 用户体验的整个开发流程，就是确保用户在使用你的产品时，不会发生在你『正确设计』之外的事情。所以，开发过程中需要思考一个用户在使用你的产品时所可能采取的所有行为，并理解用户这些行为的期望值，让产品能够给用户一个期望中的合理反馈。
+上面所说的这件事是非常困难的，所以需要一套设计方法论。把整个流程分为 5 个层面，它们分别是：
+表现层（视觉设计、体感设计）：有用户最直接的交互，包括所看到的，所操作的；比如颜色、字体大小、按钮形状、间距和图片。 框架层（信息设计、界面设计）：对表现层进行布局规划，比如按钮的位置，菜单和内容的位置等。通常是指一个页面（但不绝对），怎样的页面结构是合理的，需要依赖于结构层的设计。 结构层（交互设计、信息架构）：对框架的进一步抽象，通常是指多个页面及完整的任务完成流程。比如浏览-&gt; 点赞 -&gt; 评论 -&gt; 收藏 -&gt; 关注 的流程。而要知道一个用户任务流程应该是什么样子，就要进一步看下一层了。 范围层（功能规格）：对产品的能力进行圈定，即很明确的知道功能到底是什么；比如创作、浏览、下单、聊天都算是；该层最难的是要明确出，我们产品核心功能是什么，辅助功能是什么，可以不做的是什么，甚至是不能做的是什么。要对这些功能进行决策，我们需要再向下看。 战略层（用户需求、产品目标）：用户从我们的产品上期望得到什么，而我们又期望从用户身上得到什么。这个需要思考清楚。该层是一个产品的起始设计点。 如上，整个产品设计流程是自底向上的，以战略层为圆心，一层层向外展开。 越是靠近圆心的层，内容越是精简但也越是核心，确定后不可轻易修改。越是外层，工作内容越是繁杂，而且必须围绕内层的设计来构建，否则很容易走偏；而且外层的变动频率也会更频繁一些，变动对整个产品的影响也不会特别大。
+当在最外层发现一个『很赞』的设计时，一定要向内层对齐，看是否能够贴合内层设计，如果不能，则说明这个设计只是看上去『很赞』，而实际上会对产品的整体性和易用性造成损害。
+如果一定要加，那么就需要对每层进行重新调整，进而向外层展开，看除了实现这个『很赞』的功能，是否还有其他方面功能需要调整，避免产品逻辑冲突。
+战略层 核心问题 我们要通过这个产品得到什么？ 我们的用户要通过这个产品得到什么？ 这 2 个核心问题一定要能够回答得非常非常明确。 因为上面我们提到『战略层』是整个产品的轴心，如果它变了，外层的所有工作都会收到很大影响。
+产品目标 商业目标
+定义成功的条件，而不是成功的路径（方法）。 品牌识别
+品牌并不单单只一个 logo、名称。更多的是指产品给用户留下的印象。 需要思考，我们最期望用户对我们产生怎样的印象。 高雅？实惠？自由？年轻活力？张扬？安静？ 成功标准
+可量化的成功标准很重要，这会让整个产品运作流程不走偏。初学者很容易被一个个『很赞』的小功能带跑偏，没日没夜的提供一大堆新奇的小 Feature，假以时日使整个产品完全走形，无法达成任何一个目标。 用户需求 用户细分
+我们必须很明确的圈定产品的目标用户。比如大学生、公司白领、农民工？ 我们不可能为所有类型的用户提供服务，如果一个人不是目标用户，就不能在这类人的反馈上费脑筋。 可用性和用户研究
+圈定目标用户后，我们就需要对用户特点进行研究。比如大学生就是时间多、钱少、中低端消费能力强、爱潮玩。而农民工消费能力很低，喜欢消遣性娱乐。 创建任务角色" />
+
+  
+    <link rel="canonical" href="http://localhost:1313/docs/test/" itemprop="url" />
+  
+
+  
+
+<meta property="og:title" content="用户体验要素 - 总结" />
+<meta property="og:description" content="初识
+    用户体验的整个开发流程，就是确保用户在使用你的产品时，不会发生在你『正确设计』之外的事情。所以，开发过程中需要思考一个用户在使用你的产品时所可能采取的所有行为，并理解用户这些行为的期望值，让产品能够给用户一个期望中的合理反馈。
+上面所说的这件事是非常困难的，所以需要一套设计方法论。把整个流程分为 5 个层面，它们分别是：
+
+表现层（视觉设计、体感设计）：有用户最直接的交互，包括所看到的，所操作的；比如颜色、字体大小、按钮形状、间距和图片。
+框架层（信息设计、界面设计）：对表现层进行布局规划，比如按钮的位置，菜单和内容的位置等。通常是指一个页面（但不绝对），怎样的页面结构是合理的，需要依赖于结构层的设计。
+结构层（交互设计、信息架构）：对框架的进一步抽象，通常是指多个页面及完整的任务完成流程。比如浏览-&gt; 点赞 -&gt; 评论 -&gt; 收藏 -&gt; 关注 的流程。而要知道一个用户任务流程应该是什么样子，就要进一步看下一层了。
+范围层（功能规格）：对产品的能力进行圈定，即很明确的知道功能到底是什么；比如创作、浏览、下单、聊天都算是；该层最难的是要明确出，我们产品核心功能是什么，辅助功能是什么，可以不做的是什么，甚至是不能做的是什么。要对这些功能进行决策，我们需要再向下看。
+战略层（用户需求、产品目标）：用户从我们的产品上期望得到什么，而我们又期望从用户身上得到什么。这个需要思考清楚。该层是一个产品的起始设计点。
+
+如上，整个产品设计流程是自底向上的，以战略层为圆心，一层层向外展开。 越是靠近圆心的层，内容越是精简但也越是核心，确定后不可轻易修改。越是外层，工作内容越是繁杂，而且必须围绕内层的设计来构建，否则很容易走偏；而且外层的变动频率也会更频繁一些，变动对整个产品的影响也不会特别大。
+当在最外层发现一个『很赞』的设计时，一定要向内层对齐，看是否能够贴合内层设计，如果不能，则说明这个设计只是看上去『很赞』，而实际上会对产品的整体性和易用性造成损害。
+如果一定要加，那么就需要对每层进行重新调整，进而向外层展开，看除了实现这个『很赞』的功能，是否还有其他方面功能需要调整，避免产品逻辑冲突。
+战略层
+    核心问题
+    
+我们要通过这个产品得到什么？
+我们的用户要通过这个产品得到什么？
+
+这 2 个核心问题一定要能够回答得非常非常明确。 因为上面我们提到『战略层』是整个产品的轴心，如果它变了，外层的所有工作都会收到很大影响。
+产品目标
+    
+
+商业目标
+
+定义成功的条件，而不是成功的路径（方法）。
+
+
+
+品牌识别
+
+品牌并不单单只一个 logo、名称。更多的是指产品给用户留下的印象。
+需要思考，我们最期望用户对我们产生怎样的印象。 高雅？实惠？自由？年轻活力？张扬？安静？
+
+
+
+成功标准
+
+可量化的成功标准很重要，这会让整个产品运作流程不走偏。初学者很容易被一个个『很赞』的小功能带跑偏，没日没夜的提供一大堆新奇的小 Feature，假以时日使整个产品完全走形，无法达成任何一个目标。
+
+
+
+用户需求
+    
+
+用户细分
+
+我们必须很明确的圈定产品的目标用户。比如大学生、公司白领、农民工？
+我们不可能为所有类型的用户提供服务，如果一个人不是目标用户，就不能在这类人的反馈上费脑筋。
+
+
+
+可用性和用户研究
+
+圈定目标用户后，我们就需要对用户特点进行研究。比如大学生就是时间多、钱少、中低端消费能力强、爱潮玩。而农民工消费能力很低，喜欢消遣性娱乐。
+
+
+
+创建任务角色" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/docs/test/" /><meta property="article:section" content="docs" />
+
+
+
+  
+  <meta itemprop="name" content="用户体验要素 - 总结">
+  <meta itemprop="description" content="初识 用户体验的整个开发流程，就是确保用户在使用你的产品时，不会发生在你『正确设计』之外的事情。所以，开发过程中需要思考一个用户在使用你的产品时所可能采取的所有行为，并理解用户这些行为的期望值，让产品能够给用户一个期望中的合理反馈。
+上面所说的这件事是非常困难的，所以需要一套设计方法论。把整个流程分为 5 个层面，它们分别是：
+表现层（视觉设计、体感设计）：有用户最直接的交互，包括所看到的，所操作的；比如颜色、字体大小、按钮形状、间距和图片。 框架层（信息设计、界面设计）：对表现层进行布局规划，比如按钮的位置，菜单和内容的位置等。通常是指一个页面（但不绝对），怎样的页面结构是合理的，需要依赖于结构层的设计。 结构层（交互设计、信息架构）：对框架的进一步抽象，通常是指多个页面及完整的任务完成流程。比如浏览-&gt; 点赞 -&gt; 评论 -&gt; 收藏 -&gt; 关注 的流程。而要知道一个用户任务流程应该是什么样子，就要进一步看下一层了。 范围层（功能规格）：对产品的能力进行圈定，即很明确的知道功能到底是什么；比如创作、浏览、下单、聊天都算是；该层最难的是要明确出，我们产品核心功能是什么，辅助功能是什么，可以不做的是什么，甚至是不能做的是什么。要对这些功能进行决策，我们需要再向下看。 战略层（用户需求、产品目标）：用户从我们的产品上期望得到什么，而我们又期望从用户身上得到什么。这个需要思考清楚。该层是一个产品的起始设计点。 如上，整个产品设计流程是自底向上的，以战略层为圆心，一层层向外展开。 越是靠近圆心的层，内容越是精简但也越是核心，确定后不可轻易修改。越是外层，工作内容越是繁杂，而且必须围绕内层的设计来构建，否则很容易走偏；而且外层的变动频率也会更频繁一些，变动对整个产品的影响也不会特别大。
+当在最外层发现一个『很赞』的设计时，一定要向内层对齐，看是否能够贴合内层设计，如果不能，则说明这个设计只是看上去『很赞』，而实际上会对产品的整体性和易用性造成损害。
+如果一定要加，那么就需要对每层进行重新调整，进而向外层展开，看除了实现这个『很赞』的功能，是否还有其他方面功能需要调整，避免产品逻辑冲突。
+战略层 核心问题 我们要通过这个产品得到什么？ 我们的用户要通过这个产品得到什么？ 这 2 个核心问题一定要能够回答得非常非常明确。 因为上面我们提到『战略层』是整个产品的轴心，如果它变了，外层的所有工作都会收到很大影响。
+产品目标 商业目标
+定义成功的条件，而不是成功的路径（方法）。 品牌识别
+品牌并不单单只一个 logo、名称。更多的是指产品给用户留下的印象。 需要思考，我们最期望用户对我们产生怎样的印象。 高雅？实惠？自由？年轻活力？张扬？安静？ 成功标准
+可量化的成功标准很重要，这会让整个产品运作流程不走偏。初学者很容易被一个个『很赞』的小功能带跑偏，没日没夜的提供一大堆新奇的小 Feature，假以时日使整个产品完全走形，无法达成任何一个目标。 用户需求 用户细分
+我们必须很明确的圈定产品的目标用户。比如大学生、公司白领、农民工？ 我们不可能为所有类型的用户提供服务，如果一个人不是目标用户，就不能在这类人的反馈上费脑筋。 可用性和用户研究
+圈定目标用户后，我们就需要对用户特点进行研究。比如大学生就是时间多、钱少、中低端消费能力强、爱潮玩。而农民工消费能力很低，喜欢消遣性娱乐。 创建任务角色">
+  <meta itemprop="wordCount" content="99">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="用户体验要素 - 总结">
+  <meta name="twitter:description" content="初识 用户体验的整个开发流程，就是确保用户在使用你的产品时，不会发生在你『正确设计』之外的事情。所以，开发过程中需要思考一个用户在使用你的产品时所可能采取的所有行为，并理解用户这些行为的期望值，让产品能够给用户一个期望中的合理反馈。
+上面所说的这件事是非常困难的，所以需要一套设计方法论。把整个流程分为 5 个层面，它们分别是：
+表现层（视觉设计、体感设计）：有用户最直接的交互，包括所看到的，所操作的；比如颜色、字体大小、按钮形状、间距和图片。 框架层（信息设计、界面设计）：对表现层进行布局规划，比如按钮的位置，菜单和内容的位置等。通常是指一个页面（但不绝对），怎样的页面结构是合理的，需要依赖于结构层的设计。 结构层（交互设计、信息架构）：对框架的进一步抽象，通常是指多个页面及完整的任务完成流程。比如浏览-&gt; 点赞 -&gt; 评论 -&gt; 收藏 -&gt; 关注 的流程。而要知道一个用户任务流程应该是什么样子，就要进一步看下一层了。 范围层（功能规格）：对产品的能力进行圈定，即很明确的知道功能到底是什么；比如创作、浏览、下单、聊天都算是；该层最难的是要明确出，我们产品核心功能是什么，辅助功能是什么，可以不做的是什么，甚至是不能做的是什么。要对这些功能进行决策，我们需要再向下看。 战略层（用户需求、产品目标）：用户从我们的产品上期望得到什么，而我们又期望从用户身上得到什么。这个需要思考清楚。该层是一个产品的起始设计点。 如上，整个产品设计流程是自底向上的，以战略层为圆心，一层层向外展开。 越是靠近圆心的层，内容越是精简但也越是核心，确定后不可轻易修改。越是外层，工作内容越是繁杂，而且必须围绕内层的设计来构建，否则很容易走偏；而且外层的变动频率也会更频繁一些，变动对整个产品的影响也不会特别大。
+当在最外层发现一个『很赞』的设计时，一定要向内层对齐，看是否能够贴合内层设计，如果不能，则说明这个设计只是看上去『很赞』，而实际上会对产品的整体性和易用性造成损害。
+如果一定要加，那么就需要对每层进行重新调整，进而向外层展开，看除了实现这个『很赞』的功能，是否还有其他方面功能需要调整，避免产品逻辑冲突。
+战略层 核心问题 我们要通过这个产品得到什么？ 我们的用户要通过这个产品得到什么？ 这 2 个核心问题一定要能够回答得非常非常明确。 因为上面我们提到『战略层』是整个产品的轴心，如果它变了，外层的所有工作都会收到很大影响。
+产品目标 商业目标
+定义成功的条件，而不是成功的路径（方法）。 品牌识别
+品牌并不单单只一个 logo、名称。更多的是指产品给用户留下的印象。 需要思考，我们最期望用户对我们产生怎样的印象。 高雅？实惠？自由？年轻活力？张扬？安静？ 成功标准
+可量化的成功标准很重要，这会让整个产品运作流程不走偏。初学者很容易被一个个『很赞』的小功能带跑偏，没日没夜的提供一大堆新奇的小 Feature，假以时日使整个产品完全走形，无法达成任何一个目标。 用户需求 用户细分
+我们必须很明确的圈定产品的目标用户。比如大学生、公司白领、农民工？ 我们不可能为所有类型的用户提供服务，如果一个人不是目标用户，就不能在这类人的反馈上费脑筋。 可用性和用户研究
+圈定目标用户后，我们就需要对用户特点进行研究。比如大学生就是时间多、钱少、中低端消费能力强、爱潮玩。而农民工消费能力很低，喜欢消遣性娱乐。 创建任务角色">
+
+    <link href="/css/compiled/main.css" rel="stylesheet" />
+
+
+
+  <link href="/css/custom.css" rel="stylesheet" />
+
+
+
+
+
+  <script>
+     
+    const defaultTheme = 'system';
+
+    const setDarkTheme = () => {
+      document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
+    }
+    const setLightTheme = () => {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.style.colorScheme = "light";
+    }
+
+    if ("color-theme" in localStorage) {
+      localStorage.getItem("color-theme") === "dark" ? setDarkTheme() : setLightTheme();
+    } else {
+      defaultTheme === "dark" ? setDarkTheme() : setLightTheme();
+      if (defaultTheme === "system") {
+        window.matchMedia("(prefers-color-scheme: dark)").matches ? setDarkTheme() : setLightTheme();
+      }
+    }
+  </script>
+
+  
+</head>
+<body dir="ltr"><div class="nav-container hx-sticky hx-top-0 hx-z-20 hx-w-full hx-bg-transparent print:hx-hidden">
+  <div class="nav-container-blur hx-pointer-events-none hx-absolute hx-z-[-1] hx-h-full hx-w-full hx-bg-white dark:hx-bg-dark hx-shadow-[0_2px_4px_rgba(0,0,0,.02),0_1px_0_rgba(0,0,0,.06)] contrast-more:hx-shadow-[0_0_0_1px_#000] dark:hx-shadow-[0_-1px_0_rgba(255,255,255,.1)_inset] contrast-more:dark:hx-shadow-[0_0_0_1px_#fff]"></div>
+
+  <nav class="hx-mx-auto hx-flex hx-items-center hx-justify-end hx-gap-2 hx-h-16 hx-px-6 hx-max-w-[90rem]">
+    <a class="hx-flex hx-items-center hover:hx-opacity-75 ltr:hx-mr-auto rtl:hx-ml-auto" href="/">
+        <img class="hx-block dark:hx-hidden" src="/logo-victoriametrics.svg" alt="中文手册" height="80" width="160" />
+        <img class="hx-hidden dark:hx-block" src="/logo-victoriametrics-dark.svg" alt="中文手册" height="80" width="160" />
+        <span class="hx-mx-2 hx-font-extrabold hx-inline hx-select-none" title="中文手册">中文手册</span>
+    </a><a
+            title="手册"
+            href="/docs"
+            
+            class="hx-text-sm contrast-more:hx-text-gray-700 contrast-more:dark:hx-text-gray-100 hx-relative -hx-ml-2 hx-hidden hx-whitespace-nowrap hx-p-2 md:hx-inline-block hx-font-medium"
+          >
+            <span class="hx-text-center">手册</span>
+          </a><a
+            title="关于"
+            href="/about"
+            
+            class="hx-text-sm contrast-more:hx-text-gray-700 contrast-more:dark:hx-text-gray-100 hx-relative -hx-ml-2 hx-hidden hx-whitespace-nowrap hx-p-2 md:hx-inline-block hx-text-gray-600 hover:hx-text-gray-800 dark:hx-text-gray-400 dark:hover:hx-text-gray-200"
+          >
+            <span class="hx-text-center">关于</span>
+          </a><button type="button" aria-label="Menu" class="hamburger-menu -hx-mr-2 hx-rounded hx-p-2 active:hx-bg-gray-400/20 md:hx-hidden"><svg height=24 fill="none" viewBox="0 0 24 24" stroke="currentColor"><g><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8H20"></path></g><g><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16H20"></path></g></svg></button>
+  </nav>
+</div>
+
+  <div class='hx-mx-auto hx-flex hx-max-w-[90rem]'>
+    <div class="mobile-menu-overlay [transition:background-color_1.5s_ease] hx-fixed hx-inset-0 hx-z-10 hx-bg-black/80 dark:hx-bg-black/60 hx-hidden"></div>
+<aside class="sidebar-container hx-flex hx-flex-col print:hx-hidden md:hx-top-16 md:hx-shrink-0 md:hx-w-64 md:hx-self-start max-md:[transform:translate3d(0,-100%,0)] md:hx-sticky">
+  
+  <div class="hx-px-4 hx-pt-4 md:hx-hidden">
+    <div class="search-wrapper hx-relative md:hx-w-64">
+  <div class="hx-relative hx-flex hx-items-center hx-text-gray-900 contrast-more:hx-text-gray-800 dark:hx-text-gray-300 contrast-more:dark:hx-text-gray-300">
+    <input
+      placeholder="Search..."
+      class="search-input hx-block hx-w-full hx-appearance-none hx-rounded-lg hx-px-3 hx-py-2 hx-transition-colors hx-text-base hx-leading-tight md:hx-text-sm hx-bg-black/[.05] dark:hx-bg-gray-50/10 focus:hx-bg-white dark:focus:hx-bg-dark placeholder:hx-text-gray-500 dark:placeholder:hx-text-gray-400 contrast-more:hx-border contrast-more:hx-border-current"
+      type="search"
+      value=""
+      spellcheck="false"
+    />
+    <kbd
+      class="hx-absolute hx-my-1.5 hx-select-none ltr:hx-right-1.5 rtl:hx-left-1.5 hx-h-5 hx-rounded hx-bg-white hx-px-1.5 hx-font-mono hx-text-[10px] hx-font-medium hx-text-gray-500 hx-border dark:hx-border-gray-100/20 dark:hx-bg-dark/50 contrast-more:hx-border-current contrast-more:hx-text-current contrast-more:dark:hx-border-current hx-items-center hx-gap-1 hx-transition-opacity hx-pointer-events-none hx-hidden sm:hx-flex"
+    >
+      CTRL K
+    </kbd>
+  </div>
+
+  <div>
+    <ul
+      class="search-results hextra-scrollbar hx-hidden hx-border hx-border-gray-200 hx-bg-white hx-text-gray-100 dark:hx-border-neutral-800 dark:hx-bg-neutral-900 hx-absolute hx-top-full hx-z-20 hx-mt-2 hx-overflow-auto hx-overscroll-contain hx-rounded-xl hx-py-2.5 hx-shadow-xl hx-max-h-[min(calc(50vh-11rem-env(safe-area-inset-bottom)),400px)] md:hx-max-h-[min(calc(100vh-5rem-env(safe-area-inset-bottom)),400px)] hx-inset-x-0 ltr:md:hx-left-auto rtl:md:hx-right-auto contrast-more:hx-border contrast-more:hx-border-gray-900 contrast-more:dark:hx-border-gray-50 hx-w-screen hx-min-h-[100px] hx-max-w-[min(calc(100vw-2rem),calc(100%+20rem))]"
+      style="transition: max-height 0.2s ease 0s;"
+    ></ul>
+  </div>
+</div>
+
+  </div>
+  <div class="hextra-scrollbar hx-overflow-y-auto hx-overflow-x-hidden hx-p-4 hx-grow md:hx-h-[calc(100vh-var(--navbar-height)-var(--menu-height))]">
+    <ul class="hx-flex hx-flex-col hx-gap-1 md:hx-hidden">
+      
+      
+          <li class="open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/"
+    
+  >VictoriaMetrics 中文手册
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/concepts/"
+    
+  >核心概念
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      sidebar-active-item hx-bg-primary-100 hx-font-semibold hx-text-primary-800 contrast-more:hx-border contrast-more:hx-border-primary-500 dark:hx-bg-primary-400/10 dark:hx-text-primary-600 contrast-more:dark:hx-border-primary-500"
+    href="/docs/test/"
+    
+  >用户体验要素 - 总结
+    </a>
+  
+    <ul class='hx-flex hx-flex-col hx-gap-1 hx-relative before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] dark:before:hx-bg-neutral-800 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-pr-3 rtl:before:hx-right-0 ltr:hx-ml-3 rtl:hx-mr-3'><li>
+              <a
+                href="#%e5%88%9d%e8%af%86"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >初识</a>
+            </li>
+          <li>
+              <a
+                href="#%e6%88%98%e7%95%a5%e5%b1%82"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >战略层</a>
+            </li>
+          <li>
+              <a
+                href="#%e8%8c%83%e5%9b%b4%e5%b1%82"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >范围层</a>
+            </li>
+          <li>
+              <a
+                href="#%e7%bb%93%e6%9e%84%e5%b1%82%e4%ba%a4%e4%ba%92%e8%ae%be%e8%ae%a1"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >结构层（交互设计）</a>
+            </li>
+          <li>
+              <a
+                href="#%e6%a1%86%e6%9e%b6%e5%b1%82%e7%95%8c%e9%9d%a2%e8%ae%be%e8%ae%a1%e8%8d%89%e5%9b%be"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >框架层（界面设计、草图）</a>
+            </li>
+          <li>
+              <a
+                href="#%e8%a1%a8%e7%8e%b0%e5%b1%82"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >表现层</a>
+            </li>
+          </ul>
+  
+              
+            </li></ul>
+      </div></li>
+    </ul>
+
+    <ul class="hx-flex hx-flex-col hx-gap-1 max-md:hx-hidden">
+        
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/concepts/"
+    
+  >核心概念
+    </a></li>
+          <li class="open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      sidebar-active-item hx-bg-primary-100 hx-font-semibold hx-text-primary-800 contrast-more:hx-border contrast-more:hx-border-primary-500 dark:hx-bg-primary-400/10 dark:hx-text-primary-600 contrast-more:dark:hx-border-primary-500"
+    href="/docs/test/"
+    
+  >用户体验要素 - 总结
+    </a></li>
+        
+      </ul>
+    </div>
+  
+  
+    <div class="  hx-sticky hx-bottom-0 hx-bg-white dark:hx-bg-dark hx-mx-4 hx-py-4 hx-shadow-[0_-12px_16px_#fff] hx-flex hx-items-center hx-gap-2 dark:hx-border-neutral-800 dark:hx-shadow-[0_-12px_16px_#111] contrast-more:hx-border-neutral-400 contrast-more:hx-shadow-none contrast-more:dark:hx-shadow-none hx-border-t" data-toggle-animation="show"><div class="hx-flex hx-grow hx-flex-col"><button
+  title="Change theme"
+  data-theme="light"
+  class="theme-toggle hx-group hx-h-7 hx-rounded-md hx-px-2 hx-text-left hx-text-xs hx-font-medium hx-text-gray-600 hx-transition-colors dark:hx-text-gray-400 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50"
+  type="button"
+  aria-label="Change theme"
+>
+  <div class="hx-flex hx-items-center hx-gap-2 hx-capitalize"><svg height=12 class="group-data-[theme=light]:hx-hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg><span class="group-data-[theme=light]:hx-hidden">Light</span><svg height=12 class="group-data-[theme=dark]:hx-hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg><span class="group-data-[theme=dark]:hx-hidden">Dark</span></div>
+</button>
+</div></div></aside>
+    
+<nav class="hextra-toc hx-order-last hx-hidden hx-w-64 hx-shrink-0 xl:hx-block print:hx-hidden hx-px-4" aria-label="table of contents">
+    <div class="hextra-scrollbar hx-sticky hx-top-16 hx-overflow-y-auto hx-pr-4 hx-pt-6 hx-text-sm [hyphens:auto] hx-max-h-[calc(100vh-var(--navbar-height)-env(safe-area-inset-bottom))] ltr:hx--mr-4 rtl:hx--ml-4"><p class="hx-mb-4 hx-font-semibold hx-tracking-tight">On this page</p><ul>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%88%9d%e8%af%86">初识
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e6%88%98%e7%95%a5%e5%b1%82">战略层
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e6%a0%b8%e5%bf%83%e9%97%ae%e9%a2%98">核心问题
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e4%ba%a7%e5%93%81%e7%9b%ae%e6%a0%87">产品目标
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e7%94%a8%e6%88%b7%e9%9c%80%e6%b1%82">用户需求
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e8%8c%83%e5%9b%b4%e5%b1%82">范围层
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e9%87%8c%e7%a8%8b%e7%a2%91">里程碑
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%8a%9f%e8%83%bd%e8%a7%84%e6%a0%bc">功能规格
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e7%bb%93%e6%9e%84%e5%b1%82%e4%ba%a4%e4%ba%92%e8%ae%be%e8%ae%a1">结构层（交互设计）
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e6%a6%82%e5%bf%b5%e6%a8%a1%e5%9e%8b">概念模型
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e9%94%99%e8%af%af%e5%a4%84%e7%90%86">错误处理
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e6%a1%86%e6%9e%b6%e5%b1%82%e7%95%8c%e9%9d%a2%e8%ae%be%e8%ae%a1%e8%8d%89%e5%9b%be">框架层（界面设计、草图）
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e8%a1%a8%e7%8e%b0%e5%b1%82">表现层
+        </a>
+      </li></ul>
+      <div class="hx-mt-8 hx-border-t hx-bg-white hx-pt-8 hx-shadow-[0_-12px_16px_white] dark:hx-bg-dark dark:hx-shadow-[0_-12px_16px_#111] hx-sticky hx-bottom-0 hx-flex hx-flex-col hx-items-start hx-gap-2 hx-pb-8 dark:hx-border-neutral-800 contrast-more:hx-border-t contrast-more:hx-border-neutral-400 contrast-more:hx-shadow-none contrast-more:dark:hx-border-neutral-400">
+        <button aria-hidden="true" id="backToTop" onClick="scrollUp();" class="hx-transition-all hx-duration-75 hx-opacity-0 hx-text-xs hx-font-medium hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-100 contrast-more:hx-text-gray-800 contrast-more:dark:hx-text-gray-50">
+          <span>Scroll to top</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="hx-inline ltr:hx-ml-1 rtl:hx-mr-1 hx-h-3.5 hx-w-3.5 hx-border hx-rounded-full hx-border-gray-500 hover:hx-border-gray-900 dark:hx-border-gray-400 dark:hover:hx-border-gray-100 contrast-more:hx-border-gray-800 contrast-more:dark:hx-border-gray-50">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+
+    <article class="hx-w-full hx-break-words hx-flex hx-min-h-[calc(100vh-var(--navbar-height))] hx-min-w-0 hx-justify-center hx-pb-8 hx-pr-[calc(env(safe-area-inset-right)-1.5rem)]">
+      <main class="hx-w-full hx-min-w-0 hx-max-w-6xl hx-px-6 hx-pt-4 md:hx-px-12">
+        
+  <div class="hx-mt-1.5 hx-flex hx-items-center hx-gap-1 hx-overflow-hidden hx-text-sm hx-text-gray-500 dark:hx-text-gray-400 contrast-more:hx-text-current">
+        <div class="hx-whitespace-nowrap hx-transition-colors hx-min-w-[24px] hx-overflow-hidden hx-text-ellipsis hover:hx-text-gray-900 dark:hover:hx-text-gray-100">
+          <a href="/docs/">VictoriaMetrics 中文手册</a>
+        </div><svg class="hx-w-3.5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg><div class="hx-whitespace-nowrap hx-transition-colors hx-font-medium hx-text-gray-700 contrast-more:hx-font-bold contrast-more:hx-text-current dark:hx-text-gray-100 contrast-more:dark:hx-text-current">用户体验要素 - 总结</div>
+  </div>
+
+        <div class="content">
+          <h1>用户体验要素 - 总结</h1>
+          <h2>初识<span class="hx-absolute -hx-mt-20" id="初识"></span>
+    <a href="#%e5%88%9d%e8%af%86" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>用户体验的整个开发流程，就是确保用户在使用你的产品时，不会发生在你『正确设计』之外的事情。所以，<strong>开发过程中需要思考一个用户在使用你的产品时所可能采取的所有行为，并理解用户这些行为的期望值，让产品能够给用户一个期望中的合理反馈。</strong></p>
+<p>上面所说的这件事是非常困难的，所以需要一套设计方法论。把整个流程分为 5 个层面，它们分别是：</p>
+<ol>
+<li>表现层（视觉设计、体感设计）：有用户最直接的交互，包括所看到的，所操作的；比如颜色、字体大小、按钮形状、间距和图片。</li>
+<li>框架层（信息设计、界面设计）：对表现层进行布局规划，比如按钮的位置，菜单和内容的位置等。通常是指一个页面（但不绝对），怎样的页面结构是合理的，需要依赖于结构层的设计。</li>
+<li>结构层（交互设计、信息架构）：对框架的进一步抽象，通常是指多个页面及完整的任务完成流程。比如浏览-&gt; 点赞 -&gt; 评论 -&gt; 收藏 -&gt; 关注 的流程。而要知道一个用户任务流程应该是什么样子，就要进一步看下一层了。</li>
+<li>范围层（功能规格）：对产品的能力进行圈定，即很明确的知道功能到底是什么；比如创作、浏览、下单、聊天都算是；该层最难的是要明确出，我们产品核心功能是什么，辅助功能是什么，可以不做的是什么，甚至是不能做的是什么。要对这些功能进行决策，我们需要再向下看。</li>
+<li>战略层（用户需求、产品目标）：用户从我们的产品上期望得到什么，而我们又期望从用户身上得到什么。这个需要思考清楚。该层是一个产品的起始设计点。</li>
+</ol>
+<p>如上，<strong>整个产品设计流程是自底向上的，以战略层为圆心，一层层向外展开。</strong> 越是靠近圆心的层，内容越是精简但也越是核心，确定后不可轻易修改。越是外层，工作内容越是繁杂，而且必须围绕内层的设计来构建，否则很容易走偏；而且外层的变动频率也会更频繁一些，变动对整个产品的影响也不会特别大。</p>
+<p><strong>当在最外层发现一个『很赞』的设计时，一定要向内层对齐，看是否能够贴合内层设计，如果不能，则说明这个设计只是看上去『很赞』，而实际上会对产品的整体性和易用性造成损害。</strong></p>
+<p><strong>如果一定要加，那么就需要对每层进行重新调整，进而向外层展开，看除了实现这个『很赞』的功能，是否还有其他方面功能需要调整，避免产品逻辑冲突。</strong></p>
+<h2>战略层<span class="hx-absolute -hx-mt-20" id="战略层"></span>
+    <a href="#%e6%88%98%e7%95%a5%e5%b1%82" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><h3>核心问题<span class="hx-absolute -hx-mt-20" id="核心问题"></span>
+    <a href="#%e6%a0%b8%e5%bf%83%e9%97%ae%e9%a2%98" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><ol>
+<li>我们要通过这个产品得到什么？</li>
+<li>我们的用户要通过这个产品得到什么？</li>
+</ol>
+<p><strong>这 2 个核心问题一定要能够回答得非常非常明确。</strong> 因为上面我们提到『战略层』是整个产品的轴心，如果它变了，外层的所有工作都会收到很大影响。</p>
+<h3>产品目标<span class="hx-absolute -hx-mt-20" id="产品目标"></span>
+    <a href="#%e4%ba%a7%e5%93%81%e7%9b%ae%e6%a0%87" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><ul>
+<li>
+<p>商业目标</p>
+<ul>
+<li><strong>定义成功的条件，而不是成功的路径（方法）。</strong></li>
+</ul>
+</li>
+<li>
+<p>品牌识别</p>
+<ul>
+<li>品牌并不单单只一个 logo、名称。更多的是指产品给用户留下的印象。</li>
+<li>需要思考，<strong>我们最期望用户对我们产生怎样的印象</strong>。 高雅？实惠？自由？年轻活力？张扬？安静？</li>
+</ul>
+</li>
+<li>
+<p>成功标准</p>
+<ul>
+<li>可量化的成功标准很重要，这会让整个产品运作流程不走偏。初学者很容易被一个个『很赞』的小功能带跑偏，没日没夜的提供一大堆新奇的小 Feature，假以时日使整个产品完全走形，无法达成任何一个目标。</li>
+</ul>
+</li>
+</ul>
+<h3>用户需求<span class="hx-absolute -hx-mt-20" id="用户需求"></span>
+    <a href="#%e7%94%a8%e6%88%b7%e9%9c%80%e6%b1%82" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><ul>
+<li>
+<p>用户细分</p>
+<ul>
+<li>我们必须很明确的圈定产品的目标用户。比如大学生、公司白领、农民工？</li>
+<li>我们不可能为所有类型的用户提供服务，如果一个人不是目标用户，就不能在这类人的反馈上费脑筋。</li>
+</ul>
+</li>
+<li>
+<p>可用性和用户研究</p>
+<ul>
+<li>圈定目标用户后，我们就需要对用户特点进行研究。比如大学生就是时间多、钱少、中低端消费能力强、爱潮玩。而农民工消费能力很低，喜欢消遣性娱乐。</li>
+</ul>
+</li>
+<li>
+<p>创建任务角色</p>
+<ul>
+<li>我们可以假想一个用户，来测试我们的产品；比如一个网约车司机，一个计算机系大学生，模拟他使用产品的整个过程。</li>
+<li>我们要完完整整的设计一个假想人，过于粗糙的假想帮助不大，比如大学生，我们要设定他的年龄、性别、专业、家乡、城市、所在大学、主要课程、学习成绩、人际关系。</li>
+</ul>
+</li>
+</ul>
+<p><strong>不要依赖用户访谈，用户访谈通常是产品已经设计完了才能进行。这时候已经太晚了，应该在产品设计过程中，就不断的思考用户的所有使用可能性。</strong></p>
+<h2>范围层<span class="hx-absolute -hx-mt-20" id="范围层"></span>
+    <a href="#%e8%8c%83%e5%9b%b4%e5%b1%82" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>如果我们很明确的知道了我们从产品中得到什么，以及用户从我们的产品中得到什么。那么就可以进入范围层了。</p>
+<p>范围层本质就是功能设计，我们的产品需要包含怎样的功能，才能达成我们在战略层中设定的目标。</p>
+<h3>里程碑<span class="hx-absolute -hx-mt-20" id="里程碑"></span>
+    <a href="#%e9%87%8c%e7%a8%8b%e7%a2%91" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><strong>非常重要。</strong></p>
+<p>把一个个零散的需求，放到里程碑中进行发布，会让整个产品的进度更加清晰明了。也很有利益多人之间的协同，而不混乱。</p>
+<p>比如一个需求进来了，我们可以很清晰的知道它应该放在哪个版本，进而决定我们应该什么时候开始做它。而不是完全看我们的时间。</p>
+<p><strong>需求绝对不允许跨版本。</strong> 比如我们的里程碑是节奏是一个月一次，那就决不允许一个需求需要 3 个月完成，让我们每个版本都要跟进它的进展。我们应该对这个大需求进行拆分，确保每个里程碑都能交付一个阶段性的成果。即便这个成果对用户无感知，也可以是对内的一个优化。</p>
+<p><strong>对于高频迭代项目，比如一周一迭代，随着产品的逐渐成熟，就越来越难交付出一个用户有感的迭代。</strong> 如果不小心参与进这类的项目，是项目管理者的无知，不要强跟或自责。</p>
+<h3>功能规格<span class="hx-absolute -hx-mt-20" id="功能规格"></span>
+    <a href="#%e5%8a%9f%e8%83%bd%e8%a7%84%e6%a0%bc" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><ol>
+<li>
+<p>功能说明书的工作量很大，而且一般用户不看。</p>
+</li>
+<li>
+<p><strong>定义（概念）说明很重要，必须一致，而且工作量不大。</strong></p>
+<ol>
+<li>比如『推荐』作为一个页面的导航菜单名，那么其他地方若有关联导航或提示，也必须用『推荐』这个词，不能用『推荐页』、『首页』、『你可能喜欢』、『发现页』这些类似的名字。</li>
+</ol>
+</li>
+<li>
+<p>功能说明书内容原则</p>
+<ol>
+<li>乐观</li>
+<li>具体</li>
+<li>避免主观的语气</li>
+</ol>
+</li>
+</ol>
+<h2>结构层（交互设计）<span class="hx-absolute -hx-mt-20" id="结构层交互设计"></span>
+    <a href="#%e7%bb%93%e6%9e%84%e5%b1%82%e4%ba%a4%e4%ba%92%e8%ae%be%e8%ae%a1" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>功能需求确定好了以后，我们需要对这些功能需求进行详细设计，使这些功能片段能够组成一个整体。用户使用产品的多个功能时，整体的交互流程是连贯的。</p>
+<h3>概念模型<span class="hx-absolute -hx-mt-20" id="概念模型"></span>
+    <a href="#%e6%a6%82%e5%bf%b5%e6%a8%a1%e5%9e%8b" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p>产品的设计一定要符合用户的基本认知。早期软件产品的很多功能设计，都是模拟现实世界的实物来设计的，以降低用户对软件界面的理解。<strong>最典型的就是电子商务的流程设计，现在依旧是 加入购物车 -&gt; 下单 -&gt; 结账 的模式，因为人在超市里购物就是这样的。</strong></p>
+<h3>错误处理<span class="hx-absolute -hx-mt-20" id="错误处理"></span>
+    <a href="#%e9%94%99%e8%af%af%e5%a4%84%e7%90%86" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><ol>
+<li>把系统设计成不可能犯错的交互流程。</li>
+<li>如果错误不可避免，那就使错误很难发生；比如把 button 设置为 disable。</li>
+<li>撤销功能，如果用户就是不小心犯错了。可以让他撤销。</li>
+</ol>
+<h2>框架层（界面设计、草图）<span class="hx-absolute -hx-mt-20" id="框架层界面设计草图"></span>
+    <a href="#%e6%a1%86%e6%9e%b6%e5%b1%82%e7%95%8c%e9%9d%a2%e8%ae%be%e8%ae%a1%e8%8d%89%e5%9b%be" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>结构层设计的是用户的整体行为流程，我们把用户已经使用产品时的所有操作流程都思考清楚，包括出错的处理流程。</p>
+<p>框架层需要思考的就是界面设计，该层的设计更多是界面的框架，比如图片位置，文字位置，按钮位置。</p>
+<p>基于框架层的草图设计，我们可以完成结构层中设计得所有流程。</p>
+<p><strong>如果结构层思考得足够清晰，框架层的设计就不会太难。初学者觉得界面设计难，是因为根本没有对内层进行思考。模糊不确定的内层，会导致外层无从下手，因为我们根本不知道自己要做成什么样。</strong></p>
+<h2>表现层<span class="hx-absolute -hx-mt-20" id="表现层"></span>
+    <a href="#%e8%a1%a8%e7%8e%b0%e5%b1%82" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>表现层更多的是视觉设计，该层设计更多的是视觉设计，包括美学、心理学内容。该层经常会做一些细微调整而不会对产品产生太大影响。但它会很大程度影响用户对产品的品牌印象。</p>
+<p>比如方形改成圆形，更换按钮颜色，字体改小或加粗等等。</p>
+<p><strong>但注意，该层的任何修改都是要对齐内层的，以最终实现战略层目标为目的。一定不要只是为了『好看』。</strong></p>
+<p>初学者很容易因为『好看』而对界面做修改，但这是永无尽头的，因为审美会出现疲劳的。</p>
+
+        </div>
+        <div class="hx-mt-16"></div>
+        <div class="hx-mb-8 hx-flex hx-items-center hx-border-t hx-pt-8 dark:hx-border-neutral-800 contrast-more:hx-border-neutral-400 dark:contrast-more:hx-border-neutral-400 print:hx-hidden"><a
+        href="/docs/concepts/"
+        title="核心概念"
+        class="hx-flex hx-max-w-[50%] hx-items-center hx-gap-1 hx-py-4 hx-text-base hx-font-medium hx-text-gray-600 hx-transition-colors [word-break:break-word] hover:hx-text-primary-600 dark:hx-text-gray-300 md:hx-text-lg ltr:hx-pr-4 rtl:hx-pl-4"
+      ><svg class="hx-inline hx-h-5 hx-shrink-0 ltr:hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>核心概念</a></div>
+        <script>
+  
+
+  function getGiscusTheme() {
+    return localStorage.getItem("color-theme");
+  }
+
+  function setGiscusTheme() {
+    function sendMessage(message) {
+      const iframe = document.querySelector('iframe.giscus-frame');
+      if (!iframe) return;
+      iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+    }
+    sendMessage({
+      setConfig: {
+        theme: getGiscusTheme(),
+      },
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const giscusAttributes = {
+      "src": "https://giscus.app/client.js",
+      "data-repo": "victoriametrics-docs",
+      "data-repo-id": "",
+      "data-category": "giscus",
+      "data-category-id": "",
+      "data-mapping": "pathname",
+      "data-strict": "0",
+      "data-reactions-enabled": "1",
+      "data-emit-metadata": "0",
+      "data-input-position": "top",
+      "data-theme": getGiscusTheme(),
+      "data-lang": "zh-CN",
+      "crossorigin": "anonymous",
+      "async": "",
+    };
+
+    
+    const giscusScript = document.createElement("script");
+    Object.entries(giscusAttributes).forEach(([key, value]) => giscusScript.setAttribute(key, value));
+    document.getElementById('giscus').appendChild(giscusScript);
+
+    
+    const toggles = document.querySelectorAll(".theme-toggle");
+    if (toggles) {
+      toggles.forEach(toggle => toggle.addEventListener('click', setGiscusTheme));
+    }
+  });
+</script>
+
+<div id="giscus"></div>
+      </main>
+    </article>
+  </div>
+
+      <footer class="hextra-footer hx-bg-gray-100 hx-pb-[env(safe-area-inset-bottom)] dark:hx-bg-neutral-900 print:hx-bg-transparent"><div
+    class="hx-max-w-screen-xl hx-mx-auto hx-flex hx-justify-center hx-py-12 hx-pl-[max(env(safe-area-inset-left),1.5rem)] hx-pr-[max(env(safe-area-inset-right),1.5rem)] hx-text-gray-600 dark:hx-text-gray-400 md:hx-justify-start"
+  >
+    <div class="hx-flex hx-w-full hx-flex-col hx-items-center sm:hx-items-start"><div class="hx-font-semibold"><a class="hx-flex hx-text-sm hx-items-center hx-gap-1 hx-text-current" target="_blank" rel="noopener noreferrer" title="Hextra GitHub Homepage" href="https://github.com/imfing/hextra">
+    <span>Powered by Hextra<svg height=1em class="hx-inline-block ltr:hx-ml-1 rtl:hx-mr-1 hx-align-[-2.5px]" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="m 105.50024,22.224647 c -9.59169,-5.537563 -21.40871,-5.537563 -31.000093,0 L 39.054693,42.689119 C 29.463353,48.226675 23.55484,58.460531 23.55484,69.535642 v 40.928918 c 0,11.07542 5.908513,21.3092 15.499853,26.84652 l 35.445453,20.46446 c 9.591313,5.53732 21.408404,5.53732 31.000094,0 l 35.44507,-20.46446 c 9.59131,-5.53732 15.49985,-15.7711 15.49985,-26.84652 V 69.535642 c 0,-11.075111 -5.90854,-21.308967 -15.49985,-26.846523 z M 34.112797,85.737639 c -1.384445,2.397827 -1.384445,5.352099 0,7.749927 l 24.781554,42.922974 c 1.38437,2.39783 3.942853,3.87496 6.711592,3.87496 h 49.563107 c 2.76905,0 5.3273,-1.47713 6.71144,-3.87496 l 24.78194,-42.922974 c 1.38414,-2.397828 1.38414,-5.3521 0,-7.749927 L 121.88049,42.814746 c -1.38414,-2.397828 -3.94239,-3.874964 -6.71144,-3.874964 H 65.605944 c -2.768739,0 -5.327223,1.477059 -6.711592,3.874964 z" style="stroke-width:0.774993" /></svg></span>
+  </a></div>
+    </div>
+  </div>
+</footer>
+    
+    <script defer src="/js/main.js" integrity=""></script>
+
+
+<script defer src="/lib/flexsearch/flexsearch.bundle.min.0425860527cc9968f9f049421c7a56b39327d475e2e3a8f550416be3a9134327.js" integrity="sha256-BCWGBSfMmWj58ElCHHpWs5Mn1HXi46j1UEFr46kTQyc="></script>
+    <script defer src="/en.search.js" integrity=""></script>
+
+
+  </body>
+</html>

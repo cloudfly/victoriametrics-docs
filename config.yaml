@@ -1,19 +1,49 @@
 baseURL: https://victoriametrics.com.cn/
 languageCode: zh-CN
-title: VictoriaMetrics 中文手册
+title: 中文手册
 
 module:
   imports:
   - path: github.com/imfing/hextra
 
+menu:
+  main:
+  - name: 手册
+    pageRef: /docs
+    weight: 1
+  - name: 关于
+    pageRef: /about
+    weight: 2
 
 params:
   navbar:
     displayTitle: true
     displayLogo: true
     logo:
-      path: images/logo-victoriametrics.svg
-      dark: images/logo-victoriametrics.svg
+      path: /logo-victoriametrics.svg
+      dark: /logo-victoriametrics-dark.svg
       link: /
-      width: 40
-      height: 20
+      width: 160
+      height: 80
+  search:
+    enable: true
+    type: flexsearch
+
+    flexsearch:
+      # index page by: content | summary | heading | title
+      index: content
+  page:
+    # full (100%), wide (90rem), normal (1280px)
+    width: wide
+  comments:
+    enable: false
+    type: giscus
+    giscus:
+      repo: victoriametrics-docs
+      repoId: R_kgDOM4cSJQ
+      category: General
+      categoryId: DIC_kwDOM4cSJc4Ci4Hu
+
+
+
+copyright: "© 2024 Cloudfly,陈云飞"

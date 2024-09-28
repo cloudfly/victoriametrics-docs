@@ -1,0 +1,231 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>中文手册 – 数据查询</title>
+    <link>http://localhost:1313/docs/query/</link>
+    <description>Recent content in 数据查询 on 中文手册</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <copyright>© 2024 Cloudfly,陈云飞</copyright>
+    
+	  <atom:link href="http://localhost:1313/docs/query/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>MetricQL</title>
+      <link>http://localhost:1313/docs/query/metricsql/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/query/metricsql/</guid>
+      <description>
+        
+        
+        &lt;p&gt;VictoriaMetrics提供了一种特殊的查询语言，用于执行查询语句 - MetricsQL。它是一个类似&lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/basics&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;PromQL&lt;/a&gt;的查询语言，具有强大的函数和功能集，专门用于处理时间序列数据。MetricsQL完全兼容PromQL，因此他们之间大部分概念都是共享的。&lt;/p&gt;
+&lt;p&gt;所以，使用VictoriaMetrics替换Prometheus后，由Prometheus数据源创建的Grafana仪表板不会收到任何影响。然而，这两种语言之间存在&lt;a href=&#34;https://www.victoriametrics.com.cn/victoriametrics/shu-ju-cha-xun/metricql/dui-bi-promql&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;一定的差异&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;一个&lt;a href=&#34;https://godoc.org/github.com/VictoriaMetrics/metricsql&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;独立的 MetricQL 库&lt;/a&gt;可用于在其他应用中解析 MetricQL 语句。&lt;/p&gt;
+&lt;p&gt;如果你对 PromQL 不熟，建议阅读一下&lt;a href=&#34;https://www.victoriametrics.com.cn/victoriametrics/shu-ju-cha-xun/metricql/promql-xin-shou-ru-men&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这篇文章&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;MetricsQL在以下功能上与PromQL实现方式不同，它们改进了用户体验：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;MetricsQL在计算范围函数（如&lt;code&gt;rate&lt;/code&gt;和&lt;code&gt;increase&lt;/code&gt;）时，考虑了方括号中窗口之前的上一个点。这样可以返回用户对于&lt;code&gt;increase(metric[$__interval])&lt;/code&gt;查询所期望的精确结果，而不是Prometheus为此类查询返回的不完整结果。&lt;/li&gt;
+&lt;li&gt;MetricsQL不会推断范围函数的结果。这解决了&lt;a href=&#34;https://github.com/prometheus/prometheus/issues/3746&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Prometheus中存在的问题&lt;/a&gt;。有关VictoriaMetrics和Prometheus计算&lt;code&gt;rate&lt;/code&gt;和&lt;code&gt;increase&lt;/code&gt;的技术细节，请参阅 &lt;a href=&#34;https://github.com/VictoriaMetrics/VictoriaMetrics/issues/1215#issuecomment-850305711&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;issue&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;MetricsQL对于 step 小于抓取间隔的rate查询返回预期非空响应。这解决了&lt;a href=&#34;https://github.com/grafana/grafana/issues/11451&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Grafana中存在的问题&lt;/a&gt;。还请参阅&lt;a href=&#34;https://www.percona.com/blog/2020/02/28/better-prometheus-rate-function-with-victoriametrics/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这篇文章&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;MetricsQL将&lt;code&gt;scalar&lt;/code&gt;类型与没有 Label 的&lt;code&gt;instant vector&lt;/code&gt;视为相同，因为这些类型之间微小差异通常会让用户感到困惑。有关详细信息，请参阅&lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/basics/#expression-language-data-types&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;相应的Prometheus文档&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;MetricsQL从输出中删除所有&lt;code&gt;NaN&lt;/code&gt;值，因此一些查询（例如&lt;code&gt;(-1)^0.5&lt;/code&gt;）在VictoriaMetrics中返回空结果，在Prometheus中则返回一系列NaN值。请注意，Grafana不会为NaN值绘制任何线条或点，因此最终结果在VictoriaMetrics和Prometheus上看起来是相同的。 在应用函数后，&lt;/li&gt;
+&lt;li&gt;MetricsQL保留指标名称，并且该函数不改变原始时间序列的含义。例如，&lt;code&gt;min_over_time(foo)&lt;/code&gt;或&lt;code&gt;round(foo)&lt;/code&gt;将在结果中保留&lt;code&gt;foo&lt;/code&gt;指标名称。有关详细信息，请参阅&lt;a href=&#34;https://github.com/VictoriaMetrics/VictoriaMetrics/issues/674&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;issue&lt;/a&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;MetricQL 功能特性&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;metricql-功能特性&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#metricql-%e5%8a%9f%e8%83%bd%e7%89%b9%e6%80%a7&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;MetricsQL implements &lt;a href=&#34;https://medium.com/@valyala/promql-tutorial-for-beginners-9ab455142085&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;PromQL&lt;/a&gt; and provides additional functionality mentioned below, which is aimed towards solving practical cases. Feel free &lt;a href=&#34;https://github.com/VictoriaMetrics/VictoriaMetrics/issues&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;filing a feature request&lt;/a&gt; if you think MetricsQL misses certain useful functionality.&lt;/p&gt;
+&lt;p&gt;This functionality can be evaluated at &lt;a href=&#34;https://play.victoriametrics.com/select/accounting/1/6a716b0f-38bc-4856-90ce-448fd713e3fe/prometheus/graph/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;VictoriaMetrics playground&lt;/a&gt; or at your own &lt;a href=&#34;https://docs.victoriametrics.com/#how-to-start-victoriametrics&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;VictoriaMetrics instance&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;The list of MetricsQL features:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Graphite-compatible filters can be passed via &lt;code&gt;{__graphite__=&amp;quot;foo.*.bar&amp;quot;}&lt;/code&gt; syntax. See &lt;a href=&#34;https://docs.victoriametrics.com/#selecting-graphite-metrics&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt;. VictoriaMetrics also can be used as Graphite datasource in Grafana. See &lt;a href=&#34;https://docs.victoriametrics.com/#graphite-api-usage&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt; for details. See also &lt;a href=&#34;https://docs.victoriametrics.com/MetricsQL.html#label_graphite_group&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;label_graphite_group&lt;/a&gt; function, which can be used for extracting the given groups from Graphite metric name.&lt;/li&gt;
+&lt;li&gt;Lookbehind window in square brackets may be omitted. VictoriaMetrics automatically selects the lookbehind window depending on the current step used for building the graph (e.g. &lt;code&gt;step&lt;/code&gt; query arg passed to &lt;a href=&#34;https://docs.victoriametrics.com/keyConcepts.html#range-query&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/query_range&lt;/a&gt;). For instance, the following query is valid in VictoriaMetrics: &lt;code&gt;rate(node_network_receive_bytes_total)&lt;/code&gt;. It is equivalent to &lt;code&gt;rate(node_network_receive_bytes_total[$__interval])&lt;/code&gt; when used in Grafana.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.victoriametrics.com/keyConcepts.html#filtering&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Series selectors&lt;/a&gt; accept multiple &lt;code&gt;or&lt;/code&gt; filters. For example, &lt;code&gt;{env=&amp;quot;prod&amp;quot;,job=&amp;quot;a&amp;quot; or env=&amp;quot;dev&amp;quot;,job=&amp;quot;b&amp;quot;}&lt;/code&gt; selects series with either &lt;code&gt;{env=&amp;quot;prod&amp;quot;,job=&amp;quot;a&amp;quot;}&lt;/code&gt; or &lt;code&gt;{env=&amp;quot;dev&amp;quot;,job=&amp;quot;b&amp;quot;}&lt;/code&gt; labels. See &lt;a href=&#34;https://docs.victoriametrics.com/keyConcepts.html#filtering-by-multiple-or-filters&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt; for details.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.victoriametrics.com/MetricsQL.html#aggregate-functions&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Aggregate functions&lt;/a&gt; accept arbitrary number of args. For example, &lt;code&gt;avg(q1, q2, q3)&lt;/code&gt; would return the average values for every point across time series returned by &lt;code&gt;q1&lt;/code&gt;, &lt;code&gt;q2&lt;/code&gt; and &lt;code&gt;q3&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/basics/#modifier&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;@ modifier&lt;/a&gt; can be put anywhere in the query. For example, &lt;code&gt;sum(foo) @ end()&lt;/code&gt; calculates &lt;code&gt;sum(foo)&lt;/code&gt; at the &lt;code&gt;end&lt;/code&gt; timestamp of the selected time range &lt;code&gt;[start ... end]&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Arbitrary subexpression can be used as &lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/basics/#modifier&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;@ modifier&lt;/a&gt;. For example, &lt;code&gt;foo @ (end() - 1h)&lt;/code&gt; calculates &lt;code&gt;foo&lt;/code&gt; at the &lt;code&gt;end - 1 hour&lt;/code&gt; timestamp on the selected time range &lt;code&gt;[start ... end]&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/basics/#offset-modifier&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;offset&lt;/a&gt;, lookbehind window in square brackets and &lt;code&gt;step&lt;/code&gt; value for &lt;a href=&#34;https://docs.victoriametrics.com/MetricsQL.html#subqueries&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;subquery&lt;/a&gt; may refer to the current step aka &lt;code&gt;$__interval&lt;/code&gt; value from Grafana with &lt;code&gt;[Ni]&lt;/code&gt; syntax. For instance, &lt;code&gt;rate(metric[10i] offset 5i)&lt;/code&gt; would return per-second rate over a range covering 10 previous steps with the offset of 5 steps.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/basics/#offset-modifier&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;offset&lt;/a&gt; may be put anywhere in the query. For instance, &lt;code&gt;sum(foo) offset 24h&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Lookbehind window in square brackets and &lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/basics/#offset-modifier&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;offset&lt;/a&gt; may be fractional. For instance, &lt;code&gt;rate(node_network_receive_bytes_total[1.5m] offset 0.5d)&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;The duration suffix is optional. The duration is in seconds if the suffix is missing. For example, &lt;code&gt;rate(m[300] offset 1800)&lt;/code&gt; is equivalent to &lt;code&gt;rate(m[5m]) offset 30m&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;The duration can be placed anywhere in the query. For example, &lt;code&gt;sum_over_time(m[1h]) / 1h&lt;/code&gt; is equivalent to &lt;code&gt;sum_over_time(m[1h]) / 3600&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Numeric values can have &lt;code&gt;K&lt;/code&gt;, &lt;code&gt;Ki&lt;/code&gt;, &lt;code&gt;M&lt;/code&gt;, &lt;code&gt;Mi&lt;/code&gt;, &lt;code&gt;G&lt;/code&gt;, &lt;code&gt;Gi&lt;/code&gt;, &lt;code&gt;T&lt;/code&gt; and &lt;code&gt;Ti&lt;/code&gt; suffixes. For example, &lt;code&gt;8K&lt;/code&gt; is equivalent to &lt;code&gt;8000&lt;/code&gt;, while &lt;code&gt;1.2Mi&lt;/code&gt; is equivalent to &lt;code&gt;1.2*1024*1024&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Trailing commas on all the lists are allowed - label filters, function args and with expressions. For instance, the following queries are valid: &lt;code&gt;m{foo=&amp;quot;bar&amp;quot;,}&lt;/code&gt;, &lt;code&gt;f(a, b,)&lt;/code&gt;, &lt;code&gt;WITH (x=y,) x&lt;/code&gt;. This simplifies maintenance of multi-line queries.&lt;/li&gt;
+&lt;li&gt;Metric names and label names may contain any unicode letter. For example &lt;code&gt;температура{город=&amp;quot;Киев&amp;quot;}&lt;/code&gt; is a value MetricsQL expression.&lt;/li&gt;
+&lt;li&gt;Metric names and labels names may contain escaped chars. For example, &lt;code&gt;foo\-bar{baz\=aa=&amp;quot;b&amp;quot;}&lt;/code&gt; is valid expression. It returns time series with name &lt;code&gt;foo-bar&lt;/code&gt; containing label &lt;code&gt;baz=aa&lt;/code&gt; with value &lt;code&gt;b&lt;/code&gt;. Additionally, the following escape sequences are supported:
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;\xXX&lt;/code&gt;, where &lt;code&gt;XX&lt;/code&gt; is hexadecimal representation of the escaped ascii char.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;\uXXXX&lt;/code&gt;, where &lt;code&gt;XXXX&lt;/code&gt; is a hexadecimal representation of the escaped unicode char.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Aggregate functions support optional &lt;code&gt;limit N&lt;/code&gt; suffix in order to limit the number of output series. For example, &lt;code&gt;sum(x) by (y) limit 3&lt;/code&gt; limits the number of output time series after the aggregation to 3. All the other time series are dropped.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.victoriametrics.com/MetricsQL.html#histogram_quantile&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;histogram_quantile&lt;/a&gt; accepts optional third arg - &lt;code&gt;boundsLabel&lt;/code&gt;. In this case it returns &lt;code&gt;lower&lt;/code&gt; and &lt;code&gt;upper&lt;/code&gt; bounds for the estimated percentile. See &lt;a href=&#34;https://github.com/prometheus/prometheus/issues/5706&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;this issue for details&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;default&lt;/code&gt; binary operator. &lt;code&gt;q1 default q2&lt;/code&gt; fills gaps in &lt;code&gt;q1&lt;/code&gt; with the corresponding values from &lt;code&gt;q2&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;if&lt;/code&gt; binary operator. &lt;code&gt;q1 if q2&lt;/code&gt; removes values from &lt;code&gt;q1&lt;/code&gt; for missing values from &lt;code&gt;q2&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ifnot&lt;/code&gt; binary operator. &lt;code&gt;q1 ifnot q2&lt;/code&gt; removes values from &lt;code&gt;q1&lt;/code&gt; for existing values from &lt;code&gt;q2&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;WITH&lt;/code&gt; templates. This feature simplifies writing and managing complex queries. Go to &lt;a href=&#34;https://play.victoriametrics.com/select/accounting/1/6a716b0f-38bc-4856-90ce-448fd713e3fe/expand-with-exprs&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;WITH templates playground&lt;/a&gt; and try it.&lt;/li&gt;
+&lt;li&gt;String literals may be concatenated. This is useful with &lt;code&gt;WITH&lt;/code&gt; templates: &lt;code&gt;WITH (commonPrefix=&amp;quot;long_metric_prefix_&amp;quot;) {__name__=commonPrefix+&amp;quot;suffix1&amp;quot;} / {__name__=commonPrefix+&amp;quot;suffix2&amp;quot;}&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;keep_metric_names&lt;/code&gt; modifier can be applied to all the &lt;a href=&#34;https://docs.victoriametrics.com/MetricsQL.html#rollup-functions&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;rollup functions&lt;/a&gt; and &lt;a href=&#34;https://docs.victoriametrics.com/MetricsQL.html#transform-functions&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;transform functions&lt;/a&gt;. This modifier prevents from dropping metric names in function results. See &lt;a href=&#34;https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;keep_metric_names&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;keep_metric_names&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#keep_metric_names&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;By default, metric names are dropped after applying functions, which change the meaning of the original time series. This may result in &lt;code&gt;duplicate time series&lt;/code&gt; error when the function is applied to multiple time series with different names. This error can be fixed by applying &lt;code&gt;keep_metric_names&lt;/code&gt; modifier to the function.&lt;/p&gt;
+&lt;p&gt;For example, &lt;code&gt;rate({__name__=~&amp;quot;foo|bar&amp;quot;}) keep_metric_names&lt;/code&gt; leaves &lt;code&gt;foo&lt;/code&gt; and &lt;code&gt;bar&lt;/code&gt; metric names in the returned time series.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>HTTP 查询接口</title>
+      <link>http://localhost:1313/docs/query/http/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/query/http/</guid>
+      <description>
+        
+        
+        &lt;h2&gt;单机版&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;单机版&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#%e5%8d%95%e6%9c%ba%e7%89%88&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;h3&gt;Prometheus 查询接口&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;prometheus-查询接口&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#prometheus-%e6%9f%a5%e8%af%a2%e6%8e%a5%e5%8f%a3&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;VictoriaMetrics 支持下面这些 &lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/api/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Prometheus 查询 API&lt;/a&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.victoriametrics.com/keyConcepts.html#instant-query&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/query&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.victoriametrics.com/keyConcepts.html#range-query&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/query_range&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/api/#finding-series-by-label-matchers&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/series&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/api/#getting-label-names&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/labels&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/api/#querying-label-values&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/label/…/values&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-stats&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/status/tsdb&lt;/a&gt;. See &lt;a href=&#34;https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#tsdb-stats&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt; for details.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/api/#targets&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/targets&lt;/a&gt; - see &lt;a href=&#34;https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-scrape-prometheus-exporters-such-as-node-exporter&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt; for more details.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/federation/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/federate&lt;/a&gt; - see &lt;a href=&#34;https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#federation&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt; for more details.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;这些接口可以被Prometheus兼容的客户端（如Grafana或curl）查询。所有Prometheus查询API处理程序都可以使用&lt;code&gt;/prometheus&lt;/code&gt;前缀进行查询。例如，&lt;code&gt;/prometheus/api/v1/query&lt;/code&gt;和&lt;code&gt;/api/v1/query&lt;/code&gt;都可以正常工作。&lt;/p&gt;
+&lt;h4&gt;查询优化&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;查询优化&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#%e6%9f%a5%e8%af%a2%e4%bc%98%e5%8c%96&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;ul&gt;
+&lt;li&gt;VictoriaMetrics 接受&lt;code&gt;extra_label=&amp;lt;label_name&amp;gt;=&amp;lt;label_value&amp;gt;&lt;/code&gt;查询参数（可选），可以用于强制使用额外 Label 过滤器执行查询。例如，&lt;code&gt;/api/v1/query_range?extra_label=user_id=123&amp;amp;extra_label=group_id=456&amp;amp;query=&amp;lt;query&amp;gt;&lt;/code&gt;会自动将&lt;code&gt;{user_id=&amp;quot;123&amp;quot;,group_id=&amp;quot;456&amp;quot;}&lt;/code&gt;Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。一般&lt;code&gt;extra_label&lt;/code&gt;查询参数由位于 VictoriaMetrics 前面的查询代理服务自动设置。例如，可以参考使用 &lt;a href=&#34;https://docs.victoriametrics.com/vmauth.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;vmauth&lt;/a&gt; 和 &lt;a href=&#34;https://docs.victoriametrics.com/vmgateway.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;vmgateway&lt;/a&gt; 作为查询代理的示例。&lt;/li&gt;
+&lt;li&gt;VictoriaMetrics 接受&lt;code&gt;extra_filters[]=series_selector&lt;/code&gt;查询参数（可选），可用于对查询强制执行任意的 Label 过滤器。例如，&lt;code&gt;/api/v1/query_range?extra_filters[]={env=~&amp;quot;prod|staging&amp;quot;,user=&amp;quot;xyz&amp;quot;}&amp;amp;query=&amp;lt;query&amp;gt;&lt;/code&gt;将自动将&lt;code&gt;{env=~&amp;quot;prod|staging&amp;quot;,user=&amp;quot;xyz&amp;quot;}&lt;/code&gt;Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。我们建议在 VictoriaMetrics 前面的查询代理自动设置&lt;code&gt;extra_filters[]&lt;/code&gt;查询参数。您可以将&lt;a href=&#34;https://docs.victoriametrics.com/vmauth.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;vmauth&lt;/a&gt;和&lt;a href=&#34;https://docs.victoriametrics.com/vmgateway.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;vmgateway&lt;/a&gt;作为这种代理的示例。&lt;/li&gt;
+&lt;li&gt;VictoriaMetrics 接受多种格式的 &lt;code&gt;time&lt;/code&gt;，&lt;code&gt;start&lt;/code&gt; 和 &lt;code&gt;end&lt;/code&gt; 查询参数，可参考&lt;a href=&#34;https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#timestamp-formats&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这些文档&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;VictoriaMetrics对于&lt;a href=&#34;https://docs.victoriametrics.com/keyConcepts.html#instant-query&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/query&lt;/a&gt;和&lt;a href=&#34;https://docs.victoriametrics.com/keyConcepts.html#range-query&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/query_range&lt;/a&gt;接口支持&lt;code&gt;round_digits&lt;/code&gt;查询参数。它可用于指定返回的指标值的保留小数点位数。例如，&lt;code&gt;/api/v1/query?query=avg_over_time(temperature[1h])&amp;amp;round_digits=2&lt;/code&gt;会将让返回的指标值保留小数点后面 2 位。&lt;/li&gt;
+&lt;li&gt;VictoriaMetrics允许在&lt;a href=&#34;https://docs.victoriametrics.com/url-examples.html#apiv1labels&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/labels&lt;/a&gt;和&lt;a href=&#34;https://docs.victoriametrics.com/url-examples.html#apiv1labelvalues&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/label/&lt;!-- raw HTML omitted --&gt;/values&lt;/a&gt;接口中使用&lt;code&gt;limit&lt;/code&gt;查询参数来限制返回的条目数量。例如，对&lt;code&gt;/api/v1/labels?limit=5&lt;/code&gt;的查询请求最多返回5个唯一的 Label 值，并忽略其他 Label。如果提供的&lt;code&gt;limit&lt;/code&gt;值超过了相应的&lt;code&gt;-command-line&lt;/code&gt;命令行参数&lt;code&gt;-search.maxTagKeys&lt;/code&gt;或&lt;code&gt;-search.maxTagValues&lt;/code&gt;，则会使用命令行参数中指定的限制。&lt;/li&gt;
+&lt;li&gt;默认情况下，VictoriaMetrics从&lt;a href=&#34;https://docs.victoriametrics.com/url-examples.html#apiv1series&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/series&lt;/a&gt;、&lt;a href=&#34;https://docs.victoriametrics.com/url-examples.html#apiv1labels&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/labels&lt;/a&gt;和&lt;a href=&#34;https://docs.victoriametrics.com/url-examples.html#apiv1labelvalues&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/label/&lt;!-- raw HTML omitted --&gt;/values&lt;/a&gt;返回最近一天从00:00 UTC开始的 series 数据，而Prometheus API默认返回所有时间的数据。如果要选择特定的时间范围的 series 数据，可使用 &lt;code&gt;start&lt;/code&gt; 和 &lt;code&gt;end&lt;/code&gt; 参数指定。由于性能优化的考虑，VictoriaMetrics会将指定的 &lt;code&gt;start..end&lt;/code&gt; 时间范围舍入到天的粒度。如果您需要在给定时间范围内获取精确的 Label 集合，请将查询发送到&lt;a href=&#34;https://docs.victoriametrics.com/keyConcepts.html#instant-query&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/query&lt;/a&gt;或&lt;a href=&#34;https://docs.victoriametrics.com/keyConcepts.html#range-query&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/query_range&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;VictoriaMetrics在&lt;a href=&#34;https://docs.victoriametrics.com/url-examples.html#apiv1series&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/api/v1/series&lt;/a&gt;中接受&lt;code&gt;limit&lt;/code&gt;查询参数，用于限制返回的条目数量。例如，对&lt;code&gt;/api/v1/series?limit=5&lt;/code&gt;的查询将最多返回5个 series，并忽略其余的时间序列。如果提供的&lt;code&gt;limit&lt;/code&gt;值超过了相应的命令行参数&lt;code&gt;-search.maxSeries&lt;/code&gt;的值，则会使用命令行中指定的限制。&lt;/li&gt;
+&lt;li&gt;此外，VictoriaMetrics还提供了以下接口：
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;/vmui&lt;/code&gt; - 基本的 Web UI 界面，阅读&lt;a href=&#34;https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#vmui&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这些文档&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;/api/v1/series/count&lt;/code&gt; - 返回数据库中 time series 的总数量。注意：
+&lt;ul&gt;
+&lt;li&gt;该接口扫描了整个数据库的倒排索引，所以如果数据库包含数千万个 series 时间序列，它可能会变慢。&lt;/li&gt;
+&lt;li&gt;该接口可能把&lt;a href=&#34;https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-delete-time-series&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;删除 time series&lt;/a&gt; 计算在内，这是内部实现导致的。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;/api/v1/status/active_queries&lt;/code&gt; - 返回当前正在执行的查询。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;/api/v1/status/top_queries&lt;/code&gt; - 返回下面几个查询列表:
+&lt;ul&gt;
+&lt;li&gt;执行最频繁的查询列表 - &lt;code&gt;topByCount&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;平均执行时间最长的查询列表 - &lt;code&gt;topByAvgDuration&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;执行时间最长的查询列表 - &lt;code&gt;topBySumDuration&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;返回的查询个数可以使用 &lt;code&gt;topN&lt;/code&gt; 参数进行限制。历史查询可以使用 &lt;code&gt;maxLifetime&lt;/code&gt; 参数过滤掉。比如，请求&lt;code&gt;/api/v1/status/top_queries?topN=5&amp;amp;maxLifetime=30s&lt;/code&gt;返回最近 30 秒内每个类型的 Top5 个查询列表。VictoriaMetrics 会跟踪统计最近&lt;code&gt;-s earch.queryStats.lastQueriesCount&lt;/code&gt;时间内，且执行时间大于&lt;code&gt;search.queryStats.minQueryDuration&lt;/code&gt;的查询。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;Timestamp 格式&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;timestamp-格式&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#timestamp-%e6%a0%bc%e5%bc%8f&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;p&gt;VictoriaMetrics 接受下面这些格式的 &lt;code&gt;time&lt;/code&gt;, &lt;code&gt;start&lt;/code&gt; and &lt;code&gt;end&lt;/code&gt; 参数， 在 &lt;a href=&#34;https://docs.victoriametrics.com/#prometheus-querying-api-usage&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;query APIs&lt;/a&gt; 和 &lt;a href=&#34;https://docs.victoriametrics.com/#how-to-export-time-series&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;export APIs&lt;/a&gt; 中皆是如此。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Unix 秒级时间戳&lt;/strong&gt;，float 类型，小数部分代表的是毫秒。比如，&lt;code&gt;1562529662.678&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Unix 毫秒级时间戳&lt;/strong&gt;。比如，&lt;code&gt;1562529662678&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.ietf.org/rfc/rfc3339.txt&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;&lt;strong&gt;RFC3339&lt;/strong&gt;&lt;/a&gt;。比如， &lt;code&gt;2022-03-29T01:02:03Z&lt;/code&gt; or &lt;code&gt;2022-03-29T01:02:03+02:30&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;RFC3339 的省略格式&lt;/strong&gt;。比如：&lt;code&gt;2022&lt;/code&gt;, &lt;code&gt;2022-03&lt;/code&gt;, &lt;code&gt;2022-03-29&lt;/code&gt;, &lt;code&gt;2022-03-29T01&lt;/code&gt;, &lt;code&gt;2022-03-29T01:02&lt;/code&gt;, &lt;code&gt;2022-03-29T01:02:03&lt;/code&gt;。该 RFC3339 格式默认是使用 UTC 时区的。可以使用 &lt;code&gt;+hh:mm&lt;/code&gt; or &lt;code&gt;-hh:mm&lt;/code&gt; 后缀来指定时区。比如，&lt;code&gt;2022-03-01+06:30&lt;/code&gt; 代表 &lt;code&gt;2022-03-01&lt;/code&gt; 是 &lt;code&gt;06:30&lt;/code&gt; 时区。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;基于当前时间的相对时间&lt;/strong&gt;。比如，&lt;code&gt;1h5m&lt;/code&gt;, &lt;code&gt;-1h5m&lt;/code&gt;或 &lt;code&gt;now-1h5m&lt;/code&gt; 均代表 1小时5分钟之前，这里的 now 表示当前时间。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Graphite API&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;graphite-api&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#graphite-api&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;VictoriaMetrics支持Graphite协议的数据摄入——详见&lt;a href=&#34;https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-send-data-from-graphite-compatible-agents-such-as-statsd&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这些文档&lt;/a&gt;。VictoriaMetrics支持以下Graphite查询API，这些API对于Grafana中的&lt;a href=&#34;https://grafana.com/docs/grafana/latest/datasources/graphite/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Graphite数据源&lt;/a&gt;是必需的：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Render API - 看 &lt;a href=&#34;https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#graphite-render-api-usage&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这些文档&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;Metrics API - 看 &lt;a href=&#34;https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#graphite-render-api-usage&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这些文档&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;Tags API - 看 &lt;a href=&#34;https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#graphite-render-api-usage&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这些文档&lt;/a&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;所有Graphite处理程序都可以使用&lt;code&gt;/graphite&lt;/code&gt;前缀。例如，&lt;code&gt;/graphite/metrics/find&lt;/code&gt;和&lt;code&gt;/metrics/find&lt;/code&gt;都应该有效。&lt;/p&gt;
+&lt;p&gt;VictoriaMetrics接受可选查询参数：&lt;code&gt;extra_label=&amp;lt;标签名&amp;gt;=&amp;lt;标签值&amp;gt;&lt;/code&gt;和&lt;code&gt;extra_filters[]=series_selector&lt;/code&gt;，这些参数适用于所有Graphite API。这些参数可用于限制给定租户可见的时间序列范围。预计&lt;code&gt;extra_label&lt;/code&gt;查询参数将由位于VictoriaMetrics前方的身份验证代理自动设置。&lt;a href=&#34;https://www.victoriametrics.com.cn/victoriametrics/xi-tong-zu-jian/vmauth&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;vmauth&lt;/a&gt;和&lt;a href=&#34;https://docs.victoriametrics.com/vmgateway.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;vmgateway&lt;/a&gt;是此类代理的示例。&lt;/p&gt;
+&lt;p&gt;VictoriaMetrics支持&lt;code&gt;__graphite__&lt;/code&gt;伪标签，用于在&lt;a href=&#34;https://docs.victoriametrics.com/MetricsQL.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;MetricsQL&lt;/a&gt;中使用与Graphite兼容的过滤器过滤时间序列。详见&lt;a href=&#34;https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#selecting-graphite-metrics&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这些文档&lt;/a&gt;。&lt;/p&gt;
+&lt;h4&gt;Graphite Render API 用法&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;graphite-render-api-用法&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#graphite-render-api-%e7%94%a8%e6%b3%95&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;p&gt;VictoriaMetrics在&lt;code&gt;/render&lt;/code&gt; url 上支持&lt;a href=&#34;https://graphite.readthedocs.io/en/stable/render_api.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Graphite Render API&lt;/a&gt;子集，Grafana中的Graphite数据源会使用这一功能。在Grafana中配置&lt;a href=&#34;https://grafana.com/docs/grafana/latest/datasources/graphite/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Graphite数据源&lt;/a&gt;时，必须将&lt;code&gt;Storage-Step&lt;/code&gt; HTTP请求头设置为VictoriaMetrics中存储的Graphite数据点之间的步长。例如，&lt;code&gt;Storage-Step: 10s&lt;/code&gt;表示VictoriaMetrics中存储的Graphite数据点之间相隔10秒。&lt;/p&gt;
+&lt;h4&gt;Graphite Metrics API 用法&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;graphite-metrics-api-用法&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#graphite-metrics-api-%e7%94%a8%e6%b3%95&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;p&gt;VictoriaMetrics 支持 &lt;a href=&#34;https://graphite-api.readthedocs.io/en/latest/api.html#the-metrics-api&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Graphite Metrics API&lt;/a&gt; 中的一下接口：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://graphite-api.readthedocs.io/en/latest/api.html#metrics-find&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/metrics/find&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://graphite-api.readthedocs.io/en/latest/api.html#metrics-expand&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/metrics/expand&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://graphite-api.readthedocs.io/en/latest/api.html#metrics-index-json&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/metrics/index.json&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;VictoriaMetrics &lt;code&gt;/metrics/find&lt;/code&gt; 和 &lt;code&gt;/metrics/expand&lt;/code&gt;接口上支持以下额外的参数:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;label&lt;/code&gt; - 用于选择任意标签值。默认情况下，&lt;code&gt;label=__name__&lt;/code&gt;，即选择度量名称。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;delimiter&lt;/code&gt; - 用于在度量名称层次结构中使用不同的分隔符。例如，&lt;code&gt;/metrics/find?delimiter=``&amp;amp;query=node``*&lt;/code&gt; 将返回所有以&lt;code&gt;node_&lt;/code&gt;开头的度量名称前缀。默认情况下，&lt;code&gt;delimiter=.&lt;/code&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;Graphite Tags API usage&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;graphite-tags-api-usage&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#graphite-tags-api-usage&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;p&gt;VictoriaMetrics 支持下面这些 &lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Graphite Tags API&lt;/a&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#adding-series-to-the-tagdb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/tags/tagSeries&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#adding-series-to-the-tagdb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/tags/tagMultiSeries&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/tags&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/tags/{tag_name}&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/tags/findSeries&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#auto-complete-support&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/tags/autoComplete/tags&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#auto-complete-support&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/tags/autoComplete/values&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#removing-series-from-the-tagdb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;/tags/delSeries&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;集群版&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;集群版&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#%e9%9b%86%e7%be%a4%e7%89%88&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;集群版本和&lt;a href=&#34;https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;单机版&lt;/a&gt;的API接口主要区别是数据的读取和写入是由独立组件完成的，而且也有了租户的支持。集群版本也支持&lt;code&gt;/prometheus/api/v1&lt;/code&gt;来接收 &lt;code&gt;jsonl&lt;/code&gt;, &lt;code&gt;csv&lt;/code&gt;, &lt;code&gt;native&lt;/code&gt; 和 &lt;code&gt;prometheus&lt;/code&gt;数据格式，而不仅仅是&lt;code&gt;prometheus&lt;/code&gt;数据格式。可以在&lt;a href=&#34;https://docs.victoriametrics.com/url-examples.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这里&lt;/a&gt;查看VictoriaMetrics的API的使用范例。&lt;/p&gt;
+&lt;h3&gt;&lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/api/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Prometheus 查询 API&lt;/a&gt;&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;prometheus-查询-apihttpsprometheusiodocsprometheuslatestqueryingapi&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#prometheus-%e6%9f%a5%e8%af%a2-apihttpsprometheusiodocsprometheuslatestqueryingapi&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;&lt;code&gt;http://&amp;lt;vmselect&amp;gt;:8481/select/&amp;lt;accountID&amp;gt;/prometheus/&amp;lt;suffix&amp;gt;&lt;/code&gt;, 其中:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;&amp;lt;accountID&amp;gt;&lt;/code&gt; 是一个任意32位数字，用来标识查询的空间（即租户）。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;&amp;lt;suffix&amp;gt;&lt;/code&gt; 可以是一下的内容：
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;api/v1/query&lt;/code&gt; - 执行 &lt;a href=&#34;https://docs.victoriametrics.com/keyConcepts.html#instant-query&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;PromQL instant&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;api/v1/query_range&lt;/code&gt; - 执行 &lt;a href=&#34;https://docs.victoriametrics.com/keyConcepts.html#range-query&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;PromQL range 查询&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;api/v1/series&lt;/code&gt; - 执行 &lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/api/#finding-series-by-label-matchers&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;series 查询&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;api/v1/labels&lt;/code&gt; - 返回 &lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/api/#getting-label-names&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;label 名称列表&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;api/v1/label/&amp;lt;label_name&amp;gt;/values&lt;/code&gt; - 返回指定 &lt;code&gt;&amp;lt;label_name&amp;gt;&lt;/code&gt; 的所有值，参考&lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/api/#querying-label-values&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这个 API&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;federate&lt;/code&gt; - 返回 &lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/federation/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;federated metrics&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;api/v1/export&lt;/code&gt; - 导出 JSON line 格式的原始数据，更多信息看&lt;a href=&#34;https://medium.com/@valyala/analyzing-prometheus-data-with-external-tools-5f3e5e147639&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这篇文章&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;api/v1/export/native&lt;/code&gt; - 导出原生二进制格式的原始数据，该数据可以通过另一个接口&lt;code&gt;api/v1/import/native&lt;/code&gt;导入到 VictoriaMetrics (见上文).&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;api/v1/export/csv&lt;/code&gt; - 导出 CSV 格式原始数据。它可以使用另外一个接口 &lt;code&gt;api/v1/import/csv&lt;/code&gt; 导入到 VictoriaMetrics（见上文）。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;api/v1/series/count&lt;/code&gt; - 返回 series 的总数。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;api/v1/status/tsdb&lt;/code&gt; - 返回时序数据的统计信息。更多详细信息见&lt;a href=&#34;https://docs.victoriametrics.com/#tsdb-stats&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;这些文档&lt;/a&gt;。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;api/v1/status/active_queries&lt;/code&gt; - 返回当前活跃的查询请求。逐一每个 &lt;code&gt;vmselect&lt;/code&gt; 实例都有独立的活跃查询列表。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;api/v1/status/top_queries&lt;/code&gt; - 返回执行频率最高以及查询耗时最长的查询列表。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;metric-relabel-debug&lt;/code&gt; - 用于对 &lt;a href=&#34;https://docs.victoriametrics.com/relabeling.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;relabeling 规则&lt;/a&gt; Debug。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;&lt;a href=&#34;https://graphite-api.readthedocs.io/en/latest/api.html#the-metrics-api&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Graphite Metrics API&lt;/a&gt;&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;graphite-metrics-apihttpsgraphite-apireadthedocsioenlatestapihtmlthe-metrics-api&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#graphite-metrics-apihttpsgraphite-apireadthedocsioenlatestapihtmlthe-metrics-api&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;&lt;code&gt;http://&amp;lt;vmselect&amp;gt;:8481/select/&amp;lt;accountID&amp;gt;/graphite/&amp;lt;suffix&amp;gt;&lt;/code&gt;, 其中:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;&amp;lt;accountID&amp;gt;&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;是一个任意32位数字，用来标识查询的空间（即租户）。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;&amp;lt;suffix&amp;gt;&lt;/code&gt; 可以是一下的内容：
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;render&lt;/code&gt; - 实现 Graphite Render API. 看 &lt;a href=&#34;https://graphite.readthedocs.io/en/stable/render_api.html&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;metrics/find&lt;/code&gt; - 搜索 Graphite metrics. See &lt;a href=&#34;https://graphite-api.readthedocs.io/en/latest/api.html#metrics-find&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;metrics/expand&lt;/code&gt; - 扩展 Graphite metrics. See &lt;a href=&#34;https://graphite-api.readthedocs.io/en/latest/api.html#metrics-expand&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;metrics/index.json&lt;/code&gt; - returns 所有的 names. See &lt;a href=&#34;https://graphite-api.readthedocs.io/en/latest/api.html#metrics-index-json&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;tags/tagSeries&lt;/code&gt; - 注册 time series. See &lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#adding-series-to-the-tagdb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;tags/tagMultiSeries&lt;/code&gt; - 批量注册 time series. See &lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#adding-series-to-the-tagdb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;tags&lt;/code&gt; - 返回 tag 名称列表. See &lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;tags/&amp;lt;tag_name&amp;gt;&lt;/code&gt; - 返回指定 &lt;code&gt;&amp;lt;tag_name&amp;gt;&lt;/code&gt;的值列表 See &lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;tags/findSeries&lt;/code&gt; - 返回匹配&lt;code&gt;expr&lt;/code&gt;的 series，&lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;tags/autoComplete/tags&lt;/code&gt; - 返回匹配 &lt;code&gt;tagPrefix&lt;/code&gt; 和/或 &lt;code&gt;expr&lt;/code&gt;的tag名称列表。 See &lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#auto-complete-support&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;tags/autoComplete/values&lt;/code&gt; - 返回匹配 &lt;code&gt;valuePrefix&lt;/code&gt; 和/或 &lt;code&gt;expr&lt;/code&gt; tag值列表 See &lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#auto-complete-support&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;tags/delSeries&lt;/code&gt; - deletes series matching the given &lt;code&gt;path&lt;/code&gt;. See &lt;a href=&#34;https://graphite.readthedocs.io/en/stable/tags.html#removing-series-from-the-tagdb&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;these docs&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

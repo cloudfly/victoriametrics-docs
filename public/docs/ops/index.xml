@@ -1,0 +1,141 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>中文手册 – 运维指南</title>
+    <link>http://localhost:1313/docs/ops/</link>
+    <description>Recent content in 运维指南 on 中文手册</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <copyright>© 2024 Cloudfly,陈云飞</copyright>
+    
+	  <atom:link href="http://localhost:1313/docs/ops/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>如何处理磁盘空间不足</title>
+      <link>http://localhost:1313/docs/ops/disk-space/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/ops/disk-space/</guid>
+      <description>
+        
+        
+        &lt;p&gt;磁盘空间属于前期规划的，这种事故主要是因为前期规划失误。只能临时补救。具体有如下集中方法&lt;/p&gt;
+&lt;h2&gt;强行 merge&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;强行-merge&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#%e5%bc%ba%e8%a1%8c-merge&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;让 vmstorage 执行 merge，会将多个 part merge 成一个 part，减少磁盘空间。有数据持续写入的 partition 会自动触发 merge，不要去强制 merge。所以只对历史 partition 进行 merge。&lt;/p&gt;
+&lt;div class=&#34;hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code&#34;&gt;
+  
+
+&lt;div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;## 参数 partition_prefix 指定 partition，partition 的名字在 $DATA/data/small 下可以看到&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;curl &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;http://localhost:8442/internal/force_merge?partition_prefix=2022_01&amp;#39;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&#34;hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0&#34;&gt;
+  &lt;button
+    class=&#34;hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50&#34;
+    title=&#34;Copy code&#34;
+  &gt;
+    &lt;div class=&#34;copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
+    &lt;div class=&#34;success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
+  &lt;/button&gt;
+&lt;/div&gt;
+
+  
+&lt;/div&gt;
+&lt;p&gt;效果如图所示：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/png/327391/1723474122778-1ed5a421-6b1d-457a-8654-9ef17012d4d4.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;磁盘使用率上升是因为 merge 过程创建新的 part 来  merge 老的多个 parts。突然下降代表 merge 结束，删掉老的 parts。&lt;/p&gt;
+&lt;p&gt;整个 merge 过程，CPU 和 Memory 几乎没有什么影响。merge 的耗时数个小时，跟数据量大小有关。&lt;/p&gt;
+&lt;h2&gt;等待&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;等待&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#%e7%ad%89%e5%be%85&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;如上所述，系统对多个 part 进行 merge 时，会临时使用一定的磁盘空间，合并后将老的 part 删除就会释放。&lt;/p&gt;
+&lt;p&gt;因此在磁盘不足时，可查看 vmstorage 是否正在执行 merge，如果是，可以等待其执行完毕。一次 merge 可能会执行是个小时甚至数天。&lt;/p&gt;
+&lt;h2&gt;删除 cache&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;删除-cache&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#%e5%88%a0%e9%99%a4-cache&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;如果 cache 目录比较大，可以删除。但通常不会太大。&lt;/p&gt;
+&lt;h2&gt;强制删除历史 partition&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;强制删除历史-partition&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#%e5%bc%ba%e5%88%b6%e5%88%a0%e9%99%a4%e5%8e%86%e5%8f%b2-partition&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;删除历史数据是最直接的。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;先 stop 掉 vmstorage 组件。&lt;/li&gt;
+&lt;li&gt;删除 &lt;code&gt;$DATA/data/{big,small}/YYYY_MM&lt;/code&gt; 目录。&lt;/li&gt;
+&lt;li&gt;启动 vmstorage。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;只有一个 partition ?&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;只有一个-partition-&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#%e5%8f%aa%e6%9c%89%e4%b8%80%e4%b8%aa-partition-&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;也就是这一个月而数据磁盘都扛不住，那么只能删除 part。part 的文件夹名称，包含着这个 part 的时间范围。可以根据这些数据删除历史 part。&lt;/p&gt;
+&lt;div class=&#34;hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code&#34;&gt;
+  
+
+&lt;div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-plain&#34; data-lang=&#34;plain&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;./small/2022_02/93109700891_21411093_20220201043320.000_20220204141544.799_16CF806E39D42DF8&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&#34;hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0&#34;&gt;
+  &lt;button
+    class=&#34;hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50&#34;
+    title=&#34;Copy code&#34;
+  &gt;
+    &lt;div class=&#34;copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
+    &lt;div class=&#34;success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
+  &lt;/button&gt;
+&lt;/div&gt;
+
+  
+&lt;/div&gt;
+&lt;h2&gt;修改 retention&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;修改-retention&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#%e4%bf%ae%e6%94%b9-retention&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;直接修改 vmstorage 的运行参数，让 retention 更短。然后重启，让 vmstorage 自己去删过期的 partition 也是OK的。&lt;/p&gt;
+&lt;p&gt;不过这就是永久生效了，而不是临时删下历史数据清理磁盘。&lt;/p&gt;
+&lt;h2&gt;&lt;!-- raw HTML omitted --&gt;不要删 Series&lt;!-- raw HTML omitted --&gt;&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;font-stylecolorrgb2165749不要删-seriesfont&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#font-stylecolorrgb2165749%e4%b8%8d%e8%a6%81%e5%88%a0-seriesfont&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;&lt;!-- raw HTML omitted --&gt;因为删除 series 会带来额外很大的开销，让系统不稳定。而且它不会释放多少空间。&lt;!-- raw HTML omitted --&gt;&lt;/p&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>如何对集群版进行扩缩容</title>
+      <link>http://localhost:1313/docs/ops/cluster-resize/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/ops/cluster-resize/</guid>
+      <description>
+        
+        
+        
+      </description>
+    </item>
+    
+    <item>
+      <title>如何处理机器故障</title>
+      <link>http://localhost:1313/docs/ops/node-crash/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/ops/node-crash/</guid>
+      <description>
+        
+        
+        
+      </description>
+    </item>
+    
+    <item>
+      <title>如何补写历史数据</title>
+      <link>http://localhost:1313/docs/ops/write-history/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/ops/write-history/</guid>
+      <description>
+        
+        
+        
+      </description>
+    </item>
+    
+    <item>
+      <title>有效利用一机多盘</title>
+      <link>http://localhost:1313/docs/ops/multi-disk/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/ops/multi-disk/</guid>
+      <description>
+        
+        
+        
+      </description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon shortcut" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+<link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
+<link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link fetchpriority="low" href="/site.webmanifest" rel="manifest" />
+
+  <title>聚合统计 – 中文手册</title>
+  <meta name="description" content="Aggregate functions calculate aggregates over groups of rollup results.
+Additional details:
+By default, a single group is used for aggregation. Multiple independent groups can be set up by specifying grouping labels in by and without modifiers. For example, count(up) by (job) would group rollup results by job label value and calculate the count aggregate function independently per each group, while count(up) without (instance) would group rollup results by all the labels except instance before calculating count aggregate function independently per each group. Multiple labels can be put in by and without modifiers. If the aggregate function is applied directly to a series_selector, then the default_rollup() function is automatically applied before calculating the aggregate. For example, count(up) is implicitly transformed to count(default_rollup(up)). Aggregate functions accept arbitrary number of args. For example, avg(q1, q2, q3) would return the average values for every point across time series returned by q1, q2 and q3. Aggregate functions support optional limit N suffix, which can be used for limiting the number of output groups. For example, sum(x) by (y) limit 3 limits the number of groups for the aggregation to 3. All the other groups are ignored. See also implicit query conversions." />
+
+  
+    <link rel="canonical" href="http://localhost:1313/docs/query/metricsql/functions/aggregation/" itemprop="url" />
+  
+
+  
+
+<meta property="og:title" content="聚合统计" />
+<meta property="og:description" content="Aggregate functions calculate aggregates over groups of rollup results.
+Additional details:
+
+By default, a single group is used for aggregation. Multiple independent groups can be set up by specifying grouping labels in by and without modifiers. For example, count(up) by (job) would group rollup results by job label value and calculate the count aggregate function independently per each group, while count(up) without (instance) would group rollup results by all the labels except instance before calculating count aggregate function independently per each group. Multiple labels can be put in by and without modifiers.
+If the aggregate function is applied directly to a series_selector, then the default_rollup() function is automatically applied before calculating the aggregate. For example, count(up) is implicitly transformed to count(default_rollup(up)).
+Aggregate functions accept arbitrary number of args. For example, avg(q1, q2, q3) would return the average values for every point across time series returned by q1, q2 and q3.
+Aggregate functions support optional limit N suffix, which can be used for limiting the number of output groups. For example, sum(x) by (y) limit 3 limits the number of groups for the aggregation to 3. All the other groups are ignored.
+
+See also implicit query conversions." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/docs/query/metricsql/functions/aggregation/" /><meta property="article:section" content="docs" />
+
+
+
+  
+  <meta itemprop="name" content="聚合统计">
+  <meta itemprop="description" content="Aggregate functions calculate aggregates over groups of rollup results.
+Additional details:
+By default, a single group is used for aggregation. Multiple independent groups can be set up by specifying grouping labels in by and without modifiers. For example, count(up) by (job) would group rollup results by job label value and calculate the count aggregate function independently per each group, while count(up) without (instance) would group rollup results by all the labels except instance before calculating count aggregate function independently per each group. Multiple labels can be put in by and without modifiers. If the aggregate function is applied directly to a series_selector, then the default_rollup() function is automatically applied before calculating the aggregate. For example, count(up) is implicitly transformed to count(default_rollup(up)). Aggregate functions accept arbitrary number of args. For example, avg(q1, q2, q3) would return the average values for every point across time series returned by q1, q2 and q3. Aggregate functions support optional limit N suffix, which can be used for limiting the number of output groups. For example, sum(x) by (y) limit 3 limits the number of groups for the aggregation to 3. All the other groups are ignored. See also implicit query conversions.">
+  <meta itemprop="wordCount" content="2219">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="聚合统计">
+  <meta name="twitter:description" content="Aggregate functions calculate aggregates over groups of rollup results.
+Additional details:
+By default, a single group is used for aggregation. Multiple independent groups can be set up by specifying grouping labels in by and without modifiers. For example, count(up) by (job) would group rollup results by job label value and calculate the count aggregate function independently per each group, while count(up) without (instance) would group rollup results by all the labels except instance before calculating count aggregate function independently per each group. Multiple labels can be put in by and without modifiers. If the aggregate function is applied directly to a series_selector, then the default_rollup() function is automatically applied before calculating the aggregate. For example, count(up) is implicitly transformed to count(default_rollup(up)). Aggregate functions accept arbitrary number of args. For example, avg(q1, q2, q3) would return the average values for every point across time series returned by q1, q2 and q3. Aggregate functions support optional limit N suffix, which can be used for limiting the number of output groups. For example, sum(x) by (y) limit 3 limits the number of groups for the aggregation to 3. All the other groups are ignored. See also implicit query conversions.">
+
+    <link href="/css/compiled/main.css" rel="stylesheet" />
+
+
+
+  <link href="/css/custom.css" rel="stylesheet" />
+
+
+
+
+
+  <script>
+     
+    const defaultTheme = 'system';
+
+    const setDarkTheme = () => {
+      document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
+    }
+    const setLightTheme = () => {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.style.colorScheme = "light";
+    }
+
+    if ("color-theme" in localStorage) {
+      localStorage.getItem("color-theme") === "dark" ? setDarkTheme() : setLightTheme();
+    } else {
+      defaultTheme === "dark" ? setDarkTheme() : setLightTheme();
+      if (defaultTheme === "system") {
+        window.matchMedia("(prefers-color-scheme: dark)").matches ? setDarkTheme() : setLightTheme();
+      }
+    }
+  </script>
+
+  
+</head>
+<body dir="ltr"><div class="nav-container hx-sticky hx-top-0 hx-z-20 hx-w-full hx-bg-transparent print:hx-hidden">
+  <div class="nav-container-blur hx-pointer-events-none hx-absolute hx-z-[-1] hx-h-full hx-w-full hx-bg-white dark:hx-bg-dark hx-shadow-[0_2px_4px_rgba(0,0,0,.02),0_1px_0_rgba(0,0,0,.06)] contrast-more:hx-shadow-[0_0_0_1px_#000] dark:hx-shadow-[0_-1px_0_rgba(255,255,255,.1)_inset] contrast-more:dark:hx-shadow-[0_0_0_1px_#fff]"></div>
+
+  <nav class="hx-mx-auto hx-flex hx-items-center hx-justify-end hx-gap-2 hx-h-16 hx-px-6 hx-max-w-[90rem]">
+    <a class="hx-flex hx-items-center hover:hx-opacity-75 ltr:hx-mr-auto rtl:hx-ml-auto" href="/">
+        <img class="hx-block dark:hx-hidden" src="/logo-victoriametrics.svg" alt="中文手册" height="80" width="160" />
+        <img class="hx-hidden dark:hx-block" src="/logo-victoriametrics-dark.svg" alt="中文手册" height="80" width="160" />
+        <span class="hx-mx-2 hx-font-extrabold hx-inline hx-select-none" title="中文手册">中文手册</span>
+    </a><a
+            title="手册"
+            href="/docs"
+            
+            class="hx-text-sm contrast-more:hx-text-gray-700 contrast-more:dark:hx-text-gray-100 hx-relative -hx-ml-2 hx-hidden hx-whitespace-nowrap hx-p-2 md:hx-inline-block hx-font-medium"
+          >
+            <span class="hx-text-center">手册</span>
+          </a><a
+            title="关于"
+            href="/about"
+            
+            class="hx-text-sm contrast-more:hx-text-gray-700 contrast-more:dark:hx-text-gray-100 hx-relative -hx-ml-2 hx-hidden hx-whitespace-nowrap hx-p-2 md:hx-inline-block hx-text-gray-600 hover:hx-text-gray-800 dark:hx-text-gray-400 dark:hover:hx-text-gray-200"
+          >
+            <span class="hx-text-center">关于</span>
+          </a><button type="button" aria-label="Menu" class="hamburger-menu -hx-mr-2 hx-rounded hx-p-2 active:hx-bg-gray-400/20 md:hx-hidden"><svg height=24 fill="none" viewBox="0 0 24 24" stroke="currentColor"><g><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8H20"></path></g><g><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16H20"></path></g></svg></button>
+  </nav>
+</div>
+
+  <div class='hx-mx-auto hx-flex hx-max-w-[90rem]'>
+    <div class="mobile-menu-overlay [transition:background-color_1.5s_ease] hx-fixed hx-inset-0 hx-z-10 hx-bg-black/80 dark:hx-bg-black/60 hx-hidden"></div>
+<aside class="sidebar-container hx-flex hx-flex-col print:hx-hidden md:hx-top-16 md:hx-shrink-0 md:hx-w-64 md:hx-self-start max-md:[transform:translate3d(0,-100%,0)] md:hx-sticky">
+  
+  <div class="hx-px-4 hx-pt-4 md:hx-hidden">
+    <div class="search-wrapper hx-relative md:hx-w-64">
+  <div class="hx-relative hx-flex hx-items-center hx-text-gray-900 contrast-more:hx-text-gray-800 dark:hx-text-gray-300 contrast-more:dark:hx-text-gray-300">
+    <input
+      placeholder="Search..."
+      class="search-input hx-block hx-w-full hx-appearance-none hx-rounded-lg hx-px-3 hx-py-2 hx-transition-colors hx-text-base hx-leading-tight md:hx-text-sm hx-bg-black/[.05] dark:hx-bg-gray-50/10 focus:hx-bg-white dark:focus:hx-bg-dark placeholder:hx-text-gray-500 dark:placeholder:hx-text-gray-400 contrast-more:hx-border contrast-more:hx-border-current"
+      type="search"
+      value=""
+      spellcheck="false"
+    />
+    <kbd
+      class="hx-absolute hx-my-1.5 hx-select-none ltr:hx-right-1.5 rtl:hx-left-1.5 hx-h-5 hx-rounded hx-bg-white hx-px-1.5 hx-font-mono hx-text-[10px] hx-font-medium hx-text-gray-500 hx-border dark:hx-border-gray-100/20 dark:hx-bg-dark/50 contrast-more:hx-border-current contrast-more:hx-text-current contrast-more:dark:hx-border-current hx-items-center hx-gap-1 hx-transition-opacity hx-pointer-events-none hx-hidden sm:hx-flex"
+    >
+      CTRL K
+    </kbd>
+  </div>
+
+  <div>
+    <ul
+      class="search-results hextra-scrollbar hx-hidden hx-border hx-border-gray-200 hx-bg-white hx-text-gray-100 dark:hx-border-neutral-800 dark:hx-bg-neutral-900 hx-absolute hx-top-full hx-z-20 hx-mt-2 hx-overflow-auto hx-overscroll-contain hx-rounded-xl hx-py-2.5 hx-shadow-xl hx-max-h-[min(calc(50vh-11rem-env(safe-area-inset-bottom)),400px)] md:hx-max-h-[min(calc(100vh-5rem-env(safe-area-inset-bottom)),400px)] hx-inset-x-0 ltr:md:hx-left-auto rtl:md:hx-right-auto contrast-more:hx-border contrast-more:hx-border-gray-900 contrast-more:dark:hx-border-gray-50 hx-w-screen hx-min-h-[100px] hx-max-w-[min(calc(100vw-2rem),calc(100%+20rem))]"
+      style="transition: max-height 0.2s ease 0s;"
+    ></ul>
+  </div>
+</div>
+
+  </div>
+  <div class="hextra-scrollbar hx-overflow-y-auto hx-overflow-x-hidden hx-p-4 hx-grow md:hx-h-[calc(100vh-var(--navbar-height)-var(--menu-height))]">
+    <ul class="hx-flex hx-flex-col hx-gap-1 md:hx-hidden">
+      
+      
+          <li class="open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/"
+    
+  >VictoriaMetrics 中文手册
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/concepts/"
+    
+  >核心概念
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/quickstart/"
+    
+  >快速开始
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/single/"
+    
+  >单机版本
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/cluster/"
+    
+  >集群版本
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/"
+    
+  >数据查询
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/"
+    
+  >MetricQL
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/basic/"
+    
+  >基本用法
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/"
+    
+  >函数
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/rollup/"
+    
+  >汇总（Rollup）
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/label/"
+    
+  >操作 Label
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      sidebar-active-item hx-bg-primary-100 hx-font-semibold hx-text-primary-800 contrast-more:hx-border contrast-more:hx-border-primary-500 dark:hx-bg-primary-400/10 dark:hx-text-primary-600 contrast-more:dark:hx-border-primary-500"
+    href="/docs/query/metricsql/functions/aggregation/"
+    
+  >聚合统计
+    </a>
+  
+    <ul class='hx-flex hx-flex-col hx-gap-1 hx-relative before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] dark:before:hx-bg-neutral-800 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-pr-3 rtl:before:hx-right-0 ltr:hx-ml-3 rtl:hx-mr-3'><li>
+              <a
+                href="#"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              ></a>
+            </li>
+          </ul>
+  
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/transmit/"
+    
+  >数值转换
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql/"
+    
+  >PromQL 新手入门
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql-diff/"
+    
+  >对比PromQL
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/http/"
+    
+  >HTTP 查询接口
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/write/"
+    
+  >数据写入
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/faq/"
+    
+  >FAQ
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/"
+    
+  >运维指南
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/disk-space/"
+    
+  >如何处理磁盘空间不足
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/cluster-resize/"
+    
+  >如何对集群版进行扩缩容
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/node-crash/"
+    
+  >如何处理机器故障
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/write-history/"
+    
+  >如何补写历史数据
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/multi-disk/"
+    
+  >有效利用一机多盘
+    </a>
+              
+            </li></ul>
+      </div>
+            </li></ul>
+      </div></li>
+    </ul>
+
+    <ul class="hx-flex hx-flex-col hx-gap-1 max-md:hx-hidden">
+        
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/concepts/"
+    
+  >核心概念
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/quickstart/"
+    
+  >快速开始
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/single/"
+    
+  >单机版本
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/cluster/"
+    
+  >集群版本
+    </a></li>
+          <li class="open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/"
+    
+  >数据查询
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/"
+    
+  >MetricQL
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/basic/"
+    
+  >基本用法
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/"
+    
+  >函数
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/rollup/"
+    
+  >汇总（Rollup）
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/label/"
+    
+  >操作 Label
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      sidebar-active-item hx-bg-primary-100 hx-font-semibold hx-text-primary-800 contrast-more:hx-border contrast-more:hx-border-primary-500 dark:hx-bg-primary-400/10 dark:hx-text-primary-600 contrast-more:dark:hx-border-primary-500"
+    href="/docs/query/metricsql/functions/aggregation/"
+    
+  >聚合统计
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/transmit/"
+    
+  >数值转换
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql/"
+    
+  >PromQL 新手入门
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql-diff/"
+    
+  >对比PromQL
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/http/"
+    
+  >HTTP 查询接口
+    </a>
+              
+            </li></ul>
+      </div></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/write/"
+    
+  >数据写入
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/faq/"
+    
+  >FAQ
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/"
+    
+  >运维指南
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/disk-space/"
+    
+  >如何处理磁盘空间不足
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/cluster-resize/"
+    
+  >如何对集群版进行扩缩容
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/node-crash/"
+    
+  >如何处理机器故障
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/write-history/"
+    
+  >如何补写历史数据
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/multi-disk/"
+    
+  >有效利用一机多盘
+    </a>
+              
+            </li></ul>
+      </div></li>
+        
+      </ul>
+    </div>
+  
+  
+    <div class="  hx-sticky hx-bottom-0 hx-bg-white dark:hx-bg-dark hx-mx-4 hx-py-4 hx-shadow-[0_-12px_16px_#fff] hx-flex hx-items-center hx-gap-2 dark:hx-border-neutral-800 dark:hx-shadow-[0_-12px_16px_#111] contrast-more:hx-border-neutral-400 contrast-more:hx-shadow-none contrast-more:dark:hx-shadow-none hx-border-t" data-toggle-animation="show"><div class="hx-flex hx-grow hx-flex-col"><button
+  title="Change theme"
+  data-theme="light"
+  class="theme-toggle hx-group hx-h-7 hx-rounded-md hx-px-2 hx-text-left hx-text-xs hx-font-medium hx-text-gray-600 hx-transition-colors dark:hx-text-gray-400 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50"
+  type="button"
+  aria-label="Change theme"
+>
+  <div class="hx-flex hx-items-center hx-gap-2 hx-capitalize"><svg height=12 class="group-data-[theme=light]:hx-hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg><span class="group-data-[theme=light]:hx-hidden">Light</span><svg height=12 class="group-data-[theme=dark]:hx-hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg><span class="group-data-[theme=dark]:hx-hidden">Dark</span></div>
+</button>
+</div></div></aside>
+    
+<nav class="hextra-toc hx-order-last hx-hidden hx-w-64 hx-shrink-0 xl:hx-block print:hx-hidden hx-px-4" aria-label="table of contents">
+    <div class="hextra-scrollbar hx-sticky hx-top-16 hx-overflow-y-auto hx-pr-4 hx-pt-6 hx-text-sm [hyphens:auto] hx-max-h-[calc(100vh-var(--navbar-height)-env(safe-area-inset-bottom))] ltr:hx--mr-4 rtl:hx--ml-4"><p class="hx-mb-4 hx-font-semibold hx-tracking-tight">On this page</p><ul>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#any-httpsdocsvictoriametricscommetricsqlany">any #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#avg-httpsdocsvictoriametricscommetricsqlavg">avg #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#bottomk-httpsdocsvictoriametricscommetricsqlbottomk">bottomk #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#bottomk_avg-httpsdocsvictoriametricscommetricsqlbottomk_avg">bottomk_avg #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#bottomk_last-httpsdocsvictoriametricscommetricsqlbottomk_last">bottomk_last #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#bottomk_max-httpsdocsvictoriametricscommetricsqlbottomk_max">bottomk_max #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#bottomk_median-httpsdocsvictoriametricscommetricsqlbottomk_median">bottomk_median #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#bottomk_min-httpsdocsvictoriametricscommetricsqlbottomk_min">bottomk_min #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#count-httpsdocsvictoriametricscommetricsqlcount">count #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#count_values-httpsdocsvictoriametricscommetricsqlcount_values">count_values #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#distinct-httpsdocsvictoriametricscommetricsqldistinct">distinct #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#geomean-httpsdocsvictoriametricscommetricsqlgeomean">geomean #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#group-httpsdocsvictoriametricscommetricsqlgroup">group #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#histogram-httpsdocsvictoriametricscommetricsqlhistogram">histogram #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#limitk-httpsdocsvictoriametricscommetricsqllimitk">limitk #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#mad-httpsdocsvictoriametricscommetricsqlmad">mad #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#max-httpsdocsvictoriametricscommetricsqlmax">max #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#median-httpsdocsvictoriametricscommetricsqlmedian">median #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#min-httpsdocsvictoriametricscommetricsqlmin">min #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#mode-httpsdocsvictoriametricscommetricsqlmode">mode #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#outliers_iqr-httpsdocsvictoriametricscommetricsqloutliers_iqr">outliers_iqr #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#outliers_mad-httpsdocsvictoriametricscommetricsqloutliers_mad">outliers_mad #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#outliersk-httpsdocsvictoriametricscommetricsqloutliersk">outliersk #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#quantile-httpsdocsvictoriametricscommetricsqlquantile">quantile #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#quantiles-httpsdocsvictoriametricscommetricsqlquantiles">quantiles #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#share-httpsdocsvictoriametricscommetricsqlshare">share #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#stddev-httpsdocsvictoriametricscommetricsqlstddev">stddev #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#stdvar-httpsdocsvictoriametricscommetricsqlstdvar">stdvar #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#sum-httpsdocsvictoriametricscommetricsqlsum">sum #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#sum2-httpsdocsvictoriametricscommetricsqlsum2">sum2 #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#topk-httpsdocsvictoriametricscommetricsqltopk">topk #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#topk_avg-httpsdocsvictoriametricscommetricsqltopk_avg">topk_avg #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#topk_last-httpsdocsvictoriametricscommetricsqltopk_last">topk_last #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#topk_max-httpsdocsvictoriametricscommetricsqltopk_max">topk_max #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#topk_median-httpsdocsvictoriametricscommetricsqltopk_median">topk_median #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#topk_min-httpsdocsvictoriametricscommetricsqltopk_min">topk_min #
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#zscore-httpsdocsvictoriametricscommetricsqlzscore">zscore #
+        </a>
+      </li></ul>
+      <div class="hx-mt-8 hx-border-t hx-bg-white hx-pt-8 hx-shadow-[0_-12px_16px_white] dark:hx-bg-dark dark:hx-shadow-[0_-12px_16px_#111] hx-sticky hx-bottom-0 hx-flex hx-flex-col hx-items-start hx-gap-2 hx-pb-8 dark:hx-border-neutral-800 contrast-more:hx-border-t contrast-more:hx-border-neutral-400 contrast-more:hx-shadow-none contrast-more:dark:hx-border-neutral-400">
+        <button aria-hidden="true" id="backToTop" onClick="scrollUp();" class="hx-transition-all hx-duration-75 hx-opacity-0 hx-text-xs hx-font-medium hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-100 contrast-more:hx-text-gray-800 contrast-more:dark:hx-text-gray-50">
+          <span>Scroll to top</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="hx-inline ltr:hx-ml-1 rtl:hx-mr-1 hx-h-3.5 hx-w-3.5 hx-border hx-rounded-full hx-border-gray-500 hover:hx-border-gray-900 dark:hx-border-gray-400 dark:hover:hx-border-gray-100 contrast-more:hx-border-gray-800 contrast-more:dark:hx-border-gray-50">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+
+    <article class="hx-w-full hx-break-words hx-flex hx-min-h-[calc(100vh-var(--navbar-height))] hx-min-w-0 hx-justify-center hx-pb-8 hx-pr-[calc(env(safe-area-inset-right)-1.5rem)]">
+      <main class="hx-w-full hx-min-w-0 hx-max-w-6xl hx-px-6 hx-pt-4 md:hx-px-12">
+        
+  <div class="hx-mt-1.5 hx-flex hx-items-center hx-gap-1 hx-overflow-hidden hx-text-sm hx-text-gray-500 dark:hx-text-gray-400 contrast-more:hx-text-current">
+        <div class="hx-whitespace-nowrap hx-transition-colors hx-min-w-[24px] hx-overflow-hidden hx-text-ellipsis hover:hx-text-gray-900 dark:hover:hx-text-gray-100">
+          <a href="/docs/">VictoriaMetrics 中文手册</a>
+        </div><svg class="hx-w-3.5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <div class="hx-whitespace-nowrap hx-transition-colors hx-min-w-[24px] hx-overflow-hidden hx-text-ellipsis hover:hx-text-gray-900 dark:hover:hx-text-gray-100">
+          <a href="/docs/query/">数据查询</a>
+        </div><svg class="hx-w-3.5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <div class="hx-whitespace-nowrap hx-transition-colors hx-min-w-[24px] hx-overflow-hidden hx-text-ellipsis hover:hx-text-gray-900 dark:hover:hx-text-gray-100">
+          <a href="/docs/query/metricsql/">MetricQL</a>
+        </div><svg class="hx-w-3.5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <div class="hx-whitespace-nowrap hx-transition-colors hx-min-w-[24px] hx-overflow-hidden hx-text-ellipsis hover:hx-text-gray-900 dark:hover:hx-text-gray-100">
+          <a href="/docs/query/metricsql/functions/">函数</a>
+        </div><svg class="hx-w-3.5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg><div class="hx-whitespace-nowrap hx-transition-colors hx-font-medium hx-text-gray-700 contrast-more:hx-font-bold contrast-more:hx-text-current dark:hx-text-gray-100 contrast-more:dark:hx-text-current">聚合统计</div>
+  </div>
+
+        <div class="content">
+          <h1>聚合统计</h1>
+          <p><strong>Aggregate functions</strong> calculate aggregates over groups of <a href="https://docs.victoriametrics.com/metricsql/#rollup-functions" target="_blank" rel="noopener">rollup results</a>.</p>
+<p>Additional details:</p>
+<ul>
+<li>By default, a single group is used for aggregation. Multiple independent groups can be set up by specifying grouping labels in <code>by</code> and <code>without</code> modifiers. For example, <code>count(up) by (job)</code> would group <a href="https://docs.victoriametrics.com/metricsql/#rollup-functions" target="_blank" rel="noopener">rollup results</a> by <code>job</code> label value and calculate the <a href="https://docs.victoriametrics.com/metricsql/#count" target="_blank" rel="noopener">count</a> aggregate function independently per each group, while <code>count(up) without (instance)</code> would group <a href="https://docs.victoriametrics.com/metricsql/#rollup-functions" target="_blank" rel="noopener">rollup results</a> by all the labels except <code>instance</code> before calculating <a href="https://docs.victoriametrics.com/metricsql/#count" target="_blank" rel="noopener">count</a> aggregate function independently per each group. Multiple labels can be put in <code>by</code> and <code>without</code> modifiers.</li>
+<li>If the aggregate function is applied directly to a <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a>, then the <a href="https://docs.victoriametrics.com/metricsql/#default_rollup" target="_blank" rel="noopener">default_rollup()</a> function is automatically applied before calculating the aggregate. For example, <code>count(up)</code> is implicitly transformed to <code>count(default_rollup(up))</code>.</li>
+<li>Aggregate functions accept arbitrary number of args. For example, <code>avg(q1, q2, q3)</code> would return the average values for every point across time series returned by <code>q1</code>, <code>q2</code> and <code>q3</code>.</li>
+<li>Aggregate functions support optional <code>limit N</code> suffix, which can be used for limiting the number of output groups. For example, <code>sum(x) by (y) limit 3</code> limits the number of groups for the aggregation to 3. All the other groups are ignored.</li>
+</ul>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#implicit-query-conversions" target="_blank" rel="noopener">implicit query conversions</a>.</p>
+<p>The list of supported aggregate functions:</p>
+<h4>any <a href="https://docs.victoriametrics.com/metricsql/#any" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="any-httpsdocsvictoriametricscommetricsqlany"></span>
+    <a href="#any-httpsdocsvictoriametricscommetricsqlany" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>any(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns a single series per <code>group_labels</code> out of time series returned by <code>q</code>.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#group" target="_blank" rel="noopener">group</a>.</p>
+<h4>avg <a href="https://docs.victoriametrics.com/metricsql/#avg" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="avg-httpsdocsvictoriametricscommetricsqlavg"></span>
+    <a href="#avg-httpsdocsvictoriametricscommetricsqlavg" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>avg(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns the average value per <code>group_labels</code> for time series returned by <code>q</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<p>This function is supported by PromQL.</p>
+<h4>bottomk <a href="https://docs.victoriametrics.com/metricsql/#bottomk" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="bottomk-httpsdocsvictoriametricscommetricsqlbottomk"></span>
+    <a href="#bottomk-httpsdocsvictoriametricscommetricsqlbottomk" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>bottomk(k, q)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns up to <code>k</code> points with the smallest values across all the time series returned by <code>q</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<p>This function is supported by PromQL.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#topk" target="_blank" rel="noopener">topk</a>, <a href="https://docs.victoriametrics.com/metricsql/#bottomk_min" target="_blank" rel="noopener">bottomk_min</a> and <a href="https://docs.victoriametrics.com/metricsql/#bottomk_last" target="_blank" rel="noopener">#bottomk_last</a>.</p>
+<h4>bottomk_avg <a href="https://docs.victoriametrics.com/metricsql/#bottomk_avg" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="bottomk_avg-httpsdocsvictoriametricscommetricsqlbottomk_avg"></span>
+    <a href="#bottomk_avg-httpsdocsvictoriametricscommetricsqlbottomk_avg" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>bottomk_avg(k, q, &quot;other_label=other_value&quot;)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns up to <code>k</code> time series from <code>q</code> with the smallest averages. If an optional <code>other_label=other_value</code> arg is set, then the sum of the remaining time series is returned with the given label. For example, <code>bottomk_avg(3, sum(process_resident_memory_bytes) by (job), &quot;job=other&quot;)</code> would return up to 3 time series with the smallest averages plus a time series with <code>{job=&quot;other&quot;}</code> label with the sum of the remaining series if any.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#topk_avg" target="_blank" rel="noopener">topk_avg</a>.</p>
+<h4>bottomk_last <a href="https://docs.victoriametrics.com/metricsql/#bottomk_last" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="bottomk_last-httpsdocsvictoriametricscommetricsqlbottomk_last"></span>
+    <a href="#bottomk_last-httpsdocsvictoriametricscommetricsqlbottomk_last" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>bottomk_last(k, q, &quot;other_label=other_value&quot;)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns up to <code>k</code> time series from <code>q</code> with the smallest last values. If an optional <code>other_label=other_value</code> arg is set, then the sum of the remaining time series is returned with the given label. For example, <code>bottomk_max(3, sum(process_resident_memory_bytes) by (job), &quot;job=other&quot;)</code> would return up to 3 time series with the smallest maximums plus a time series with <code>{job=&quot;other&quot;}</code> label with the sum of the remaining series if any.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#topk_last" target="_blank" rel="noopener">topk_last</a>.</p>
+<h4>bottomk_max <a href="https://docs.victoriametrics.com/metricsql/#bottomk_max" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="bottomk_max-httpsdocsvictoriametricscommetricsqlbottomk_max"></span>
+    <a href="#bottomk_max-httpsdocsvictoriametricscommetricsqlbottomk_max" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>bottomk_max(k, q, &quot;other_label=other_value&quot;)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns up to <code>k</code> time series from <code>q</code> with the smallest maximums. If an optional <code>other_label=other_value</code> arg is set, then the sum of the remaining time series is returned with the given label. For example, <code>bottomk_max(3, sum(process_resident_memory_bytes) by (job), &quot;job=other&quot;)</code> would return up to 3 time series with the smallest maximums plus a time series with <code>{job=&quot;other&quot;}</code> label with the sum of the remaining series if any.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#topk_max" target="_blank" rel="noopener">topk_max</a>.</p>
+<h4>bottomk_median <a href="https://docs.victoriametrics.com/metricsql/#bottomk_median" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="bottomk_median-httpsdocsvictoriametricscommetricsqlbottomk_median"></span>
+    <a href="#bottomk_median-httpsdocsvictoriametricscommetricsqlbottomk_median" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>bottomk_median(k, q, &quot;other_label=other_value&quot;)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns up to <code>k</code> time series from <code>q</code> with the smallest medians. If an optional<code>other_label=other_value</code> arg is set, then the sum of the remaining time series is returned with the given label. For example, <code>bottomk_median(3, sum(process_resident_memory_bytes) by (job), &quot;job=other&quot;)</code> would return up to 3 time series with the smallest medians plus a time series with <code>{job=&quot;other&quot;}</code> label with the sum of the remaining series if any.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#topk_median" target="_blank" rel="noopener">topk_median</a>.</p>
+<h4>bottomk_min <a href="https://docs.victoriametrics.com/metricsql/#bottomk_min" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="bottomk_min-httpsdocsvictoriametricscommetricsqlbottomk_min"></span>
+    <a href="#bottomk_min-httpsdocsvictoriametricscommetricsqlbottomk_min" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>bottomk_min(k, q, &quot;other_label=other_value&quot;)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns up to <code>k</code> time series from <code>q</code> with the smallest minimums. If an optional <code>other_label=other_value</code> arg is set, then the sum of the remaining time series is returned with the given label. For example, <code>bottomk_min(3, sum(process_resident_memory_bytes) by (job), &quot;job=other&quot;)</code> would return up to 3 time series with the smallest minimums plus a time series with <code>{job=&quot;other&quot;}</code> label with the sum of the remaining series if any.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#topk_min" target="_blank" rel="noopener">topk_min</a>.</p>
+<h4>count <a href="https://docs.victoriametrics.com/metricsql/#count" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="count-httpsdocsvictoriametricscommetricsqlcount"></span>
+    <a href="#count-httpsdocsvictoriametricscommetricsqlcount" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>count(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns the number of non-empty points per <code>group_labels</code> for time series returned by <code>q</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<p>This function is supported by PromQL.</p>
+<h4>count_values <a href="https://docs.victoriametrics.com/metricsql/#count_values" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="count_values-httpsdocsvictoriametricscommetricsqlcount_values"></span>
+    <a href="#count_values-httpsdocsvictoriametricscommetricsqlcount_values" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>count_values(&quot;label&quot;, q)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which counts the number of points with the same value and stores the counts in a time series with an additional <code>label</code>, which contains each initial value. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<p>This function is supported by PromQL.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#count_values_over_time" target="_blank" rel="noopener">count_values_over_time</a> and <a href="https://docs.victoriametrics.com/metricsql/#label_match" target="_blank" rel="noopener">label_match</a>.</p>
+<h4>distinct <a href="https://docs.victoriametrics.com/metricsql/#distinct" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="distinct-httpsdocsvictoriametricscommetricsqldistinct"></span>
+    <a href="#distinct-httpsdocsvictoriametricscommetricsqldistinct" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>distinct(q)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which calculates the number of unique values per each group of points with the same timestamp.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#distinct_over_time" target="_blank" rel="noopener">distinct_over_time</a>.</p>
+<h4>geomean <a href="https://docs.victoriametrics.com/metricsql/#geomean" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="geomean-httpsdocsvictoriametricscommetricsqlgeomean"></span>
+    <a href="#geomean-httpsdocsvictoriametricscommetricsqlgeomean" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>geomean(q)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which calculates geometric mean per each group of points with the same timestamp.</p>
+<h4>group <a href="https://docs.victoriametrics.com/metricsql/#group" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="group-httpsdocsvictoriametricscommetricsqlgroup"></span>
+    <a href="#group-httpsdocsvictoriametricscommetricsqlgroup" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>group(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns <code>1</code> per each <code>group_labels</code> for time series returned by <code>q</code>.</p>
+<p>This function is supported by PromQL. See also <a href="https://docs.victoriametrics.com/metricsql/#any" target="_blank" rel="noopener">any</a>.</p>
+<h4>histogram <a href="https://docs.victoriametrics.com/metricsql/#histogram" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="histogram-httpsdocsvictoriametricscommetricsqlhistogram"></span>
+    <a href="#histogram-httpsdocsvictoriametricscommetricsqlhistogram" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>histogram(q)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which calculates <a href="https://valyala.medium.com/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350" target="_blank" rel="noopener">VictoriaMetrics histogram</a> per each group of points with the same timestamp. Useful for visualizing big number of time series via a heatmap. See <a href="https://medium.com/@valyala/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350" target="_blank" rel="noopener">this article</a> for more details.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#histogram_over_time" target="_blank" rel="noopener">histogram_over_time</a> and <a href="https://docs.victoriametrics.com/metricsql/#histogram_quantile" target="_blank" rel="noopener">histogram_quantile</a>.</p>
+<h4>limitk <a href="https://docs.victoriametrics.com/metricsql/#limitk" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="limitk-httpsdocsvictoriametricscommetricsqllimitk"></span>
+    <a href="#limitk-httpsdocsvictoriametricscommetricsqllimitk" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>limitk(k, q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns up to <code>k</code> time series per each <code>group_labels</code> out of time series returned by <code>q</code>. The returned set of time series remain the same across calls.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#limit_offset" target="_blank" rel="noopener">limit_offset</a>.</p>
+<h4>mad <a href="https://docs.victoriametrics.com/metricsql/#mad" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="mad-httpsdocsvictoriametricscommetricsqlmad"></span>
+    <a href="#mad-httpsdocsvictoriametricscommetricsqlmad" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>mad(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns the <a href="https://en.wikipedia.org/wiki/Median_absolute_deviation" target="_blank" rel="noopener">Median absolute deviation</a> per each <code>group_labels</code> for all the time series returned by <code>q</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#range_mad" target="_blank" rel="noopener">range_mad</a>, <a href="https://docs.victoriametrics.com/metricsql/#mad_over_time" target="_blank" rel="noopener">mad_over_time</a>, <a href="https://docs.victoriametrics.com/metricsql/#outliers_mad" target="_blank" rel="noopener">outliers_mad</a> and <a href="https://docs.victoriametrics.com/metricsql/#stddev" target="_blank" rel="noopener">stddev</a>.</p>
+<h4>max <a href="https://docs.victoriametrics.com/metricsql/#max" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="max-httpsdocsvictoriametricscommetricsqlmax"></span>
+    <a href="#max-httpsdocsvictoriametricscommetricsqlmax" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>max(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns the maximum value per each <code>group_labels</code> for all the time series returned by <code>q</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<p>This function is supported by PromQL.</p>
+<h4>median <a href="https://docs.victoriametrics.com/metricsql/#median" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="median-httpsdocsvictoriametricscommetricsqlmedian"></span>
+    <a href="#median-httpsdocsvictoriametricscommetricsqlmedian" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>median(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns the median value per each <code>group_labels</code> for all the time series returned by <code>q</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<h4>min <a href="https://docs.victoriametrics.com/metricsql/#min" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="min-httpsdocsvictoriametricscommetricsqlmin"></span>
+    <a href="#min-httpsdocsvictoriametricscommetricsqlmin" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>min(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns the minimum value per each <code>group_labels</code> for all the time series returned by <code>q</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<p>This function is supported by PromQL.</p>
+<h4>mode <a href="https://docs.victoriametrics.com/metricsql/#mode" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="mode-httpsdocsvictoriametricscommetricsqlmode"></span>
+    <a href="#mode-httpsdocsvictoriametricscommetricsqlmode" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>mode(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns <a href="https://en.wikipedia.org/wiki/Mode_%28statistics%29" target="_blank" rel="noopener">mode</a> per each <code>group_labels</code> for all the time series returned by <code>q</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<h4>outliers_iqr <a href="https://docs.victoriametrics.com/metricsql/#outliers_iqr" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="outliers_iqr-httpsdocsvictoriametricscommetricsqloutliers_iqr"></span>
+    <a href="#outliers_iqr-httpsdocsvictoriametricscommetricsqloutliers_iqr" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>outliers_iqr(q)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns time series from <code>q</code> with at least a single point outside e.g. <a href="https://en.wikipedia.org/wiki/Interquartile_range" target="_blank" rel="noopener">Interquartile range outlier bounds</a> <code>[q25-1.5*iqr .. q75+1.5*iqr]</code> comparing to other time series at the given point, where:</p>
+<ul>
+<li><code>iqr</code> is an <a href="https://en.wikipedia.org/wiki/Interquartile_range" target="_blank" rel="noopener">Interquartile range</a> calculated independently per each point on the graph across <code>q</code> series.</li>
+<li><code>q25</code> and <code>q75</code> are 25th and 75th <a href="https://en.wikipedia.org/wiki/Percentile" target="_blank" rel="noopener">percentiles</a> calculated independently per each point on the graph across <code>q</code> series.</li>
+</ul>
+<p>The <code>outliers_iqr()</code> is useful for detecting anomalous series in the group of series. For example, <code>outliers_iqr(temperature) by (country)</code> returns per-country series with anomalous outlier values comparing to the rest of per-country series.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#outliers_mad" target="_blank" rel="noopener">outliers_mad</a>, <a href="https://docs.victoriametrics.com/metricsql/#outliersk" target="_blank" rel="noopener">outliersk</a> and <a href="https://docs.victoriametrics.com/metricsql/#outlier_iqr_over_time" target="_blank" rel="noopener">outlier_iqr_over_time</a>.</p>
+<h4>outliers_mad <a href="https://docs.victoriametrics.com/metricsql/#outliers_mad" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="outliers_mad-httpsdocsvictoriametricscommetricsqloutliers_mad"></span>
+    <a href="#outliers_mad-httpsdocsvictoriametricscommetricsqloutliers_mad" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>outliers_mad(tolerance, q)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns time series from <code>q</code> with at least a single point outside <a href="https://en.wikipedia.org/wiki/Median_absolute_deviation" target="_blank" rel="noopener">Median absolute deviation</a> (aka MAD) multiplied by <code>tolerance</code>. E.g. it returns time series with at least a single point below <code>median(q) - mad(q)</code> or a single point above <code>median(q) + mad(q)</code>.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#outliers_iqr" target="_blank" rel="noopener">outliers_iqr</a>, <a href="https://docs.victoriametrics.com/metricsql/#outliersk" target="_blank" rel="noopener">outliersk</a> and <a href="https://docs.victoriametrics.com/metricsql/#mad" target="_blank" rel="noopener">mad</a>.</p>
+<h4>outliersk <a href="https://docs.victoriametrics.com/metricsql/#outliersk" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="outliersk-httpsdocsvictoriametricscommetricsqloutliersk"></span>
+    <a href="#outliersk-httpsdocsvictoriametricscommetricsqloutliersk" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>outliersk(k, q)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns up to <code>k</code> time series with the biggest standard deviation (aka outliers) out of time series returned by <code>q</code>.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#outliers_iqr" target="_blank" rel="noopener">outliers_iqr</a> and <a href="https://docs.victoriametrics.com/metricsql/#outliers_mad" target="_blank" rel="noopener">outliers_mad</a>.</p>
+<h4>quantile <a href="https://docs.victoriametrics.com/metricsql/#quantile" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="quantile-httpsdocsvictoriametricscommetricsqlquantile"></span>
+    <a href="#quantile-httpsdocsvictoriametricscommetricsqlquantile" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>quantile(phi, q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which calculates <code>phi</code>-quantile per each <code>group_labels</code> for all the time series returned by <code>q</code>. <code>phi</code> must be in the range <code>[0...1]</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<p>This function is supported by PromQL.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#quantiles" target="_blank" rel="noopener">quantiles</a> and <a href="https://docs.victoriametrics.com/metricsql/#histogram_quantile" target="_blank" rel="noopener">histogram_quantile</a>.</p>
+<h4>quantiles <a href="https://docs.victoriametrics.com/metricsql/#quantiles" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="quantiles-httpsdocsvictoriametricscommetricsqlquantiles"></span>
+    <a href="#quantiles-httpsdocsvictoriametricscommetricsqlquantiles" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>quantiles(&quot;phiLabel&quot;, phi1, ..., phiN, q)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which calculates <code>phi*</code>-quantiles for all the time series returned by <code>q</code> and return them in time series with <code>{phiLabel=&quot;phi*&quot;}</code> label. <code>phi*</code> must be in the range <code>[0...1]</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#quantile" target="_blank" rel="noopener">quantile</a>.</p>
+<h4>share <a href="https://docs.victoriametrics.com/metricsql/#share" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="share-httpsdocsvictoriametricscommetricsqlshare"></span>
+    <a href="#share-httpsdocsvictoriametricscommetricsqlshare" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>share(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns shares in the range <code>[0..1]</code> for every non-negative points returned by <code>q</code> per each timestamp, so the sum of shares per each <code>group_labels</code> equals 1.</p>
+<p>This function is useful for normalizing <a href="https://docs.victoriametrics.com/keyconcepts/#histogram" target="_blank" rel="noopener">histogram bucket</a> shares into <code>[0..1]</code> range:</p>
+<div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+  
+
+<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-plain" data-lang="plain"><span style="display:flex;"><span>share(
+</span></span><span style="display:flex;"><span>  sum(
+</span></span><span style="display:flex;"><span>    rate(http_request_duration_seconds_bucket[5m])
+</span></span><span style="display:flex;"><span>  ) by (le, vmrange)
+</span></span><span style="display:flex;"><span>)</span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+  <button
+    class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+    title="Copy code"
+  >
+    <div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4"></div>
+    <div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4"></div>
+  </button>
+</div>
+
+  
+</div>
+<p><!-- raw HTML omitted -->MetricsQL<!-- raw HTML omitted --></p>
+<p><!-- raw HTML omitted -->Copy<!-- raw HTML omitted --></p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#range_normalize" target="_blank" rel="noopener">range_normalize</a>.</p>
+<h4>stddev <a href="https://docs.victoriametrics.com/metricsql/#stddev" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="stddev-httpsdocsvictoriametricscommetricsqlstddev"></span>
+    <a href="#stddev-httpsdocsvictoriametricscommetricsqlstddev" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>stddev(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which calculates standard deviation per each <code>group_labels</code> for all the time series returned by <code>q</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<p>This function is supported by PromQL.</p>
+<h4>stdvar <a href="https://docs.victoriametrics.com/metricsql/#stdvar" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="stdvar-httpsdocsvictoriametricscommetricsqlstdvar"></span>
+    <a href="#stdvar-httpsdocsvictoriametricscommetricsqlstdvar" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>stdvar(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which calculates standard variance per each <code>group_labels</code> for all the time series returned by <code>q</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<p>This function is supported by PromQL.</p>
+<h4>sum <a href="https://docs.victoriametrics.com/metricsql/#sum" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="sum-httpsdocsvictoriametricscommetricsqlsum"></span>
+    <a href="#sum-httpsdocsvictoriametricscommetricsqlsum" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>sum(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns the sum per each <code>group_labels</code> for all the time series returned by <code>q</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<p>This function is supported by PromQL.</p>
+<h4>sum2 <a href="https://docs.victoriametrics.com/metricsql/#sum2" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="sum2-httpsdocsvictoriametricscommetricsqlsum2"></span>
+    <a href="#sum2-httpsdocsvictoriametricscommetricsqlsum2" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>sum2(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which calculates the sum of squares per each <code>group_labels</code> for all the time series returned by <code>q</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<h4>topk <a href="https://docs.victoriametrics.com/metricsql/#topk" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="topk-httpsdocsvictoriametricscommetricsqltopk"></span>
+    <a href="#topk-httpsdocsvictoriametricscommetricsqltopk" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>topk(k, q)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns up to <code>k</code> points with the biggest values across all the time series returned by <code>q</code>. The aggregate is calculated individually per each group of points with the same timestamp.</p>
+<p>This function is supported by PromQL.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#bottomk" target="_blank" rel="noopener">bottomk</a>, <a href="https://docs.victoriametrics.com/metricsql/#topk_max" target="_blank" rel="noopener">topk_max</a> and <a href="https://docs.victoriametrics.com/metricsql/#topk_last" target="_blank" rel="noopener">topk_last</a>.</p>
+<h4>topk_avg <a href="https://docs.victoriametrics.com/metricsql/#topk_avg" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="topk_avg-httpsdocsvictoriametricscommetricsqltopk_avg"></span>
+    <a href="#topk_avg-httpsdocsvictoriametricscommetricsqltopk_avg" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>topk_avg(k, q, &quot;other_label=other_value&quot;)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns up to <code>k</code> time series from <code>q</code> with the biggest averages. If an optional <code>other_label=other_value</code> arg is set, then the sum of the remaining time series is returned with the given label. For example, <code>topk_avg(3, sum(process_resident_memory_bytes) by (job), &quot;job=other&quot;)</code> would return up to 3 time series with the biggest averages plus a time series with <code>{job=&quot;other&quot;}</code> label with the sum of the remaining series if any.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#bottomk_avg" target="_blank" rel="noopener">bottomk_avg</a>.</p>
+<h4>topk_last <a href="https://docs.victoriametrics.com/metricsql/#topk_last" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="topk_last-httpsdocsvictoriametricscommetricsqltopk_last"></span>
+    <a href="#topk_last-httpsdocsvictoriametricscommetricsqltopk_last" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>topk_last(k, q, &quot;other_label=other_value&quot;)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns up to <code>k</code> time series from <code>q</code> with the biggest last values. If an optional <code>other_label=other_value</code> arg is set, then the sum of the remaining time series is returned with the given label. For example, <code>topk_max(3, sum(process_resident_memory_bytes) by (job), &quot;job=other&quot;)</code> would return up to 3 time series with the biggest maximums plus a time series with <code>{job=&quot;other&quot;}</code> label with the sum of the remaining series if any.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#bottomk_last" target="_blank" rel="noopener">bottomk_last</a>.</p>
+<h4>topk_max <a href="https://docs.victoriametrics.com/metricsql/#topk_max" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="topk_max-httpsdocsvictoriametricscommetricsqltopk_max"></span>
+    <a href="#topk_max-httpsdocsvictoriametricscommetricsqltopk_max" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>topk_max(k, q, &quot;other_label=other_value&quot;)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns up to <code>k</code> time series from <code>q</code> with the biggest maximums. If an optional <code>other_label=other_value</code> arg is set, then the sum of the remaining time series is returned with the given label. For example, <code>topk_max(3, sum(process_resident_memory_bytes) by (job), &quot;job=other&quot;)</code> would return up to 3 time series with the biggest maximums plus a time series with <code>{job=&quot;other&quot;}</code> label with the sum of the remaining series if any.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#bottomk_max" target="_blank" rel="noopener">bottomk_max</a>.</p>
+<h4>topk_median <a href="https://docs.victoriametrics.com/metricsql/#topk_median" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="topk_median-httpsdocsvictoriametricscommetricsqltopk_median"></span>
+    <a href="#topk_median-httpsdocsvictoriametricscommetricsqltopk_median" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>topk_median(k, q, &quot;other_label=other_value&quot;)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns up to <code>k</code> time series from <code>q</code> with the biggest medians. If an optional <code>other_label=other_value</code> arg is set, then the sum of the remaining time series is returned with the given label. For example, <code>topk_median(3, sum(process_resident_memory_bytes) by (job), &quot;job=other&quot;)</code> would return up to 3 time series with the biggest medians plus a time series with <code>{job=&quot;other&quot;}</code> label with the sum of the remaining series if any.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#bottomk_median" target="_blank" rel="noopener">bottomk_median</a>.</p>
+<h4>topk_min <a href="https://docs.victoriametrics.com/metricsql/#topk_min" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="topk_min-httpsdocsvictoriametricscommetricsqltopk_min"></span>
+    <a href="#topk_min-httpsdocsvictoriametricscommetricsqltopk_min" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>topk_min(k, q, &quot;other_label=other_value&quot;)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns up to <code>k</code> time series from <code>q</code> with the biggest minimums. If an optional <code>other_label=other_value</code> arg is set, then the sum of the remaining time series is returned with the given label. For example, <code>topk_min(3, sum(process_resident_memory_bytes) by (job), &quot;job=other&quot;)</code> would return up to 3 time series with the biggest minimums plus a time series with <code>{job=&quot;other&quot;}</code> label with the sum of the remaining series if any.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#bottomk_min" target="_blank" rel="noopener">bottomk_min</a>.</p>
+<h4>zscore <a href="https://docs.victoriametrics.com/metricsql/#zscore" target="_blank" rel="noopener">#</a><span class="hx-absolute -hx-mt-20" id="zscore-httpsdocsvictoriametricscommetricsqlzscore"></span>
+    <a href="#zscore-httpsdocsvictoriametricscommetricsqlzscore" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p><code>zscore(q) by (group_labels)</code> is <a href="https://docs.victoriametrics.com/metricsql/#aggregate-functions" target="_blank" rel="noopener">aggregate function</a>, which returns <a href="https://en.wikipedia.org/wiki/Standard_score" target="_blank" rel="noopener">z-score</a> values per each <code>group_labels</code> for all the time series returned by <code>q</code>. The aggregate is calculated individually per each group of points with the same timestamp. This function is useful for detecting anomalies in the group of related time series.</p>
+<p>See also <a href="https://docs.victoriametrics.com/metricsql/#zscore_over_time" target="_blank" rel="noopener">zscore_over_time</a>, <a href="https://docs.victoriametrics.com/metricsql/#range_trim_zscore" target="_blank" rel="noopener">range_trim_zscore</a> and <a href="https://docs.victoriametrics.com/metricsql/#outliers_iqr" target="_blank" rel="noopener">outliers_iqr</a>.</p>
+
+        </div>
+        <div class="hx-mt-16"></div>
+        <div class="hx-mb-8 hx-flex hx-items-center hx-border-t hx-pt-8 dark:hx-border-neutral-800 contrast-more:hx-border-neutral-400 dark:contrast-more:hx-border-neutral-400 print:hx-hidden"><a
+        href="/docs/query/metricsql/functions/label/"
+        title="操作 Label"
+        class="hx-flex hx-max-w-[50%] hx-items-center hx-gap-1 hx-py-4 hx-text-base hx-font-medium hx-text-gray-600 hx-transition-colors [word-break:break-word] hover:hx-text-primary-600 dark:hx-text-gray-300 md:hx-text-lg ltr:hx-pr-4 rtl:hx-pl-4"
+      ><svg class="hx-inline hx-h-5 hx-shrink-0 ltr:hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>操作 Label</a><a
+        href="/docs/query/metricsql/functions/transmit/"
+        title="数值转换"
+        class="hx-flex hx-max-w-[50%] hx-items-center hx-gap-1 hx-py-4 hx-text-base hx-font-medium hx-text-gray-600 hx-transition-colors [word-break:break-word] hover:hx-text-primary-600 dark:hx-text-gray-300 md:hx-text-lg ltr:hx-ml-auto ltr:hx-pl-4 ltr:hx-text-right rtl:hx-mr-auto rtl:hx-pr-4 rtl:hx-text-left"
+      >数值转换<svg class="hx-inline hx-h-5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></a></div>
+        
+      </main>
+    </article>
+  </div>
+
+      <footer class="hextra-footer hx-bg-gray-100 hx-pb-[env(safe-area-inset-bottom)] dark:hx-bg-neutral-900 print:hx-bg-transparent"><div
+    class="hx-max-w-screen-xl hx-mx-auto hx-flex hx-justify-center hx-py-12 hx-pl-[max(env(safe-area-inset-left),1.5rem)] hx-pr-[max(env(safe-area-inset-right),1.5rem)] hx-text-gray-600 dark:hx-text-gray-400 md:hx-justify-start"
+  >
+    <div class="hx-flex hx-w-full hx-flex-col hx-items-center sm:hx-items-start"><div class="hx-font-semibold"><a class="hx-flex hx-text-sm hx-items-center hx-gap-1 hx-text-current" target="_blank" rel="noopener noreferrer" title="Hextra GitHub Homepage" href="https://github.com/imfing/hextra">
+    <span>Powered by Hextra<svg height=1em class="hx-inline-block ltr:hx-ml-1 rtl:hx-mr-1 hx-align-[-2.5px]" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="m 105.50024,22.224647 c -9.59169,-5.537563 -21.40871,-5.537563 -31.000093,0 L 39.054693,42.689119 C 29.463353,48.226675 23.55484,58.460531 23.55484,69.535642 v 40.928918 c 0,11.07542 5.908513,21.3092 15.499853,26.84652 l 35.445453,20.46446 c 9.591313,5.53732 21.408404,5.53732 31.000094,0 l 35.44507,-20.46446 c 9.59131,-5.53732 15.49985,-15.7711 15.49985,-26.84652 V 69.535642 c 0,-11.075111 -5.90854,-21.308967 -15.49985,-26.846523 z M 34.112797,85.737639 c -1.384445,2.397827 -1.384445,5.352099 0,7.749927 l 24.781554,42.922974 c 1.38437,2.39783 3.942853,3.87496 6.711592,3.87496 h 49.563107 c 2.76905,0 5.3273,-1.47713 6.71144,-3.87496 l 24.78194,-42.922974 c 1.38414,-2.397828 1.38414,-5.3521 0,-7.749927 L 121.88049,42.814746 c -1.38414,-2.397828 -3.94239,-3.874964 -6.71144,-3.874964 H 65.605944 c -2.768739,0 -5.327223,1.477059 -6.711592,3.874964 z" style="stroke-width:0.774993" /></svg></span>
+  </a></div>
+    </div>
+  </div>
+</footer>
+    
+    <script defer src="/js/main.js" integrity=""></script>
+
+
+<script defer src="/lib/flexsearch/flexsearch.bundle.min.0425860527cc9968f9f049421c7a56b39327d475e2e3a8f550416be3a9134327.js" integrity="sha256-BCWGBSfMmWj58ElCHHpWs5Mn1HXi46j1UEFr46kTQyc="></script>
+    <script defer src="/en.search.js" integrity=""></script>
+
+
+  </body>
+</html>

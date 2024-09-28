@@ -1,10 +1,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>VictoriaMetrics 中文手册 – </title>
+    <title>中文手册 – </title>
     <link>http://localhost:1313/</link>
-    <description>Recent content on VictoriaMetrics 中文手册</description>
+    <description>Recent content on 中文手册</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
+    <copyright>© 2024 Cloudfly,陈云飞</copyright>
     <lastBuildDate>Sat, 28 Sep 2024 19:10:51 +0800</lastBuildDate>
     
 	  <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />

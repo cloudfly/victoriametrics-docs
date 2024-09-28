@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon shortcut" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+<link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
+<link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link fetchpriority="low" href="/site.webmanifest" rel="manifest" />
+
+  <title>HTTP 查询接口 – 中文手册</title>
+  <meta name="description" content="单机版 Prometheus 查询接口 VictoriaMetrics 支持下面这些 Prometheus 查询 API:
+/api/v1/query /api/v1/query_range /api/v1/series /api/v1/labels /api/v1/label/…/values /api/v1/status/tsdb. See these docs for details. /api/v1/targets - see these docs for more details. /federate - see these docs for more details. 这些接口可以被Prometheus兼容的客户端（如Grafana或curl）查询。所有Prometheus查询API处理程序都可以使用/prometheus前缀进行查询。例如，/prometheus/api/v1/query和/api/v1/query都可以正常工作。
+查询优化 VictoriaMetrics 接受extra_label=&lt;label_name&gt;=&lt;label_value&gt;查询参数（可选），可以用于强制使用额外 Label 过滤器执行查询。例如，/api/v1/query_range?extra_label=user_id=123&amp;extra_label=group_id=456&amp;query=&lt;query&gt;会自动将{user_id=&#34;123&#34;,group_id=&#34;456&#34;}Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。一般extra_label查询参数由位于 VictoriaMetrics 前面的查询代理服务自动设置。例如，可以参考使用 vmauth 和 vmgateway 作为查询代理的示例。 VictoriaMetrics 接受extra_filters[]=series_selector查询参数（可选），可用于对查询强制执行任意的 Label 过滤器。例如，/api/v1/query_range?extra_filters[]={env=~&#34;prod|staging&#34;,user=&#34;xyz&#34;}&amp;query=&lt;query&gt;将自动将{env=~&#34;prod|staging&#34;,user=&#34;xyz&#34;}Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。我们建议在 VictoriaMetrics 前面的查询代理自动设置extra_filters[]查询参数。您可以将vmauth和vmgateway作为这种代理的示例。 VictoriaMetrics 接受多种格式的 time，start 和 end 查询参数，可参考这些文档。 VictoriaMetrics对于/api/v1/query和/api/v1/query_range接口支持round_digits查询参数。它可用于指定返回的指标值的保留小数点位数。例如，/api/v1/query?query=avg_over_time(temperature[1h])&amp;round_digits=2会将让返回的指标值保留小数点后面 2 位。 VictoriaMetrics允许在/api/v1/labels和/api/v1/label//values接口中使用limit查询参数来限制返回的条目数量。例如，对/api/v1/labels?limit=5的查询请求最多返回5个唯一的 Label 值，并忽略其他 Label。如果提供的limit值超过了相应的-command-line命令行参数-search.maxTagKeys或-search.maxTagValues，则会使用命令行参数中指定的限制。 默认情况下，VictoriaMetrics从/api/v1/series、/api/v1/labels和/api/v1/label//values返回最近一天从00:00 UTC开始的 series 数据，而Prometheus API默认返回所有时间的数据。如果要选择特定的时间范围的 series 数据，可使用 start 和 end 参数指定。由于性能优化的考虑，VictoriaMetrics会将指定的 start..end 时间范围舍入到天的粒度。如果您需要在给定时间范围内获取精确的 Label 集合，请将查询发送到/api/v1/query或/api/v1/query_range。 VictoriaMetrics在/api/v1/series中接受limit查询参数，用于限制返回的条目数量。例如，对/api/v1/series?limit=5的查询将最多返回5个 series，并忽略其余的时间序列。如果提供的limit值超过了相应的命令行参数-search.maxSeries的值，则会使用命令行中指定的限制。 此外，VictoriaMetrics还提供了以下接口： /vmui - 基本的 Web UI 界面，阅读这些文档。 /api/v1/series/count - 返回数据库中 time series 的总数量。注意： 该接口扫描了整个数据库的倒排索引，所以如果数据库包含数千万个 series 时间序列，它可能会变慢。 该接口可能把删除 time series 计算在内，这是内部实现导致的。 /api/v1/status/active_queries - 返回当前正在执行的查询。 /api/v1/status/top_queries - 返回下面几个查询列表: 执行最频繁的查询列表 - topByCount 平均执行时间最长的查询列表 - topByAvgDuration 执行时间最长的查询列表 - topBySumDuration 返回的查询个数可以使用 topN 参数进行限制。历史查询可以使用 maxLifetime 参数过滤掉。比如，请求/api/v1/status/top_queries?topN=5&amp;maxLifetime=30s返回最近 30 秒内每个类型的 Top5 个查询列表。VictoriaMetrics 会跟踪统计最近-s earch.queryStats.lastQueriesCount时间内，且执行时间大于search.queryStats.minQueryDuration的查询。 Timestamp 格式 VictoriaMetrics 接受下面这些格式的 time, start and end 参数， 在 query APIs 和 export APIs 中皆是如此。" />
+
+  
+    <link rel="canonical" href="http://localhost:1313/docs/query/http/" itemprop="url" />
+  
+
+  
+
+<meta property="og:title" content="HTTP 查询接口" />
+<meta property="og:description" content="单机版
+    Prometheus 查询接口
+    VictoriaMetrics 支持下面这些 Prometheus 查询 API:
+
+/api/v1/query
+/api/v1/query_range
+/api/v1/series
+/api/v1/labels
+/api/v1/label/…/values
+/api/v1/status/tsdb. See these docs for details.
+/api/v1/targets - see these docs for more details.
+/federate - see these docs for more details.
+
+这些接口可以被Prometheus兼容的客户端（如Grafana或curl）查询。所有Prometheus查询API处理程序都可以使用/prometheus前缀进行查询。例如，/prometheus/api/v1/query和/api/v1/query都可以正常工作。
+查询优化
+    
+VictoriaMetrics 接受extra_label=&lt;label_name&gt;=&lt;label_value&gt;查询参数（可选），可以用于强制使用额外 Label 过滤器执行查询。例如，/api/v1/query_range?extra_label=user_id=123&amp;extra_label=group_id=456&amp;query=&lt;query&gt;会自动将{user_id=&quot;123&quot;,group_id=&quot;456&quot;}Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。一般extra_label查询参数由位于 VictoriaMetrics 前面的查询代理服务自动设置。例如，可以参考使用 vmauth 和 vmgateway 作为查询代理的示例。
+VictoriaMetrics 接受extra_filters[]=series_selector查询参数（可选），可用于对查询强制执行任意的 Label 过滤器。例如，/api/v1/query_range?extra_filters[]={env=~&quot;prod|staging&quot;,user=&quot;xyz&quot;}&amp;query=&lt;query&gt;将自动将{env=~&quot;prod|staging&quot;,user=&quot;xyz&quot;}Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。我们建议在 VictoriaMetrics 前面的查询代理自动设置extra_filters[]查询参数。您可以将vmauth和vmgateway作为这种代理的示例。
+VictoriaMetrics 接受多种格式的 time，start 和 end 查询参数，可参考这些文档。
+VictoriaMetrics对于/api/v1/query和/api/v1/query_range接口支持round_digits查询参数。它可用于指定返回的指标值的保留小数点位数。例如，/api/v1/query?query=avg_over_time(temperature[1h])&amp;round_digits=2会将让返回的指标值保留小数点后面 2 位。
+VictoriaMetrics允许在/api/v1/labels和/api/v1/label//values接口中使用limit查询参数来限制返回的条目数量。例如，对/api/v1/labels?limit=5的查询请求最多返回5个唯一的 Label 值，并忽略其他 Label。如果提供的limit值超过了相应的-command-line命令行参数-search.maxTagKeys或-search.maxTagValues，则会使用命令行参数中指定的限制。
+默认情况下，VictoriaMetrics从/api/v1/series、/api/v1/labels和/api/v1/label//values返回最近一天从00:00 UTC开始的 series 数据，而Prometheus API默认返回所有时间的数据。如果要选择特定的时间范围的 series 数据，可使用 start 和 end 参数指定。由于性能优化的考虑，VictoriaMetrics会将指定的 start..end 时间范围舍入到天的粒度。如果您需要在给定时间范围内获取精确的 Label 集合，请将查询发送到/api/v1/query或/api/v1/query_range。
+VictoriaMetrics在/api/v1/series中接受limit查询参数，用于限制返回的条目数量。例如，对/api/v1/series?limit=5的查询将最多返回5个 series，并忽略其余的时间序列。如果提供的limit值超过了相应的命令行参数-search.maxSeries的值，则会使用命令行中指定的限制。
+此外，VictoriaMetrics还提供了以下接口：
+
+/vmui - 基本的 Web UI 界面，阅读这些文档。
+/api/v1/series/count - 返回数据库中 time series 的总数量。注意：
+
+该接口扫描了整个数据库的倒排索引，所以如果数据库包含数千万个 series 时间序列，它可能会变慢。
+该接口可能把删除 time series 计算在内，这是内部实现导致的。
+
+
+/api/v1/status/active_queries - 返回当前正在执行的查询。
+/api/v1/status/top_queries - 返回下面几个查询列表:
+
+执行最频繁的查询列表 - topByCount
+平均执行时间最长的查询列表 - topByAvgDuration
+执行时间最长的查询列表 - topBySumDuration
+返回的查询个数可以使用 topN 参数进行限制。历史查询可以使用 maxLifetime 参数过滤掉。比如，请求/api/v1/status/top_queries?topN=5&amp;maxLifetime=30s返回最近 30 秒内每个类型的 Top5 个查询列表。VictoriaMetrics 会跟踪统计最近-s earch.queryStats.lastQueriesCount时间内，且执行时间大于search.queryStats.minQueryDuration的查询。
+
+
+
+
+
+Timestamp 格式
+    VictoriaMetrics 接受下面这些格式的 time, start and end 参数， 在 query APIs 和 export APIs 中皆是如此。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/docs/query/http/" /><meta property="article:section" content="docs" />
+
+
+
+  
+  <meta itemprop="name" content="HTTP 查询接口">
+  <meta itemprop="description" content="单机版 Prometheus 查询接口 VictoriaMetrics 支持下面这些 Prometheus 查询 API:
+/api/v1/query /api/v1/query_range /api/v1/series /api/v1/labels /api/v1/label/…/values /api/v1/status/tsdb. See these docs for details. /api/v1/targets - see these docs for more details. /federate - see these docs for more details. 这些接口可以被Prometheus兼容的客户端（如Grafana或curl）查询。所有Prometheus查询API处理程序都可以使用/prometheus前缀进行查询。例如，/prometheus/api/v1/query和/api/v1/query都可以正常工作。
+查询优化 VictoriaMetrics 接受extra_label=&lt;label_name&gt;=&lt;label_value&gt;查询参数（可选），可以用于强制使用额外 Label 过滤器执行查询。例如，/api/v1/query_range?extra_label=user_id=123&amp;extra_label=group_id=456&amp;query=&lt;query&gt;会自动将{user_id=&#34;123&#34;,group_id=&#34;456&#34;}Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。一般extra_label查询参数由位于 VictoriaMetrics 前面的查询代理服务自动设置。例如，可以参考使用 vmauth 和 vmgateway 作为查询代理的示例。 VictoriaMetrics 接受extra_filters[]=series_selector查询参数（可选），可用于对查询强制执行任意的 Label 过滤器。例如，/api/v1/query_range?extra_filters[]={env=~&#34;prod|staging&#34;,user=&#34;xyz&#34;}&amp;query=&lt;query&gt;将自动将{env=~&#34;prod|staging&#34;,user=&#34;xyz&#34;}Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。我们建议在 VictoriaMetrics 前面的查询代理自动设置extra_filters[]查询参数。您可以将vmauth和vmgateway作为这种代理的示例。 VictoriaMetrics 接受多种格式的 time，start 和 end 查询参数，可参考这些文档。 VictoriaMetrics对于/api/v1/query和/api/v1/query_range接口支持round_digits查询参数。它可用于指定返回的指标值的保留小数点位数。例如，/api/v1/query?query=avg_over_time(temperature[1h])&amp;round_digits=2会将让返回的指标值保留小数点后面 2 位。 VictoriaMetrics允许在/api/v1/labels和/api/v1/label//values接口中使用limit查询参数来限制返回的条目数量。例如，对/api/v1/labels?limit=5的查询请求最多返回5个唯一的 Label 值，并忽略其他 Label。如果提供的limit值超过了相应的-command-line命令行参数-search.maxTagKeys或-search.maxTagValues，则会使用命令行参数中指定的限制。 默认情况下，VictoriaMetrics从/api/v1/series、/api/v1/labels和/api/v1/label//values返回最近一天从00:00 UTC开始的 series 数据，而Prometheus API默认返回所有时间的数据。如果要选择特定的时间范围的 series 数据，可使用 start 和 end 参数指定。由于性能优化的考虑，VictoriaMetrics会将指定的 start..end 时间范围舍入到天的粒度。如果您需要在给定时间范围内获取精确的 Label 集合，请将查询发送到/api/v1/query或/api/v1/query_range。 VictoriaMetrics在/api/v1/series中接受limit查询参数，用于限制返回的条目数量。例如，对/api/v1/series?limit=5的查询将最多返回5个 series，并忽略其余的时间序列。如果提供的limit值超过了相应的命令行参数-search.maxSeries的值，则会使用命令行中指定的限制。 此外，VictoriaMetrics还提供了以下接口： /vmui - 基本的 Web UI 界面，阅读这些文档。 /api/v1/series/count - 返回数据库中 time series 的总数量。注意： 该接口扫描了整个数据库的倒排索引，所以如果数据库包含数千万个 series 时间序列，它可能会变慢。 该接口可能把删除 time series 计算在内，这是内部实现导致的。 /api/v1/status/active_queries - 返回当前正在执行的查询。 /api/v1/status/top_queries - 返回下面几个查询列表: 执行最频繁的查询列表 - topByCount 平均执行时间最长的查询列表 - topByAvgDuration 执行时间最长的查询列表 - topBySumDuration 返回的查询个数可以使用 topN 参数进行限制。历史查询可以使用 maxLifetime 参数过滤掉。比如，请求/api/v1/status/top_queries?topN=5&amp;maxLifetime=30s返回最近 30 秒内每个类型的 Top5 个查询列表。VictoriaMetrics 会跟踪统计最近-s earch.queryStats.lastQueriesCount时间内，且执行时间大于search.queryStats.minQueryDuration的查询。 Timestamp 格式 VictoriaMetrics 接受下面这些格式的 time, start and end 参数， 在 query APIs 和 export APIs 中皆是如此。">
+  <meta itemprop="wordCount" content="458">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="HTTP 查询接口">
+  <meta name="twitter:description" content="单机版 Prometheus 查询接口 VictoriaMetrics 支持下面这些 Prometheus 查询 API:
+/api/v1/query /api/v1/query_range /api/v1/series /api/v1/labels /api/v1/label/…/values /api/v1/status/tsdb. See these docs for details. /api/v1/targets - see these docs for more details. /federate - see these docs for more details. 这些接口可以被Prometheus兼容的客户端（如Grafana或curl）查询。所有Prometheus查询API处理程序都可以使用/prometheus前缀进行查询。例如，/prometheus/api/v1/query和/api/v1/query都可以正常工作。
+查询优化 VictoriaMetrics 接受extra_label=&lt;label_name&gt;=&lt;label_value&gt;查询参数（可选），可以用于强制使用额外 Label 过滤器执行查询。例如，/api/v1/query_range?extra_label=user_id=123&amp;extra_label=group_id=456&amp;query=&lt;query&gt;会自动将{user_id=&#34;123&#34;,group_id=&#34;456&#34;}Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。一般extra_label查询参数由位于 VictoriaMetrics 前面的查询代理服务自动设置。例如，可以参考使用 vmauth 和 vmgateway 作为查询代理的示例。 VictoriaMetrics 接受extra_filters[]=series_selector查询参数（可选），可用于对查询强制执行任意的 Label 过滤器。例如，/api/v1/query_range?extra_filters[]={env=~&#34;prod|staging&#34;,user=&#34;xyz&#34;}&amp;query=&lt;query&gt;将自动将{env=~&#34;prod|staging&#34;,user=&#34;xyz&#34;}Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。我们建议在 VictoriaMetrics 前面的查询代理自动设置extra_filters[]查询参数。您可以将vmauth和vmgateway作为这种代理的示例。 VictoriaMetrics 接受多种格式的 time，start 和 end 查询参数，可参考这些文档。 VictoriaMetrics对于/api/v1/query和/api/v1/query_range接口支持round_digits查询参数。它可用于指定返回的指标值的保留小数点位数。例如，/api/v1/query?query=avg_over_time(temperature[1h])&amp;round_digits=2会将让返回的指标值保留小数点后面 2 位。 VictoriaMetrics允许在/api/v1/labels和/api/v1/label//values接口中使用limit查询参数来限制返回的条目数量。例如，对/api/v1/labels?limit=5的查询请求最多返回5个唯一的 Label 值，并忽略其他 Label。如果提供的limit值超过了相应的-command-line命令行参数-search.maxTagKeys或-search.maxTagValues，则会使用命令行参数中指定的限制。 默认情况下，VictoriaMetrics从/api/v1/series、/api/v1/labels和/api/v1/label//values返回最近一天从00:00 UTC开始的 series 数据，而Prometheus API默认返回所有时间的数据。如果要选择特定的时间范围的 series 数据，可使用 start 和 end 参数指定。由于性能优化的考虑，VictoriaMetrics会将指定的 start..end 时间范围舍入到天的粒度。如果您需要在给定时间范围内获取精确的 Label 集合，请将查询发送到/api/v1/query或/api/v1/query_range。 VictoriaMetrics在/api/v1/series中接受limit查询参数，用于限制返回的条目数量。例如，对/api/v1/series?limit=5的查询将最多返回5个 series，并忽略其余的时间序列。如果提供的limit值超过了相应的命令行参数-search.maxSeries的值，则会使用命令行中指定的限制。 此外，VictoriaMetrics还提供了以下接口： /vmui - 基本的 Web UI 界面，阅读这些文档。 /api/v1/series/count - 返回数据库中 time series 的总数量。注意： 该接口扫描了整个数据库的倒排索引，所以如果数据库包含数千万个 series 时间序列，它可能会变慢。 该接口可能把删除 time series 计算在内，这是内部实现导致的。 /api/v1/status/active_queries - 返回当前正在执行的查询。 /api/v1/status/top_queries - 返回下面几个查询列表: 执行最频繁的查询列表 - topByCount 平均执行时间最长的查询列表 - topByAvgDuration 执行时间最长的查询列表 - topBySumDuration 返回的查询个数可以使用 topN 参数进行限制。历史查询可以使用 maxLifetime 参数过滤掉。比如，请求/api/v1/status/top_queries?topN=5&amp;maxLifetime=30s返回最近 30 秒内每个类型的 Top5 个查询列表。VictoriaMetrics 会跟踪统计最近-s earch.queryStats.lastQueriesCount时间内，且执行时间大于search.queryStats.minQueryDuration的查询。 Timestamp 格式 VictoriaMetrics 接受下面这些格式的 time, start and end 参数， 在 query APIs 和 export APIs 中皆是如此。">
+
+    <link href="/css/compiled/main.css" rel="stylesheet" />
+
+
+
+  <link href="/css/custom.css" rel="stylesheet" />
+
+
+
+
+
+  <script>
+     
+    const defaultTheme = 'system';
+
+    const setDarkTheme = () => {
+      document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
+    }
+    const setLightTheme = () => {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.style.colorScheme = "light";
+    }
+
+    if ("color-theme" in localStorage) {
+      localStorage.getItem("color-theme") === "dark" ? setDarkTheme() : setLightTheme();
+    } else {
+      defaultTheme === "dark" ? setDarkTheme() : setLightTheme();
+      if (defaultTheme === "system") {
+        window.matchMedia("(prefers-color-scheme: dark)").matches ? setDarkTheme() : setLightTheme();
+      }
+    }
+  </script>
+
+  
+</head>
+<body dir="ltr"><div class="nav-container hx-sticky hx-top-0 hx-z-20 hx-w-full hx-bg-transparent print:hx-hidden">
+  <div class="nav-container-blur hx-pointer-events-none hx-absolute hx-z-[-1] hx-h-full hx-w-full hx-bg-white dark:hx-bg-dark hx-shadow-[0_2px_4px_rgba(0,0,0,.02),0_1px_0_rgba(0,0,0,.06)] contrast-more:hx-shadow-[0_0_0_1px_#000] dark:hx-shadow-[0_-1px_0_rgba(255,255,255,.1)_inset] contrast-more:dark:hx-shadow-[0_0_0_1px_#fff]"></div>
+
+  <nav class="hx-mx-auto hx-flex hx-items-center hx-justify-end hx-gap-2 hx-h-16 hx-px-6 hx-max-w-[90rem]">
+    <a class="hx-flex hx-items-center hover:hx-opacity-75 ltr:hx-mr-auto rtl:hx-ml-auto" href="/">
+        <img class="hx-block dark:hx-hidden" src="/logo-victoriametrics.svg" alt="中文手册" height="80" width="160" />
+        <img class="hx-hidden dark:hx-block" src="/logo-victoriametrics-dark.svg" alt="中文手册" height="80" width="160" />
+        <span class="hx-mx-2 hx-font-extrabold hx-inline hx-select-none" title="中文手册">中文手册</span>
+    </a><a
+            title="手册"
+            href="/docs"
+            
+            class="hx-text-sm contrast-more:hx-text-gray-700 contrast-more:dark:hx-text-gray-100 hx-relative -hx-ml-2 hx-hidden hx-whitespace-nowrap hx-p-2 md:hx-inline-block hx-font-medium"
+          >
+            <span class="hx-text-center">手册</span>
+          </a><a
+            title="关于"
+            href="/about"
+            
+            class="hx-text-sm contrast-more:hx-text-gray-700 contrast-more:dark:hx-text-gray-100 hx-relative -hx-ml-2 hx-hidden hx-whitespace-nowrap hx-p-2 md:hx-inline-block hx-text-gray-600 hover:hx-text-gray-800 dark:hx-text-gray-400 dark:hover:hx-text-gray-200"
+          >
+            <span class="hx-text-center">关于</span>
+          </a><button type="button" aria-label="Menu" class="hamburger-menu -hx-mr-2 hx-rounded hx-p-2 active:hx-bg-gray-400/20 md:hx-hidden"><svg height=24 fill="none" viewBox="0 0 24 24" stroke="currentColor"><g><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8H20"></path></g><g><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16H20"></path></g></svg></button>
+  </nav>
+</div>
+
+  <div class='hx-mx-auto hx-flex hx-max-w-[90rem]'>
+    <div class="mobile-menu-overlay [transition:background-color_1.5s_ease] hx-fixed hx-inset-0 hx-z-10 hx-bg-black/80 dark:hx-bg-black/60 hx-hidden"></div>
+<aside class="sidebar-container hx-flex hx-flex-col print:hx-hidden md:hx-top-16 md:hx-shrink-0 md:hx-w-64 md:hx-self-start max-md:[transform:translate3d(0,-100%,0)] md:hx-sticky">
+  
+  <div class="hx-px-4 hx-pt-4 md:hx-hidden">
+    <div class="search-wrapper hx-relative md:hx-w-64">
+  <div class="hx-relative hx-flex hx-items-center hx-text-gray-900 contrast-more:hx-text-gray-800 dark:hx-text-gray-300 contrast-more:dark:hx-text-gray-300">
+    <input
+      placeholder="Search..."
+      class="search-input hx-block hx-w-full hx-appearance-none hx-rounded-lg hx-px-3 hx-py-2 hx-transition-colors hx-text-base hx-leading-tight md:hx-text-sm hx-bg-black/[.05] dark:hx-bg-gray-50/10 focus:hx-bg-white dark:focus:hx-bg-dark placeholder:hx-text-gray-500 dark:placeholder:hx-text-gray-400 contrast-more:hx-border contrast-more:hx-border-current"
+      type="search"
+      value=""
+      spellcheck="false"
+    />
+    <kbd
+      class="hx-absolute hx-my-1.5 hx-select-none ltr:hx-right-1.5 rtl:hx-left-1.5 hx-h-5 hx-rounded hx-bg-white hx-px-1.5 hx-font-mono hx-text-[10px] hx-font-medium hx-text-gray-500 hx-border dark:hx-border-gray-100/20 dark:hx-bg-dark/50 contrast-more:hx-border-current contrast-more:hx-text-current contrast-more:dark:hx-border-current hx-items-center hx-gap-1 hx-transition-opacity hx-pointer-events-none hx-hidden sm:hx-flex"
+    >
+      CTRL K
+    </kbd>
+  </div>
+
+  <div>
+    <ul
+      class="search-results hextra-scrollbar hx-hidden hx-border hx-border-gray-200 hx-bg-white hx-text-gray-100 dark:hx-border-neutral-800 dark:hx-bg-neutral-900 hx-absolute hx-top-full hx-z-20 hx-mt-2 hx-overflow-auto hx-overscroll-contain hx-rounded-xl hx-py-2.5 hx-shadow-xl hx-max-h-[min(calc(50vh-11rem-env(safe-area-inset-bottom)),400px)] md:hx-max-h-[min(calc(100vh-5rem-env(safe-area-inset-bottom)),400px)] hx-inset-x-0 ltr:md:hx-left-auto rtl:md:hx-right-auto contrast-more:hx-border contrast-more:hx-border-gray-900 contrast-more:dark:hx-border-gray-50 hx-w-screen hx-min-h-[100px] hx-max-w-[min(calc(100vw-2rem),calc(100%+20rem))]"
+      style="transition: max-height 0.2s ease 0s;"
+    ></ul>
+  </div>
+</div>
+
+  </div>
+  <div class="hextra-scrollbar hx-overflow-y-auto hx-overflow-x-hidden hx-p-4 hx-grow md:hx-h-[calc(100vh-var(--navbar-height)-var(--menu-height))]">
+    <ul class="hx-flex hx-flex-col hx-gap-1 md:hx-hidden">
+      
+      
+          <li class="open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/"
+    
+  >VictoriaMetrics 中文手册
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/concepts/"
+    
+  >核心概念
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/quickstart/"
+    
+  >快速开始
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/single/"
+    
+  >单机版本
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/cluster/"
+    
+  >集群版本
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/"
+    
+  >数据查询
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/"
+    
+  >MetricQL
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/basic/"
+    
+  >基本用法
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/"
+    
+  >函数
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/rollup/"
+    
+  >汇总（Rollup）
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/label/"
+    
+  >操作 Label
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/aggregation/"
+    
+  >聚合统计
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/transmit/"
+    
+  >数值转换
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql/"
+    
+  >PromQL 新手入门
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql-diff/"
+    
+  >对比PromQL
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      sidebar-active-item hx-bg-primary-100 hx-font-semibold hx-text-primary-800 contrast-more:hx-border contrast-more:hx-border-primary-500 dark:hx-bg-primary-400/10 dark:hx-text-primary-600 contrast-more:dark:hx-border-primary-500"
+    href="/docs/query/http/"
+    
+  >HTTP 查询接口
+    </a>
+  
+    <ul class='hx-flex hx-flex-col hx-gap-1 hx-relative before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] dark:before:hx-bg-neutral-800 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-pr-3 rtl:before:hx-right-0 ltr:hx-ml-3 rtl:hx-mr-3'><li>
+              <a
+                href="#%e5%8d%95%e6%9c%ba%e7%89%88"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >单机版</a>
+            </li>
+          <li>
+              <a
+                href="#%e9%9b%86%e7%be%a4%e7%89%88"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >集群版</a>
+            </li>
+          </ul>
+  
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/write/"
+    
+  >数据写入
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/faq/"
+    
+  >FAQ
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/"
+    
+  >运维指南
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/disk-space/"
+    
+  >如何处理磁盘空间不足
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/cluster-resize/"
+    
+  >如何对集群版进行扩缩容
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/node-crash/"
+    
+  >如何处理机器故障
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/write-history/"
+    
+  >如何补写历史数据
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/multi-disk/"
+    
+  >有效利用一机多盘
+    </a>
+              
+            </li></ul>
+      </div>
+            </li></ul>
+      </div></li>
+    </ul>
+
+    <ul class="hx-flex hx-flex-col hx-gap-1 max-md:hx-hidden">
+        
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/concepts/"
+    
+  >核心概念
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/quickstart/"
+    
+  >快速开始
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/single/"
+    
+  >单机版本
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/cluster/"
+    
+  >集群版本
+    </a></li>
+          <li class="open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/"
+    
+  >数据查询
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/"
+    
+  >MetricQL
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/basic/"
+    
+  >基本用法
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/"
+    
+  >函数
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/rollup/"
+    
+  >汇总（Rollup）
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/label/"
+    
+  >操作 Label
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/aggregation/"
+    
+  >聚合统计
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/transmit/"
+    
+  >数值转换
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql/"
+    
+  >PromQL 新手入门
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql-diff/"
+    
+  >对比PromQL
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      sidebar-active-item hx-bg-primary-100 hx-font-semibold hx-text-primary-800 contrast-more:hx-border contrast-more:hx-border-primary-500 dark:hx-bg-primary-400/10 dark:hx-text-primary-600 contrast-more:dark:hx-border-primary-500"
+    href="/docs/query/http/"
+    
+  >HTTP 查询接口
+    </a>
+              
+            </li></ul>
+      </div></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/write/"
+    
+  >数据写入
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/faq/"
+    
+  >FAQ
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/"
+    
+  >运维指南
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/disk-space/"
+    
+  >如何处理磁盘空间不足
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/cluster-resize/"
+    
+  >如何对集群版进行扩缩容
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/node-crash/"
+    
+  >如何处理机器故障
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/write-history/"
+    
+  >如何补写历史数据
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/multi-disk/"
+    
+  >有效利用一机多盘
+    </a>
+              
+            </li></ul>
+      </div></li>
+        
+      </ul>
+    </div>
+  
+  
+    <div class="  hx-sticky hx-bottom-0 hx-bg-white dark:hx-bg-dark hx-mx-4 hx-py-4 hx-shadow-[0_-12px_16px_#fff] hx-flex hx-items-center hx-gap-2 dark:hx-border-neutral-800 dark:hx-shadow-[0_-12px_16px_#111] contrast-more:hx-border-neutral-400 contrast-more:hx-shadow-none contrast-more:dark:hx-shadow-none hx-border-t" data-toggle-animation="show"><div class="hx-flex hx-grow hx-flex-col"><button
+  title="Change theme"
+  data-theme="light"
+  class="theme-toggle hx-group hx-h-7 hx-rounded-md hx-px-2 hx-text-left hx-text-xs hx-font-medium hx-text-gray-600 hx-transition-colors dark:hx-text-gray-400 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50"
+  type="button"
+  aria-label="Change theme"
+>
+  <div class="hx-flex hx-items-center hx-gap-2 hx-capitalize"><svg height=12 class="group-data-[theme=light]:hx-hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg><span class="group-data-[theme=light]:hx-hidden">Light</span><svg height=12 class="group-data-[theme=dark]:hx-hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg><span class="group-data-[theme=dark]:hx-hidden">Dark</span></div>
+</button>
+</div></div></aside>
+    
+<nav class="hextra-toc hx-order-last hx-hidden hx-w-64 hx-shrink-0 xl:hx-block print:hx-hidden hx-px-4" aria-label="table of contents">
+    <div class="hextra-scrollbar hx-sticky hx-top-16 hx-overflow-y-auto hx-pr-4 hx-pt-6 hx-text-sm [hyphens:auto] hx-max-h-[calc(100vh-var(--navbar-height)-env(safe-area-inset-bottom))] ltr:hx--mr-4 rtl:hx--ml-4"><p class="hx-mb-4 hx-font-semibold hx-tracking-tight">On this page</p><ul>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%8d%95%e6%9c%ba%e7%89%88">单机版
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#prometheus-%e6%9f%a5%e8%af%a2%e6%8e%a5%e5%8f%a3">Prometheus 查询接口
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e6%9f%a5%e8%af%a2%e4%bc%98%e5%8c%96">查询优化
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#timestamp-%e6%a0%bc%e5%bc%8f">Timestamp 格式
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#graphite-api">Graphite API
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#graphite-render-api-%e7%94%a8%e6%b3%95">Graphite Render API 用法
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#graphite-metrics-api-%e7%94%a8%e6%b3%95">Graphite Metrics API 用法
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-8 rtl:hx-pr-8 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#graphite-tags-api-usage">Graphite Tags API usage
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e9%9b%86%e7%be%a4%e7%89%88">集群版
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#prometheus-%e6%9f%a5%e8%af%a2-apihttpsprometheusiodocsprometheuslatestqueryingapi">Prometheus 查询 API
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#graphite-metrics-apihttpsgraphite-apireadthedocsioenlatestapihtmlthe-metrics-api">Graphite Metrics API
+        </a>
+      </li></ul>
+      <div class="hx-mt-8 hx-border-t hx-bg-white hx-pt-8 hx-shadow-[0_-12px_16px_white] dark:hx-bg-dark dark:hx-shadow-[0_-12px_16px_#111] hx-sticky hx-bottom-0 hx-flex hx-flex-col hx-items-start hx-gap-2 hx-pb-8 dark:hx-border-neutral-800 contrast-more:hx-border-t contrast-more:hx-border-neutral-400 contrast-more:hx-shadow-none contrast-more:dark:hx-border-neutral-400">
+        <button aria-hidden="true" id="backToTop" onClick="scrollUp();" class="hx-transition-all hx-duration-75 hx-opacity-0 hx-text-xs hx-font-medium hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-100 contrast-more:hx-text-gray-800 contrast-more:dark:hx-text-gray-50">
+          <span>Scroll to top</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="hx-inline ltr:hx-ml-1 rtl:hx-mr-1 hx-h-3.5 hx-w-3.5 hx-border hx-rounded-full hx-border-gray-500 hover:hx-border-gray-900 dark:hx-border-gray-400 dark:hover:hx-border-gray-100 contrast-more:hx-border-gray-800 contrast-more:dark:hx-border-gray-50">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+
+    <article class="hx-w-full hx-break-words hx-flex hx-min-h-[calc(100vh-var(--navbar-height))] hx-min-w-0 hx-justify-center hx-pb-8 hx-pr-[calc(env(safe-area-inset-right)-1.5rem)]">
+      <main class="hx-w-full hx-min-w-0 hx-max-w-6xl hx-px-6 hx-pt-4 md:hx-px-12">
+        
+  <div class="hx-mt-1.5 hx-flex hx-items-center hx-gap-1 hx-overflow-hidden hx-text-sm hx-text-gray-500 dark:hx-text-gray-400 contrast-more:hx-text-current">
+        <div class="hx-whitespace-nowrap hx-transition-colors hx-min-w-[24px] hx-overflow-hidden hx-text-ellipsis hover:hx-text-gray-900 dark:hover:hx-text-gray-100">
+          <a href="/docs/">VictoriaMetrics 中文手册</a>
+        </div><svg class="hx-w-3.5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <div class="hx-whitespace-nowrap hx-transition-colors hx-min-w-[24px] hx-overflow-hidden hx-text-ellipsis hover:hx-text-gray-900 dark:hover:hx-text-gray-100">
+          <a href="/docs/query/">数据查询</a>
+        </div><svg class="hx-w-3.5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg><div class="hx-whitespace-nowrap hx-transition-colors hx-font-medium hx-text-gray-700 contrast-more:hx-font-bold contrast-more:hx-text-current dark:hx-text-gray-100 contrast-more:dark:hx-text-current">HTTP 查询接口</div>
+  </div>
+
+        <div class="content">
+          <h1>HTTP 查询接口</h1>
+          <h2>单机版<span class="hx-absolute -hx-mt-20" id="单机版"></span>
+    <a href="#%e5%8d%95%e6%9c%ba%e7%89%88" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><h3>Prometheus 查询接口<span class="hx-absolute -hx-mt-20" id="prometheus-查询接口"></span>
+    <a href="#prometheus-%e6%9f%a5%e8%af%a2%e6%8e%a5%e5%8f%a3" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p>VictoriaMetrics 支持下面这些 <a href="https://prometheus.io/docs/prometheus/latest/querying/api/" target="_blank" rel="noopener">Prometheus 查询 API</a>:</p>
+<ul>
+<li><a href="https://docs.victoriametrics.com/keyConcepts.html#instant-query" target="_blank" rel="noopener">/api/v1/query</a></li>
+<li><a href="https://docs.victoriametrics.com/keyConcepts.html#range-query" target="_blank" rel="noopener">/api/v1/query_range</a></li>
+<li><a href="https://prometheus.io/docs/prometheus/latest/querying/api/#finding-series-by-label-matchers" target="_blank" rel="noopener">/api/v1/series</a></li>
+<li><a href="https://prometheus.io/docs/prometheus/latest/querying/api/#getting-label-names" target="_blank" rel="noopener">/api/v1/labels</a></li>
+<li><a href="https://prometheus.io/docs/prometheus/latest/querying/api/#querying-label-values" target="_blank" rel="noopener">/api/v1/label/…/values</a></li>
+<li><a href="https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-stats" target="_blank" rel="noopener">/api/v1/status/tsdb</a>. See <a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#tsdb-stats" target="_blank" rel="noopener">these docs</a> for details.</li>
+<li><a href="https://prometheus.io/docs/prometheus/latest/querying/api/#targets" target="_blank" rel="noopener">/api/v1/targets</a> - see <a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-scrape-prometheus-exporters-such-as-node-exporter" target="_blank" rel="noopener">these docs</a> for more details.</li>
+<li><a href="https://prometheus.io/docs/prometheus/latest/federation/" target="_blank" rel="noopener">/federate</a> - see <a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#federation" target="_blank" rel="noopener">these docs</a> for more details.</li>
+</ul>
+<p>这些接口可以被Prometheus兼容的客户端（如Grafana或curl）查询。所有Prometheus查询API处理程序都可以使用<code>/prometheus</code>前缀进行查询。例如，<code>/prometheus/api/v1/query</code>和<code>/api/v1/query</code>都可以正常工作。</p>
+<h4>查询优化<span class="hx-absolute -hx-mt-20" id="查询优化"></span>
+    <a href="#%e6%9f%a5%e8%af%a2%e4%bc%98%e5%8c%96" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><ul>
+<li>VictoriaMetrics 接受<code>extra_label=&lt;label_name&gt;=&lt;label_value&gt;</code>查询参数（可选），可以用于强制使用额外 Label 过滤器执行查询。例如，<code>/api/v1/query_range?extra_label=user_id=123&amp;extra_label=group_id=456&amp;query=&lt;query&gt;</code>会自动将<code>{user_id=&quot;123&quot;,group_id=&quot;456&quot;}</code>Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。一般<code>extra_label</code>查询参数由位于 VictoriaMetrics 前面的查询代理服务自动设置。例如，可以参考使用 <a href="https://docs.victoriametrics.com/vmauth.html" target="_blank" rel="noopener">vmauth</a> 和 <a href="https://docs.victoriametrics.com/vmgateway.html" target="_blank" rel="noopener">vmgateway</a> 作为查询代理的示例。</li>
+<li>VictoriaMetrics 接受<code>extra_filters[]=series_selector</code>查询参数（可选），可用于对查询强制执行任意的 Label 过滤器。例如，<code>/api/v1/query_range?extra_filters[]={env=~&quot;prod|staging&quot;,user=&quot;xyz&quot;}&amp;query=&lt;query&gt;</code>将自动将<code>{env=~&quot;prod|staging&quot;,user=&quot;xyz&quot;}</code>Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。我们建议在 VictoriaMetrics 前面的查询代理自动设置<code>extra_filters[]</code>查询参数。您可以将<a href="https://docs.victoriametrics.com/vmauth.html" target="_blank" rel="noopener">vmauth</a>和<a href="https://docs.victoriametrics.com/vmgateway.html" target="_blank" rel="noopener">vmgateway</a>作为这种代理的示例。</li>
+<li>VictoriaMetrics 接受多种格式的 <code>time</code>，<code>start</code> 和 <code>end</code> 查询参数，可参考<a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#timestamp-formats" target="_blank" rel="noopener">这些文档</a>。</li>
+<li>VictoriaMetrics对于<a href="https://docs.victoriametrics.com/keyConcepts.html#instant-query" target="_blank" rel="noopener">/api/v1/query</a>和<a href="https://docs.victoriametrics.com/keyConcepts.html#range-query" target="_blank" rel="noopener">/api/v1/query_range</a>接口支持<code>round_digits</code>查询参数。它可用于指定返回的指标值的保留小数点位数。例如，<code>/api/v1/query?query=avg_over_time(temperature[1h])&amp;round_digits=2</code>会将让返回的指标值保留小数点后面 2 位。</li>
+<li>VictoriaMetrics允许在<a href="https://docs.victoriametrics.com/url-examples.html#apiv1labels" target="_blank" rel="noopener">/api/v1/labels</a>和<a href="https://docs.victoriametrics.com/url-examples.html#apiv1labelvalues" target="_blank" rel="noopener">/api/v1/label/<!-- raw HTML omitted -->/values</a>接口中使用<code>limit</code>查询参数来限制返回的条目数量。例如，对<code>/api/v1/labels?limit=5</code>的查询请求最多返回5个唯一的 Label 值，并忽略其他 Label。如果提供的<code>limit</code>值超过了相应的<code>-command-line</code>命令行参数<code>-search.maxTagKeys</code>或<code>-search.maxTagValues</code>，则会使用命令行参数中指定的限制。</li>
+<li>默认情况下，VictoriaMetrics从<a href="https://docs.victoriametrics.com/url-examples.html#apiv1series" target="_blank" rel="noopener">/api/v1/series</a>、<a href="https://docs.victoriametrics.com/url-examples.html#apiv1labels" target="_blank" rel="noopener">/api/v1/labels</a>和<a href="https://docs.victoriametrics.com/url-examples.html#apiv1labelvalues" target="_blank" rel="noopener">/api/v1/label/<!-- raw HTML omitted -->/values</a>返回最近一天从00:00 UTC开始的 series 数据，而Prometheus API默认返回所有时间的数据。如果要选择特定的时间范围的 series 数据，可使用 <code>start</code> 和 <code>end</code> 参数指定。由于性能优化的考虑，VictoriaMetrics会将指定的 <code>start..end</code> 时间范围舍入到天的粒度。如果您需要在给定时间范围内获取精确的 Label 集合，请将查询发送到<a href="https://docs.victoriametrics.com/keyConcepts.html#instant-query" target="_blank" rel="noopener">/api/v1/query</a>或<a href="https://docs.victoriametrics.com/keyConcepts.html#range-query" target="_blank" rel="noopener">/api/v1/query_range</a>。</li>
+<li>VictoriaMetrics在<a href="https://docs.victoriametrics.com/url-examples.html#apiv1series" target="_blank" rel="noopener">/api/v1/series</a>中接受<code>limit</code>查询参数，用于限制返回的条目数量。例如，对<code>/api/v1/series?limit=5</code>的查询将最多返回5个 series，并忽略其余的时间序列。如果提供的<code>limit</code>值超过了相应的命令行参数<code>-search.maxSeries</code>的值，则会使用命令行中指定的限制。</li>
+<li>此外，VictoriaMetrics还提供了以下接口：
+<ul>
+<li><code>/vmui</code> - 基本的 Web UI 界面，阅读<a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#vmui" target="_blank" rel="noopener">这些文档</a>。</li>
+<li><code>/api/v1/series/count</code> - 返回数据库中 time series 的总数量。注意：
+<ul>
+<li>该接口扫描了整个数据库的倒排索引，所以如果数据库包含数千万个 series 时间序列，它可能会变慢。</li>
+<li>该接口可能把<a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-delete-time-series" target="_blank" rel="noopener">删除 time series</a> 计算在内，这是内部实现导致的。</li>
+</ul>
+</li>
+<li><code>/api/v1/status/active_queries</code> - 返回当前正在执行的查询。</li>
+<li><code>/api/v1/status/top_queries</code> - 返回下面几个查询列表:
+<ul>
+<li>执行最频繁的查询列表 - <code>topByCount</code></li>
+<li>平均执行时间最长的查询列表 - <code>topByAvgDuration</code></li>
+<li>执行时间最长的查询列表 - <code>topBySumDuration</code></li>
+<li>返回的查询个数可以使用 <code>topN</code> 参数进行限制。历史查询可以使用 <code>maxLifetime</code> 参数过滤掉。比如，请求<code>/api/v1/status/top_queries?topN=5&amp;maxLifetime=30s</code>返回最近 30 秒内每个类型的 Top5 个查询列表。VictoriaMetrics 会跟踪统计最近<code>-s earch.queryStats.lastQueriesCount</code>时间内，且执行时间大于<code>search.queryStats.minQueryDuration</code>的查询。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h4>Timestamp 格式<span class="hx-absolute -hx-mt-20" id="timestamp-格式"></span>
+    <a href="#timestamp-%e6%a0%bc%e5%bc%8f" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p>VictoriaMetrics 接受下面这些格式的 <code>time</code>, <code>start</code> and <code>end</code> 参数， 在 <a href="https://docs.victoriametrics.com/#prometheus-querying-api-usage" target="_blank" rel="noopener">query APIs</a> 和 <a href="https://docs.victoriametrics.com/#how-to-export-time-series" target="_blank" rel="noopener">export APIs</a> 中皆是如此。</p>
+<ul>
+<li><strong>Unix 秒级时间戳</strong>，float 类型，小数部分代表的是毫秒。比如，<code>1562529662.678</code>。</li>
+<li><strong>Unix 毫秒级时间戳</strong>。比如，<code>1562529662678</code>。</li>
+<li><a href="https://www.ietf.org/rfc/rfc3339.txt" target="_blank" rel="noopener"><strong>RFC3339</strong></a>。比如， <code>2022-03-29T01:02:03Z</code> or <code>2022-03-29T01:02:03+02:30</code>.</li>
+<li><strong>RFC3339 的省略格式</strong>。比如：<code>2022</code>, <code>2022-03</code>, <code>2022-03-29</code>, <code>2022-03-29T01</code>, <code>2022-03-29T01:02</code>, <code>2022-03-29T01:02:03</code>。该 RFC3339 格式默认是使用 UTC 时区的。可以使用 <code>+hh:mm</code> or <code>-hh:mm</code> 后缀来指定时区。比如，<code>2022-03-01+06:30</code> 代表 <code>2022-03-01</code> 是 <code>06:30</code> 时区。</li>
+<li><strong>基于当前时间的相对时间</strong>。比如，<code>1h5m</code>, <code>-1h5m</code>或 <code>now-1h5m</code> 均代表 1小时5分钟之前，这里的 now 表示当前时间。</li>
+</ul>
+<h3>Graphite API<span class="hx-absolute -hx-mt-20" id="graphite-api"></span>
+    <a href="#graphite-api" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p>VictoriaMetrics支持Graphite协议的数据摄入——详见<a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-send-data-from-graphite-compatible-agents-such-as-statsd" target="_blank" rel="noopener">这些文档</a>。VictoriaMetrics支持以下Graphite查询API，这些API对于Grafana中的<a href="https://grafana.com/docs/grafana/latest/datasources/graphite/" target="_blank" rel="noopener">Graphite数据源</a>是必需的：</p>
+<ul>
+<li>Render API - 看 <a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#graphite-render-api-usage" target="_blank" rel="noopener">这些文档</a>。</li>
+<li>Metrics API - 看 <a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#graphite-render-api-usage" target="_blank" rel="noopener">这些文档</a>。</li>
+<li>Tags API - 看 <a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#graphite-render-api-usage" target="_blank" rel="noopener">这些文档</a>。</li>
+</ul>
+<p>所有Graphite处理程序都可以使用<code>/graphite</code>前缀。例如，<code>/graphite/metrics/find</code>和<code>/metrics/find</code>都应该有效。</p>
+<p>VictoriaMetrics接受可选查询参数：<code>extra_label=&lt;标签名&gt;=&lt;标签值&gt;</code>和<code>extra_filters[]=series_selector</code>，这些参数适用于所有Graphite API。这些参数可用于限制给定租户可见的时间序列范围。预计<code>extra_label</code>查询参数将由位于VictoriaMetrics前方的身份验证代理自动设置。<a href="https://www.victoriametrics.com.cn/victoriametrics/xi-tong-zu-jian/vmauth" target="_blank" rel="noopener">vmauth</a>和<a href="https://docs.victoriametrics.com/vmgateway.html" target="_blank" rel="noopener">vmgateway</a>是此类代理的示例。</p>
+<p>VictoriaMetrics支持<code>__graphite__</code>伪标签，用于在<a href="https://docs.victoriametrics.com/MetricsQL.html" target="_blank" rel="noopener">MetricsQL</a>中使用与Graphite兼容的过滤器过滤时间序列。详见<a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#selecting-graphite-metrics" target="_blank" rel="noopener">这些文档</a>。</p>
+<h4>Graphite Render API 用法<span class="hx-absolute -hx-mt-20" id="graphite-render-api-用法"></span>
+    <a href="#graphite-render-api-%e7%94%a8%e6%b3%95" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p>VictoriaMetrics在<code>/render</code> url 上支持<a href="https://graphite.readthedocs.io/en/stable/render_api.html" target="_blank" rel="noopener">Graphite Render API</a>子集，Grafana中的Graphite数据源会使用这一功能。在Grafana中配置<a href="https://grafana.com/docs/grafana/latest/datasources/graphite/" target="_blank" rel="noopener">Graphite数据源</a>时，必须将<code>Storage-Step</code> HTTP请求头设置为VictoriaMetrics中存储的Graphite数据点之间的步长。例如，<code>Storage-Step: 10s</code>表示VictoriaMetrics中存储的Graphite数据点之间相隔10秒。</p>
+<h4>Graphite Metrics API 用法<span class="hx-absolute -hx-mt-20" id="graphite-metrics-api-用法"></span>
+    <a href="#graphite-metrics-api-%e7%94%a8%e6%b3%95" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p>VictoriaMetrics 支持 <a href="https://graphite-api.readthedocs.io/en/latest/api.html#the-metrics-api" target="_blank" rel="noopener">Graphite Metrics API</a> 中的一下接口：</p>
+<ul>
+<li><a href="https://graphite-api.readthedocs.io/en/latest/api.html#metrics-find" target="_blank" rel="noopener">/metrics/find</a></li>
+<li><a href="https://graphite-api.readthedocs.io/en/latest/api.html#metrics-expand" target="_blank" rel="noopener">/metrics/expand</a></li>
+<li><a href="https://graphite-api.readthedocs.io/en/latest/api.html#metrics-index-json" target="_blank" rel="noopener">/metrics/index.json</a></li>
+</ul>
+<p>VictoriaMetrics <code>/metrics/find</code> 和 <code>/metrics/expand</code>接口上支持以下额外的参数:</p>
+<ul>
+<li><code>label</code> - 用于选择任意标签值。默认情况下，<code>label=__name__</code>，即选择度量名称。</li>
+<li><code>delimiter</code> - 用于在度量名称层次结构中使用不同的分隔符。例如，<code>/metrics/find?delimiter=``&amp;query=node``*</code> 将返回所有以<code>node_</code>开头的度量名称前缀。默认情况下，<code>delimiter=.</code>。</li>
+</ul>
+<h4>Graphite Tags API usage<span class="hx-absolute -hx-mt-20" id="graphite-tags-api-usage"></span>
+    <a href="#graphite-tags-api-usage" class="subheading-anchor" aria-label="Permalink for this section"></a></h4><p>VictoriaMetrics 支持下面这些 <a href="https://graphite.readthedocs.io/en/stable/tags.html" target="_blank" rel="noopener">Graphite Tags API</a>:</p>
+<ul>
+<li><a href="https://graphite.readthedocs.io/en/stable/tags.html#adding-series-to-the-tagdb" target="_blank" rel="noopener">/tags/tagSeries</a></li>
+<li><a href="https://graphite.readthedocs.io/en/stable/tags.html#adding-series-to-the-tagdb" target="_blank" rel="noopener">/tags/tagMultiSeries</a></li>
+<li><a href="https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags" target="_blank" rel="noopener">/tags</a></li>
+<li><a href="https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags" target="_blank" rel="noopener">/tags/{tag_name}</a></li>
+<li><a href="https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags" target="_blank" rel="noopener">/tags/findSeries</a></li>
+<li><a href="https://graphite.readthedocs.io/en/stable/tags.html#auto-complete-support" target="_blank" rel="noopener">/tags/autoComplete/tags</a></li>
+<li><a href="https://graphite.readthedocs.io/en/stable/tags.html#auto-complete-support" target="_blank" rel="noopener">/tags/autoComplete/values</a></li>
+<li><a href="https://graphite.readthedocs.io/en/stable/tags.html#removing-series-from-the-tagdb" target="_blank" rel="noopener">/tags/delSeries</a></li>
+</ul>
+<h2>集群版<span class="hx-absolute -hx-mt-20" id="集群版"></span>
+    <a href="#%e9%9b%86%e7%be%a4%e7%89%88" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>集群版本和<a href="https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben" target="_blank" rel="noopener">单机版</a>的API接口主要区别是数据的读取和写入是由独立组件完成的，而且也有了租户的支持。集群版本也支持<code>/prometheus/api/v1</code>来接收 <code>jsonl</code>, <code>csv</code>, <code>native</code> 和 <code>prometheus</code>数据格式，而不仅仅是<code>prometheus</code>数据格式。可以在<a href="https://docs.victoriametrics.com/url-examples.html" target="_blank" rel="noopener">这里</a>查看VictoriaMetrics的API的使用范例。</p>
+<h3><a href="https://prometheus.io/docs/prometheus/latest/querying/api/" target="_blank" rel="noopener">Prometheus 查询 API</a><span class="hx-absolute -hx-mt-20" id="prometheus-查询-apihttpsprometheusiodocsprometheuslatestqueryingapi"></span>
+    <a href="#prometheus-%e6%9f%a5%e8%af%a2-apihttpsprometheusiodocsprometheuslatestqueryingapi" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>http://&lt;vmselect&gt;:8481/select/&lt;accountID&gt;/prometheus/&lt;suffix&gt;</code>, 其中:</p>
+<ul>
+<li><code>&lt;accountID&gt;</code> 是一个任意32位数字，用来标识查询的空间（即租户）。</li>
+<li><code>&lt;suffix&gt;</code> 可以是一下的内容：
+<ul>
+<li><code>api/v1/query</code> - 执行 <a href="https://docs.victoriametrics.com/keyConcepts.html#instant-query" target="_blank" rel="noopener">PromQL instant</a>.</li>
+<li><code>api/v1/query_range</code> - 执行 <a href="https://docs.victoriametrics.com/keyConcepts.html#range-query" target="_blank" rel="noopener">PromQL range 查询</a>。</li>
+<li><code>api/v1/series</code> - 执行 <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#finding-series-by-label-matchers" target="_blank" rel="noopener">series 查询</a>。</li>
+<li><code>api/v1/labels</code> - 返回 <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#getting-label-names" target="_blank" rel="noopener">label 名称列表</a>。</li>
+<li><code>api/v1/label/&lt;label_name&gt;/values</code> - 返回指定 <code>&lt;label_name&gt;</code> 的所有值，参考<a href="https://prometheus.io/docs/prometheus/latest/querying/api/#querying-label-values" target="_blank" rel="noopener">这个 API</a>.</li>
+<li><code>federate</code> - 返回 <a href="https://prometheus.io/docs/prometheus/latest/federation/" target="_blank" rel="noopener">federated metrics</a>.</li>
+<li><code>api/v1/export</code> - 导出 JSON line 格式的原始数据，更多信息看<a href="https://medium.com/@valyala/analyzing-prometheus-data-with-external-tools-5f3e5e147639" target="_blank" rel="noopener">这篇文章</a>。</li>
+<li><code>api/v1/export/native</code> - 导出原生二进制格式的原始数据，该数据可以通过另一个接口<code>api/v1/import/native</code>导入到 VictoriaMetrics (见上文).</li>
+<li><code>api/v1/export/csv</code> - 导出 CSV 格式原始数据。它可以使用另外一个接口 <code>api/v1/import/csv</code> 导入到 VictoriaMetrics（见上文）。</li>
+<li><code>api/v1/series/count</code> - 返回 series 的总数。</li>
+<li><code>api/v1/status/tsdb</code> - 返回时序数据的统计信息。更多详细信息见<a href="https://docs.victoriametrics.com/#tsdb-stats" target="_blank" rel="noopener">这些文档</a>。</li>
+<li><code>api/v1/status/active_queries</code> - 返回当前活跃的查询请求。逐一每个 <code>vmselect</code> 实例都有独立的活跃查询列表。</li>
+<li><code>api/v1/status/top_queries</code> - 返回执行频率最高以及查询耗时最长的查询列表。</li>
+<li><code>metric-relabel-debug</code> - 用于对 <a href="https://docs.victoriametrics.com/relabeling.html" target="_blank" rel="noopener">relabeling 规则</a> Debug。</li>
+</ul>
+</li>
+</ul>
+<h3><a href="https://graphite-api.readthedocs.io/en/latest/api.html#the-metrics-api" target="_blank" rel="noopener">Graphite Metrics API</a><span class="hx-absolute -hx-mt-20" id="graphite-metrics-apihttpsgraphite-apireadthedocsioenlatestapihtmlthe-metrics-api"></span>
+    <a href="#graphite-metrics-apihttpsgraphite-apireadthedocsioenlatestapihtmlthe-metrics-api" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>http://&lt;vmselect&gt;:8481/select/&lt;accountID&gt;/graphite/&lt;suffix&gt;</code>, 其中:</p>
+<ul>
+<li><code>&lt;accountID&gt;</code></li>
+<li>是一个任意32位数字，用来标识查询的空间（即租户）。</li>
+<li><code>&lt;suffix&gt;</code> 可以是一下的内容：
+<ul>
+<li><code>render</code> - 实现 Graphite Render API. 看 <a href="https://graphite.readthedocs.io/en/stable/render_api.html" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>metrics/find</code> - 搜索 Graphite metrics. See <a href="https://graphite-api.readthedocs.io/en/latest/api.html#metrics-find" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>metrics/expand</code> - 扩展 Graphite metrics. See <a href="https://graphite-api.readthedocs.io/en/latest/api.html#metrics-expand" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>metrics/index.json</code> - returns 所有的 names. See <a href="https://graphite-api.readthedocs.io/en/latest/api.html#metrics-index-json" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags/tagSeries</code> - 注册 time series. See <a href="https://graphite.readthedocs.io/en/stable/tags.html#adding-series-to-the-tagdb" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags/tagMultiSeries</code> - 批量注册 time series. See <a href="https://graphite.readthedocs.io/en/stable/tags.html#adding-series-to-the-tagdb" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags</code> - 返回 tag 名称列表. See <a href="https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags/&lt;tag_name&gt;</code> - 返回指定 <code>&lt;tag_name&gt;</code>的值列表 See <a href="https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags/findSeries</code> - 返回匹配<code>expr</code>的 series，<a href="https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags/autoComplete/tags</code> - 返回匹配 <code>tagPrefix</code> 和/或 <code>expr</code>的tag名称列表。 See <a href="https://graphite.readthedocs.io/en/stable/tags.html#auto-complete-support" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags/autoComplete/values</code> - 返回匹配 <code>valuePrefix</code> 和/或 <code>expr</code> tag值列表 See <a href="https://graphite.readthedocs.io/en/stable/tags.html#auto-complete-support" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags/delSeries</code> - deletes series matching the given <code>path</code>. See <a href="https://graphite.readthedocs.io/en/stable/tags.html#removing-series-from-the-tagdb" target="_blank" rel="noopener">these docs</a>.</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+        <div class="hx-mt-16"></div>
+        
+        
+      </main>
+    </article>
+  </div>
+
+      <footer class="hextra-footer hx-bg-gray-100 hx-pb-[env(safe-area-inset-bottom)] dark:hx-bg-neutral-900 print:hx-bg-transparent"><div
+    class="hx-max-w-screen-xl hx-mx-auto hx-flex hx-justify-center hx-py-12 hx-pl-[max(env(safe-area-inset-left),1.5rem)] hx-pr-[max(env(safe-area-inset-right),1.5rem)] hx-text-gray-600 dark:hx-text-gray-400 md:hx-justify-start"
+  >
+    <div class="hx-flex hx-w-full hx-flex-col hx-items-center sm:hx-items-start"><div class="hx-font-semibold"><a class="hx-flex hx-text-sm hx-items-center hx-gap-1 hx-text-current" target="_blank" rel="noopener noreferrer" title="Hextra GitHub Homepage" href="https://github.com/imfing/hextra">
+    <span>Powered by Hextra<svg height=1em class="hx-inline-block ltr:hx-ml-1 rtl:hx-mr-1 hx-align-[-2.5px]" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="m 105.50024,22.224647 c -9.59169,-5.537563 -21.40871,-5.537563 -31.000093,0 L 39.054693,42.689119 C 29.463353,48.226675 23.55484,58.460531 23.55484,69.535642 v 40.928918 c 0,11.07542 5.908513,21.3092 15.499853,26.84652 l 35.445453,20.46446 c 9.591313,5.53732 21.408404,5.53732 31.000094,0 l 35.44507,-20.46446 c 9.59131,-5.53732 15.49985,-15.7711 15.49985,-26.84652 V 69.535642 c 0,-11.075111 -5.90854,-21.308967 -15.49985,-26.846523 z M 34.112797,85.737639 c -1.384445,2.397827 -1.384445,5.352099 0,7.749927 l 24.781554,42.922974 c 1.38437,2.39783 3.942853,3.87496 6.711592,3.87496 h 49.563107 c 2.76905,0 5.3273,-1.47713 6.71144,-3.87496 l 24.78194,-42.922974 c 1.38414,-2.397828 1.38414,-5.3521 0,-7.749927 L 121.88049,42.814746 c -1.38414,-2.397828 -3.94239,-3.874964 -6.71144,-3.874964 H 65.605944 c -2.768739,0 -5.327223,1.477059 -6.711592,3.874964 z" style="stroke-width:0.774993" /></svg></span>
+  </a></div>
+    </div>
+  </div>
+</footer>
+    
+    <script defer src="/js/main.js" integrity=""></script>
+
+
+<script defer src="/lib/flexsearch/flexsearch.bundle.min.0425860527cc9968f9f049421c7a56b39327d475e2e3a8f550416be3a9134327.js" integrity="sha256-BCWGBSfMmWj58ElCHHpWs5Mn1HXi46j1UEFr46kTQyc="></script>
+    <script defer src="/en.search.js" integrity=""></script>
+
+
+  </body>
+</html>

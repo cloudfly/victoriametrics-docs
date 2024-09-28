@@ -1,12 +1,13 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>VictoriaMetrics 中文手册 – Tags</title>
-    <link>https://victoriametrics.com.cn/tags/</link>
-    <description>Recent content in Tags on VictoriaMetrics 中文手册</description>
+    <title>中文手册 – Tags</title>
+    <link>http://localhost:1313/tags/</link>
+    <description>Recent content in Tags on 中文手册</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
+    <copyright>© 2024 Cloudfly,陈云飞</copyright>
     
-	  <atom:link href="https://victoriametrics.com.cn/tags/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" />
     
     
       

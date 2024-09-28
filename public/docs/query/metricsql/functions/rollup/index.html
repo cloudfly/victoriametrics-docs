@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon shortcut" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+<link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
+<link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link fetchpriority="low" href="/site.webmanifest" rel="manifest" />
+
+  <title>汇总（Rollup） – 中文手册</title>
+  <meta name="description" content="什么是Rollup Rollup函数（也称为范围函数或窗口函数）在所选 timeseries 的给定回溯窗口上对原始样本的汇总计算。例如，avg_over_time(temperature[24h])计算过去 24 小时内所有原始样本的平均温度值。
+更多细节：
+如果在Grafana中使用rollup函数来构建图形，那么每个点上的rollup都是独立计算的。例如，avg_over_time(temperature[24h])图表中的每个点显示了截止到该时间点的过去24小时内的平均温度。点之间的间隔由Grafana传递给/api/v1/query_range接口作为step查询参数设置。 如果给定的查询语句返回多个 timeseries，则每个返回的序列都会单独计算汇总。 如果方括号中的回溯窗口缺失，则MetricsQL会自动将回溯窗口设置为图表上点之间的间隔（即/api/v1/query_range中的step查询参数，Grafana中的$__interval值或MetricsQL中的1i持续时间）。例如，rate(http_requests_total)在Grafana中等同于rate(http_requests_total[$__interval])。它也等同于rate(http_requests_total[1i])。 每个在MetricsQL中的系列选择器都必须包装在一个rollup函数中。否则，它会自动被包装成default_rollup。例如，foo{bar=&#34;baz&#34;} 在执行计算之前会自动转换为 default_rollup(foo{bar=&#34;baz&#34;}[1i])。 如果在rollup函数中传递的参数不是series selector，那么内部的参数会自动转换为子查询。 所有的汇总函数都接受可选的 keep_metric_names 修饰符。如果设置了该修饰符，函数将在结果中保留指标名称。请参阅这些文档。 更多参见隐式查询转换。
+与 Prometheus 的普遍差异 凡是涉及对回溯窗口样本值首尾样本值进行计算的 rollup 函数，比如 rate、delta、increase 等函数；其MetricsQL 和 PromQL 都存在统一的计算差异。因此 VictoriaMetrics 使用 xxx_prometheus 的命名提供了兼容 Prometheus 统计方式的 rollup 函数，如 rate_prometheus、delta_prometheus、increase_prometheus 等。而默认则使用 MetricsQL 的统计方式。
+具体的差异细节请阅读这篇文档。
+函数列表 absent_over_time absent_over_time(series_selector[d])是一个 rollup 函数，如果给定的向前窗口d不包含原始样本，则返回1。否则，它将返回一个空结果。
+这个函数在PromQL中得到支持。另请参阅present_over_time。
+aggr_over_time aggr_over_time((&#34;rollup_func1&#34;, &#34;rollup_func2&#34;, ...), series_selector[d]) 计算给定回溯窗口 d 上所有列出的 rollup_func* 对原始样本进行汇总。根据给定的series_selector，对每个返回的时间序列进行单独计算。" />
+
+  
+    <link rel="canonical" href="http://localhost:1313/docs/query/metricsql/functions/rollup/" itemprop="url" />
+  
+
+  
+
+<meta property="og:title" content="汇总（Rollup）" />
+<meta property="og:description" content="什么是Rollup
+    Rollup函数（也称为范围函数或窗口函数）在所选 timeseries 的给定回溯窗口上对原始样本的汇总计算。例如，avg_over_time(temperature[24h])计算过去 24 小时内所有原始样本的平均温度值。
+更多细节：
+
+如果在Grafana中使用rollup函数来构建图形，那么每个点上的rollup都是独立计算的。例如，avg_over_time(temperature[24h])图表中的每个点显示了截止到该时间点的过去24小时内的平均温度。点之间的间隔由Grafana传递给/api/v1/query_range接口作为step查询参数设置。
+如果给定的查询语句返回多个 timeseries，则每个返回的序列都会单独计算汇总。
+如果方括号中的回溯窗口缺失，则MetricsQL会自动将回溯窗口设置为图表上点之间的间隔（即/api/v1/query_range中的step查询参数，Grafana中的$__interval值或MetricsQL中的1i持续时间）。例如，rate(http_requests_total)在Grafana中等同于rate(http_requests_total[$__interval])。它也等同于rate(http_requests_total[1i])。
+每个在MetricsQL中的系列选择器都必须包装在一个rollup函数中。否则，它会自动被包装成default_rollup。例如，foo{bar=&quot;baz&quot;} 在执行计算之前会自动转换为 default_rollup(foo{bar=&quot;baz&quot;}[1i])。
+如果在rollup函数中传递的参数不是series selector，那么内部的参数会自动转换为子查询。
+所有的汇总函数都接受可选的 keep_metric_names 修饰符。如果设置了该修饰符，函数将在结果中保留指标名称。请参阅这些文档。
+
+更多参见隐式查询转换。
+与 Prometheus 的普遍差异
+    凡是涉及对回溯窗口样本值首尾样本值进行计算的 rollup 函数，比如 rate、delta、increase 等函数；其MetricsQL 和 PromQL 都存在统一的计算差异。因此 VictoriaMetrics 使用 xxx_prometheus 的命名提供了兼容 Prometheus 统计方式的 rollup 函数，如 rate_prometheus、delta_prometheus、increase_prometheus 等。而默认则使用 MetricsQL 的统计方式。
+具体的差异细节请阅读这篇文档。
+函数列表
+    absent_over_time
+    absent_over_time(series_selector[d])是一个 rollup 函数，如果给定的向前窗口d不包含原始样本，则返回1。否则，它将返回一个空结果。
+这个函数在PromQL中得到支持。另请参阅present_over_time。
+aggr_over_time
+    aggr_over_time((&quot;rollup_func1&quot;, &quot;rollup_func2&quot;, ...), series_selector[d]) 计算给定回溯窗口 d 上所有列出的 rollup_func* 对原始样本进行汇总。根据给定的series_selector，对每个返回的时间序列进行单独计算。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/docs/query/metricsql/functions/rollup/" /><meta property="article:section" content="docs" />
+
+
+
+  
+  <meta itemprop="name" content="汇总（Rollup）">
+  <meta itemprop="description" content="什么是Rollup Rollup函数（也称为范围函数或窗口函数）在所选 timeseries 的给定回溯窗口上对原始样本的汇总计算。例如，avg_over_time(temperature[24h])计算过去 24 小时内所有原始样本的平均温度值。
+更多细节：
+如果在Grafana中使用rollup函数来构建图形，那么每个点上的rollup都是独立计算的。例如，avg_over_time(temperature[24h])图表中的每个点显示了截止到该时间点的过去24小时内的平均温度。点之间的间隔由Grafana传递给/api/v1/query_range接口作为step查询参数设置。 如果给定的查询语句返回多个 timeseries，则每个返回的序列都会单独计算汇总。 如果方括号中的回溯窗口缺失，则MetricsQL会自动将回溯窗口设置为图表上点之间的间隔（即/api/v1/query_range中的step查询参数，Grafana中的$__interval值或MetricsQL中的1i持续时间）。例如，rate(http_requests_total)在Grafana中等同于rate(http_requests_total[$__interval])。它也等同于rate(http_requests_total[1i])。 每个在MetricsQL中的系列选择器都必须包装在一个rollup函数中。否则，它会自动被包装成default_rollup。例如，foo{bar=&#34;baz&#34;} 在执行计算之前会自动转换为 default_rollup(foo{bar=&#34;baz&#34;}[1i])。 如果在rollup函数中传递的参数不是series selector，那么内部的参数会自动转换为子查询。 所有的汇总函数都接受可选的 keep_metric_names 修饰符。如果设置了该修饰符，函数将在结果中保留指标名称。请参阅这些文档。 更多参见隐式查询转换。
+与 Prometheus 的普遍差异 凡是涉及对回溯窗口样本值首尾样本值进行计算的 rollup 函数，比如 rate、delta、increase 等函数；其MetricsQL 和 PromQL 都存在统一的计算差异。因此 VictoriaMetrics 使用 xxx_prometheus 的命名提供了兼容 Prometheus 统计方式的 rollup 函数，如 rate_prometheus、delta_prometheus、increase_prometheus 等。而默认则使用 MetricsQL 的统计方式。
+具体的差异细节请阅读这篇文档。
+函数列表 absent_over_time absent_over_time(series_selector[d])是一个 rollup 函数，如果给定的向前窗口d不包含原始样本，则返回1。否则，它将返回一个空结果。
+这个函数在PromQL中得到支持。另请参阅present_over_time。
+aggr_over_time aggr_over_time((&#34;rollup_func1&#34;, &#34;rollup_func2&#34;, ...), series_selector[d]) 计算给定回溯窗口 d 上所有列出的 rollup_func* 对原始样本进行汇总。根据给定的series_selector，对每个返回的时间序列进行单独计算。">
+  <meta itemprop="wordCount" content="1397">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="汇总（Rollup）">
+  <meta name="twitter:description" content="什么是Rollup Rollup函数（也称为范围函数或窗口函数）在所选 timeseries 的给定回溯窗口上对原始样本的汇总计算。例如，avg_over_time(temperature[24h])计算过去 24 小时内所有原始样本的平均温度值。
+更多细节：
+如果在Grafana中使用rollup函数来构建图形，那么每个点上的rollup都是独立计算的。例如，avg_over_time(temperature[24h])图表中的每个点显示了截止到该时间点的过去24小时内的平均温度。点之间的间隔由Grafana传递给/api/v1/query_range接口作为step查询参数设置。 如果给定的查询语句返回多个 timeseries，则每个返回的序列都会单独计算汇总。 如果方括号中的回溯窗口缺失，则MetricsQL会自动将回溯窗口设置为图表上点之间的间隔（即/api/v1/query_range中的step查询参数，Grafana中的$__interval值或MetricsQL中的1i持续时间）。例如，rate(http_requests_total)在Grafana中等同于rate(http_requests_total[$__interval])。它也等同于rate(http_requests_total[1i])。 每个在MetricsQL中的系列选择器都必须包装在一个rollup函数中。否则，它会自动被包装成default_rollup。例如，foo{bar=&#34;baz&#34;} 在执行计算之前会自动转换为 default_rollup(foo{bar=&#34;baz&#34;}[1i])。 如果在rollup函数中传递的参数不是series selector，那么内部的参数会自动转换为子查询。 所有的汇总函数都接受可选的 keep_metric_names 修饰符。如果设置了该修饰符，函数将在结果中保留指标名称。请参阅这些文档。 更多参见隐式查询转换。
+与 Prometheus 的普遍差异 凡是涉及对回溯窗口样本值首尾样本值进行计算的 rollup 函数，比如 rate、delta、increase 等函数；其MetricsQL 和 PromQL 都存在统一的计算差异。因此 VictoriaMetrics 使用 xxx_prometheus 的命名提供了兼容 Prometheus 统计方式的 rollup 函数，如 rate_prometheus、delta_prometheus、increase_prometheus 等。而默认则使用 MetricsQL 的统计方式。
+具体的差异细节请阅读这篇文档。
+函数列表 absent_over_time absent_over_time(series_selector[d])是一个 rollup 函数，如果给定的向前窗口d不包含原始样本，则返回1。否则，它将返回一个空结果。
+这个函数在PromQL中得到支持。另请参阅present_over_time。
+aggr_over_time aggr_over_time((&#34;rollup_func1&#34;, &#34;rollup_func2&#34;, ...), series_selector[d]) 计算给定回溯窗口 d 上所有列出的 rollup_func* 对原始样本进行汇总。根据给定的series_selector，对每个返回的时间序列进行单独计算。">
+
+    <link href="/css/compiled/main.css" rel="stylesheet" />
+
+
+
+  <link href="/css/custom.css" rel="stylesheet" />
+
+
+
+
+
+  <script>
+     
+    const defaultTheme = 'system';
+
+    const setDarkTheme = () => {
+      document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
+    }
+    const setLightTheme = () => {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.style.colorScheme = "light";
+    }
+
+    if ("color-theme" in localStorage) {
+      localStorage.getItem("color-theme") === "dark" ? setDarkTheme() : setLightTheme();
+    } else {
+      defaultTheme === "dark" ? setDarkTheme() : setLightTheme();
+      if (defaultTheme === "system") {
+        window.matchMedia("(prefers-color-scheme: dark)").matches ? setDarkTheme() : setLightTheme();
+      }
+    }
+  </script>
+
+  
+</head>
+<body dir="ltr"><div class="nav-container hx-sticky hx-top-0 hx-z-20 hx-w-full hx-bg-transparent print:hx-hidden">
+  <div class="nav-container-blur hx-pointer-events-none hx-absolute hx-z-[-1] hx-h-full hx-w-full hx-bg-white dark:hx-bg-dark hx-shadow-[0_2px_4px_rgba(0,0,0,.02),0_1px_0_rgba(0,0,0,.06)] contrast-more:hx-shadow-[0_0_0_1px_#000] dark:hx-shadow-[0_-1px_0_rgba(255,255,255,.1)_inset] contrast-more:dark:hx-shadow-[0_0_0_1px_#fff]"></div>
+
+  <nav class="hx-mx-auto hx-flex hx-items-center hx-justify-end hx-gap-2 hx-h-16 hx-px-6 hx-max-w-[90rem]">
+    <a class="hx-flex hx-items-center hover:hx-opacity-75 ltr:hx-mr-auto rtl:hx-ml-auto" href="/">
+        <img class="hx-block dark:hx-hidden" src="/logo-victoriametrics.svg" alt="中文手册" height="80" width="160" />
+        <img class="hx-hidden dark:hx-block" src="/logo-victoriametrics-dark.svg" alt="中文手册" height="80" width="160" />
+        <span class="hx-mx-2 hx-font-extrabold hx-inline hx-select-none" title="中文手册">中文手册</span>
+    </a><a
+            title="手册"
+            href="/docs"
+            
+            class="hx-text-sm contrast-more:hx-text-gray-700 contrast-more:dark:hx-text-gray-100 hx-relative -hx-ml-2 hx-hidden hx-whitespace-nowrap hx-p-2 md:hx-inline-block hx-font-medium"
+          >
+            <span class="hx-text-center">手册</span>
+          </a><a
+            title="关于"
+            href="/about"
+            
+            class="hx-text-sm contrast-more:hx-text-gray-700 contrast-more:dark:hx-text-gray-100 hx-relative -hx-ml-2 hx-hidden hx-whitespace-nowrap hx-p-2 md:hx-inline-block hx-text-gray-600 hover:hx-text-gray-800 dark:hx-text-gray-400 dark:hover:hx-text-gray-200"
+          >
+            <span class="hx-text-center">关于</span>
+          </a><button type="button" aria-label="Menu" class="hamburger-menu -hx-mr-2 hx-rounded hx-p-2 active:hx-bg-gray-400/20 md:hx-hidden"><svg height=24 fill="none" viewBox="0 0 24 24" stroke="currentColor"><g><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8H20"></path></g><g><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16H20"></path></g></svg></button>
+  </nav>
+</div>
+
+  <div class='hx-mx-auto hx-flex hx-max-w-[90rem]'>
+    <div class="mobile-menu-overlay [transition:background-color_1.5s_ease] hx-fixed hx-inset-0 hx-z-10 hx-bg-black/80 dark:hx-bg-black/60 hx-hidden"></div>
+<aside class="sidebar-container hx-flex hx-flex-col print:hx-hidden md:hx-top-16 md:hx-shrink-0 md:hx-w-64 md:hx-self-start max-md:[transform:translate3d(0,-100%,0)] md:hx-sticky">
+  
+  <div class="hx-px-4 hx-pt-4 md:hx-hidden">
+    <div class="search-wrapper hx-relative md:hx-w-64">
+  <div class="hx-relative hx-flex hx-items-center hx-text-gray-900 contrast-more:hx-text-gray-800 dark:hx-text-gray-300 contrast-more:dark:hx-text-gray-300">
+    <input
+      placeholder="Search..."
+      class="search-input hx-block hx-w-full hx-appearance-none hx-rounded-lg hx-px-3 hx-py-2 hx-transition-colors hx-text-base hx-leading-tight md:hx-text-sm hx-bg-black/[.05] dark:hx-bg-gray-50/10 focus:hx-bg-white dark:focus:hx-bg-dark placeholder:hx-text-gray-500 dark:placeholder:hx-text-gray-400 contrast-more:hx-border contrast-more:hx-border-current"
+      type="search"
+      value=""
+      spellcheck="false"
+    />
+    <kbd
+      class="hx-absolute hx-my-1.5 hx-select-none ltr:hx-right-1.5 rtl:hx-left-1.5 hx-h-5 hx-rounded hx-bg-white hx-px-1.5 hx-font-mono hx-text-[10px] hx-font-medium hx-text-gray-500 hx-border dark:hx-border-gray-100/20 dark:hx-bg-dark/50 contrast-more:hx-border-current contrast-more:hx-text-current contrast-more:dark:hx-border-current hx-items-center hx-gap-1 hx-transition-opacity hx-pointer-events-none hx-hidden sm:hx-flex"
+    >
+      CTRL K
+    </kbd>
+  </div>
+
+  <div>
+    <ul
+      class="search-results hextra-scrollbar hx-hidden hx-border hx-border-gray-200 hx-bg-white hx-text-gray-100 dark:hx-border-neutral-800 dark:hx-bg-neutral-900 hx-absolute hx-top-full hx-z-20 hx-mt-2 hx-overflow-auto hx-overscroll-contain hx-rounded-xl hx-py-2.5 hx-shadow-xl hx-max-h-[min(calc(50vh-11rem-env(safe-area-inset-bottom)),400px)] md:hx-max-h-[min(calc(100vh-5rem-env(safe-area-inset-bottom)),400px)] hx-inset-x-0 ltr:md:hx-left-auto rtl:md:hx-right-auto contrast-more:hx-border contrast-more:hx-border-gray-900 contrast-more:dark:hx-border-gray-50 hx-w-screen hx-min-h-[100px] hx-max-w-[min(calc(100vw-2rem),calc(100%+20rem))]"
+      style="transition: max-height 0.2s ease 0s;"
+    ></ul>
+  </div>
+</div>
+
+  </div>
+  <div class="hextra-scrollbar hx-overflow-y-auto hx-overflow-x-hidden hx-p-4 hx-grow md:hx-h-[calc(100vh-var(--navbar-height)-var(--menu-height))]">
+    <ul class="hx-flex hx-flex-col hx-gap-1 md:hx-hidden">
+      
+      
+          <li class="open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/"
+    
+  >VictoriaMetrics 中文手册
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/concepts/"
+    
+  >核心概念
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/quickstart/"
+    
+  >快速开始
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/single/"
+    
+  >单机版本
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/cluster/"
+    
+  >集群版本
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/"
+    
+  >数据查询
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/"
+    
+  >MetricQL
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/basic/"
+    
+  >基本用法
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/"
+    
+  >函数
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      sidebar-active-item hx-bg-primary-100 hx-font-semibold hx-text-primary-800 contrast-more:hx-border contrast-more:hx-border-primary-500 dark:hx-bg-primary-400/10 dark:hx-text-primary-600 contrast-more:dark:hx-border-primary-500"
+    href="/docs/query/metricsql/functions/rollup/"
+    
+  >汇总（Rollup）
+    </a>
+  
+    <ul class='hx-flex hx-flex-col hx-gap-1 hx-relative before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] dark:before:hx-bg-neutral-800 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-pr-3 rtl:before:hx-right-0 ltr:hx-ml-3 rtl:hx-mr-3'><li>
+              <a
+                href="#%e4%bb%80%e4%b9%88%e6%98%afrollup"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >什么是Rollup</a>
+            </li>
+          <li>
+              <a
+                href="#%e4%b8%8e-prometheus-%e7%9a%84%e6%99%ae%e9%81%8d%e5%b7%ae%e5%bc%82"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >与 Prometheus 的普遍差异</a>
+            </li>
+          <li>
+              <a
+                href="#%e5%87%bd%e6%95%b0%e5%88%97%e8%a1%a8"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >函数列表</a>
+            </li>
+          </ul>
+  
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/label/"
+    
+  >操作 Label
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/aggregation/"
+    
+  >聚合统计
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/transmit/"
+    
+  >数值转换
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql/"
+    
+  >PromQL 新手入门
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql-diff/"
+    
+  >对比PromQL
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/http/"
+    
+  >HTTP 查询接口
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/write/"
+    
+  >数据写入
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/faq/"
+    
+  >FAQ
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/"
+    
+  >运维指南
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/disk-space/"
+    
+  >如何处理磁盘空间不足
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/cluster-resize/"
+    
+  >如何对集群版进行扩缩容
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/node-crash/"
+    
+  >如何处理机器故障
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/write-history/"
+    
+  >如何补写历史数据
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/multi-disk/"
+    
+  >有效利用一机多盘
+    </a>
+              
+            </li></ul>
+      </div>
+            </li></ul>
+      </div></li>
+    </ul>
+
+    <ul class="hx-flex hx-flex-col hx-gap-1 max-md:hx-hidden">
+        
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/concepts/"
+    
+  >核心概念
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/quickstart/"
+    
+  >快速开始
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/single/"
+    
+  >单机版本
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/cluster/"
+    
+  >集群版本
+    </a></li>
+          <li class="open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/"
+    
+  >数据查询
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/"
+    
+  >MetricQL
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/basic/"
+    
+  >基本用法
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/"
+    
+  >函数
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      sidebar-active-item hx-bg-primary-100 hx-font-semibold hx-text-primary-800 contrast-more:hx-border contrast-more:hx-border-primary-500 dark:hx-bg-primary-400/10 dark:hx-text-primary-600 contrast-more:dark:hx-border-primary-500"
+    href="/docs/query/metricsql/functions/rollup/"
+    
+  >汇总（Rollup）
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/label/"
+    
+  >操作 Label
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/aggregation/"
+    
+  >聚合统计
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/transmit/"
+    
+  >数值转换
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql/"
+    
+  >PromQL 新手入门
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql-diff/"
+    
+  >对比PromQL
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/http/"
+    
+  >HTTP 查询接口
+    </a>
+              
+            </li></ul>
+      </div></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/write/"
+    
+  >数据写入
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/faq/"
+    
+  >FAQ
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/"
+    
+  >运维指南
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/disk-space/"
+    
+  >如何处理磁盘空间不足
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/cluster-resize/"
+    
+  >如何对集群版进行扩缩容
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/node-crash/"
+    
+  >如何处理机器故障
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/write-history/"
+    
+  >如何补写历史数据
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/multi-disk/"
+    
+  >有效利用一机多盘
+    </a>
+              
+            </li></ul>
+      </div></li>
+        
+      </ul>
+    </div>
+  
+  
+    <div class="  hx-sticky hx-bottom-0 hx-bg-white dark:hx-bg-dark hx-mx-4 hx-py-4 hx-shadow-[0_-12px_16px_#fff] hx-flex hx-items-center hx-gap-2 dark:hx-border-neutral-800 dark:hx-shadow-[0_-12px_16px_#111] contrast-more:hx-border-neutral-400 contrast-more:hx-shadow-none contrast-more:dark:hx-shadow-none hx-border-t" data-toggle-animation="show"><div class="hx-flex hx-grow hx-flex-col"><button
+  title="Change theme"
+  data-theme="light"
+  class="theme-toggle hx-group hx-h-7 hx-rounded-md hx-px-2 hx-text-left hx-text-xs hx-font-medium hx-text-gray-600 hx-transition-colors dark:hx-text-gray-400 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50"
+  type="button"
+  aria-label="Change theme"
+>
+  <div class="hx-flex hx-items-center hx-gap-2 hx-capitalize"><svg height=12 class="group-data-[theme=light]:hx-hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg><span class="group-data-[theme=light]:hx-hidden">Light</span><svg height=12 class="group-data-[theme=dark]:hx-hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg><span class="group-data-[theme=dark]:hx-hidden">Dark</span></div>
+</button>
+</div></div></aside>
+    
+<nav class="hextra-toc hx-order-last hx-hidden hx-w-64 hx-shrink-0 xl:hx-block print:hx-hidden hx-px-4" aria-label="table of contents">
+    <div class="hextra-scrollbar hx-sticky hx-top-16 hx-overflow-y-auto hx-pr-4 hx-pt-6 hx-text-sm [hyphens:auto] hx-max-h-[calc(100vh-var(--navbar-height)-env(safe-area-inset-bottom))] ltr:hx--mr-4 rtl:hx--ml-4"><p class="hx-mb-4 hx-font-semibold hx-tracking-tight">On this page</p><ul>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e4%bb%80%e4%b9%88%e6%98%afrollup">什么是Rollup
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e4%b8%8e-prometheus-%e7%9a%84%e6%99%ae%e9%81%8d%e5%b7%ae%e5%bc%82">与 Prometheus 的普遍差异
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%87%bd%e6%95%b0%e5%88%97%e8%a1%a8">函数列表
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#absent_over_time">absent_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#aggr_over_time">aggr_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#ascent_over_time">ascent_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#avg_over_time">avg_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#changes">changes
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#changes_prometheus">changes_prometheus
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#count_eq_over_time">count_eq_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#count_gt_over_time">count_gt_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#count_le_over_time">count_le_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#count_ne_over_time">count_ne_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#count_over_time">count_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#decreases_over_time">decreases_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#default_rollup">default_rollup
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#delta">delta
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#delta_prometheus">delta_prometheus
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#deriv">deriv
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#deriv_fast">deriv_fast
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#descent_over_time">descent_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#distinct_over_time">distinct_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#duration_over_time">duration_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#first_over_time">first_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#geomean_over_time">geomean_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#histogram_over_time">histogram_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#holt_winters">holt_winters
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#idelta">idelta
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#ideriv">ideriv
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#increase">increase
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#increase_prometheus">increase_prometheus
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#increase_pure">increase_pure
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#increases_over_time">increases_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#integrate">integrate
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#irate">irate
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#lag">lag
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#last_over_time">last_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#lifetime">lifetime
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#mad_over_time">mad_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#max_over_time">max_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#median_over_time">median_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#min_over_time">min_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#mode_over_time">mode_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#outlier_iqr_over_time">outlier_iqr_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#predict_linear">predict_linear
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#present_over_time">present_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#quantile_over_time">quantile_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#quantiles_over_time">quantiles_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#range_over_time">range_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#rate">rate
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#rate_over_sum">rate_over_sum
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#resets">resets
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#rollup">rollup
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#rollup_candlestick">rollup_candlestick
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#rollup_delta">rollup_delta
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#rollup_deriv">rollup_deriv
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#rollup_increase">rollup_increase
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#rollup_rate">rollup_rate
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#rollup_scrape_interval">rollup_scrape_interval
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#scrape_interval">scrape_interval
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#share_gt_over_time">share_gt_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#share_le_over_time">share_le_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#share_eq_over_time">share_eq_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#stddev_over_time">stddev_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#stdvar_over_time">stdvar_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#sum_eq_over_time">sum_eq_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#sum_gt_over_time">sum_gt_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#sum_le_over_time">sum_le_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#sum_over_time">sum_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#sum2_over_time">sum2_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#timestamp">timestamp
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#timestamp_with_name">timestamp_with_name
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#tfirst_over_time">tfirst_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#tlast_change_over_time">tlast_change_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#tlast_over_time">tlast_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#tmax_over_time">tmax_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#tmin_over_time">tmin_over_time
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#zscore_over_time">zscore_over_time
+        </a>
+      </li></ul>
+      <div class="hx-mt-8 hx-border-t hx-bg-white hx-pt-8 hx-shadow-[0_-12px_16px_white] dark:hx-bg-dark dark:hx-shadow-[0_-12px_16px_#111] hx-sticky hx-bottom-0 hx-flex hx-flex-col hx-items-start hx-gap-2 hx-pb-8 dark:hx-border-neutral-800 contrast-more:hx-border-t contrast-more:hx-border-neutral-400 contrast-more:hx-shadow-none contrast-more:dark:hx-border-neutral-400">
+        <button aria-hidden="true" id="backToTop" onClick="scrollUp();" class="hx-transition-all hx-duration-75 hx-opacity-0 hx-text-xs hx-font-medium hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-100 contrast-more:hx-text-gray-800 contrast-more:dark:hx-text-gray-50">
+          <span>Scroll to top</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="hx-inline ltr:hx-ml-1 rtl:hx-mr-1 hx-h-3.5 hx-w-3.5 hx-border hx-rounded-full hx-border-gray-500 hover:hx-border-gray-900 dark:hx-border-gray-400 dark:hover:hx-border-gray-100 contrast-more:hx-border-gray-800 contrast-more:dark:hx-border-gray-50">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+
+    <article class="hx-w-full hx-break-words hx-flex hx-min-h-[calc(100vh-var(--navbar-height))] hx-min-w-0 hx-justify-center hx-pb-8 hx-pr-[calc(env(safe-area-inset-right)-1.5rem)]">
+      <main class="hx-w-full hx-min-w-0 hx-max-w-6xl hx-px-6 hx-pt-4 md:hx-px-12">
+        
+  <div class="hx-mt-1.5 hx-flex hx-items-center hx-gap-1 hx-overflow-hidden hx-text-sm hx-text-gray-500 dark:hx-text-gray-400 contrast-more:hx-text-current">
+        <div class="hx-whitespace-nowrap hx-transition-colors hx-min-w-[24px] hx-overflow-hidden hx-text-ellipsis hover:hx-text-gray-900 dark:hover:hx-text-gray-100">
+          <a href="/docs/">VictoriaMetrics 中文手册</a>
+        </div><svg class="hx-w-3.5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <div class="hx-whitespace-nowrap hx-transition-colors hx-min-w-[24px] hx-overflow-hidden hx-text-ellipsis hover:hx-text-gray-900 dark:hover:hx-text-gray-100">
+          <a href="/docs/query/">数据查询</a>
+        </div><svg class="hx-w-3.5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <div class="hx-whitespace-nowrap hx-transition-colors hx-min-w-[24px] hx-overflow-hidden hx-text-ellipsis hover:hx-text-gray-900 dark:hover:hx-text-gray-100">
+          <a href="/docs/query/metricsql/">MetricQL</a>
+        </div><svg class="hx-w-3.5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <div class="hx-whitespace-nowrap hx-transition-colors hx-min-w-[24px] hx-overflow-hidden hx-text-ellipsis hover:hx-text-gray-900 dark:hover:hx-text-gray-100">
+          <a href="/docs/query/metricsql/functions/">函数</a>
+        </div><svg class="hx-w-3.5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg><div class="hx-whitespace-nowrap hx-transition-colors hx-font-medium hx-text-gray-700 contrast-more:hx-font-bold contrast-more:hx-text-current dark:hx-text-gray-100 contrast-more:dark:hx-text-current">汇总（Rollup）</div>
+  </div>
+
+        <div class="content">
+          <h1>汇总（Rollup）</h1>
+          <h2>什么是Rollup<span class="hx-absolute -hx-mt-20" id="什么是rollup"></span>
+    <a href="#%e4%bb%80%e4%b9%88%e6%98%afrollup" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>Rollup函数（也称为范围函数或窗口函数）在所选 timeseries 的给定回溯窗口上对原始样本的汇总计算。例如，<code>avg_over_time(temperature[24h])</code>计算过去 24 小时内所有原始样本的平均温度值。</p>
+<p>更多细节：</p>
+<ul>
+<li>如果在Grafana中使用<code>rollup</code>函数来构建图形，那么每个点上的<code>rollup</code>都是独立计算的。例如，<code>avg_over_time(temperature[24h])</code>图表中的每个点显示了截止到该时间点的过去24小时内的平均温度。点之间的间隔由Grafana传递给<code>/api/v1/query_range</code>接口作为<code>step</code>查询参数设置。</li>
+<li>如果给定的查询语句返回多个 timeseries，则每个返回的序列都会单独计算汇总。</li>
+<li>如果方括号中的回溯窗口缺失，则MetricsQL会自动将回溯窗口设置为图表上点之间的间隔（即<code>/api/v1/query_range</code>中的<code>step</code>查询参数，Grafana中的<code>$__interval</code>值或MetricsQL中的<code>1i</code>持续时间）。例如，<code>rate(http_requests_total)</code>在Grafana中等同于<code>rate(http_requests_total[$__interval])</code>。它也等同于<code>rate(http_requests_total[1i])</code>。</li>
+<li>每个在MetricsQL中的系列选择器都必须包装在一个rollup函数中。否则，它会自动被包装成<code>default_rollup</code>。例如，<code>foo{bar=&quot;baz&quot;}</code> 在执行计算之前会自动转换为 <code>default_rollup(foo{bar=&quot;baz&quot;}[1i])</code>。</li>
+<li>如果在rollup函数中传递的参数不是series selector，那么内部的参数会自动转换为<a href="https://www.victoriametrics.com.cn/victoriametrics/shu-ju-cha-xun/metricql/zi-cha-xun" target="_blank" rel="noopener">子查询</a>。</li>
+<li>所有的汇总函数都接受可选的 <code>keep_metric_names</code> 修饰符。如果设置了该修饰符，函数将在结果中保留指标名称。请参阅<a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">这些文档</a>。</li>
+</ul>
+<p>更多参见<a href="https://docs.victoriametrics.com/MetricsQL.html#implicit-query-conversions" target="_blank" rel="noopener">隐式查询转换</a>。</p>
+<h2>与 Prometheus 的普遍差异<span class="hx-absolute -hx-mt-20" id="与-prometheus-的普遍差异"></span>
+    <a href="#%e4%b8%8e-prometheus-%e7%9a%84%e6%99%ae%e9%81%8d%e5%b7%ae%e5%bc%82" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>凡是涉及对回溯窗口样本值首尾样本值进行计算的 rollup 函数，比如 <code>rate</code>、<code>delta</code>、<code>increase</code> 等函数；其MetricsQL 和 PromQL 都存在统一的计算差异。因此 VictoriaMetrics 使用 <code>xxx_prometheus</code> 的命名提供了兼容 Prometheus 统计方式的 rollup 函数，如 <code>rate_prometheus</code>、<code>delta_prometheus</code>、<code>increase_prometheus</code> 等。而默认则使用 MetricsQL 的统计方式。</p>
+<p>具体的差异细节请阅读<a href="https://www.yuque.com/icloudfly/xs51ky/qwvgrmtpg77a33a7" target="_blank" rel="noopener">这篇文档</a>。</p>
+<h2>函数列表<span class="hx-absolute -hx-mt-20" id="函数列表"></span>
+    <a href="#%e5%87%bd%e6%95%b0%e5%88%97%e8%a1%a8" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><h3>absent_over_time<span class="hx-absolute -hx-mt-20" id="absent_over_time"></span>
+    <a href="#absent_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>absent_over_time(series_selector[d])</code>是一个 rollup 函数，如果给定的向前窗口<code>d</code>不包含原始样本，则返回1。否则，它将返回一个空结果。</p>
+<p>这个函数在PromQL中得到支持。另请参阅<a href="https://docs.victoriametrics.com/MetricsQL.html#present_over_time" target="_blank" rel="noopener">present_over_time</a>。</p>
+<h3>aggr_over_time<span class="hx-absolute -hx-mt-20" id="aggr_over_time"></span>
+    <a href="#aggr_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>aggr_over_time((&quot;rollup_func1&quot;, &quot;rollup_func2&quot;, ...), series_selector[d])</code> 计算给定回溯窗口 <code>d</code> 上所有列出的 <code>rollup_func* </code>对原始样本进行汇总。根据给定的series_selector，对每个返回的时间序列进行单独计算。</p>
+<p><code>rollup_func*</code> 可以是任意一个 rollup 函数。比如，<code>aggr_over_time((&quot;min_over_time&quot;, &quot;max_over_time&quot;, &quot;rate&quot;), m[d])</code> 就会对<code>m[d]</code>计算 <a href="https://docs.victoriametrics.com/MetricsQL.html#min_over_time" target="_blank" rel="noopener">min_over_time</a>, <a href="https://docs.victoriametrics.com/MetricsQL.html#max_over_time" target="_blank" rel="noopener">max_over_time</a> 和 <a href="https://docs.victoriametrics.com/MetricsQL.html#rate" target="_blank" rel="noopener">rate</a> 。</p>
+<h3>ascent_over_time<span class="hx-absolute -hx-mt-20" id="ascent_over_time"></span>
+    <a href="#ascent_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>ascent_over_time(series_selector[d])</code> 计算给定时间窗口d上原始样本值的上升。针对<a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a>查询返回的每个时间序列单独执行计算。</p>
+<p>该功能用于在GPS跟踪中跟踪高度增益。Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/MetricsQL.html#descent_over_time" target="_blank" rel="noopener">descent_over_time</a>。</p>
+<h3>avg_over_time<span class="hx-absolute -hx-mt-20" id="avg_over_time"></span>
+    <a href="#avg_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>avg_over_time(series_selector[d])</code> 计算给定时间窗口d上原始样本值的平均值。针对<a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a>查询返回的每个时间序列单独执行计算。</p>
+<p>这个函数在 PromQL 中也支持，另请参阅 <a href="https://docs.victoriametrics.com/MetricsQL.html#median_over_time" target="_blank" rel="noopener">median_over_time</a>。</p>
+<h3>changes<span class="hx-absolute -hx-mt-20" id="changes"></span>
+    <a href="#changes" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>changes(series_selector[d])</code> 计算给定时间窗口d上原始样本值的变化。针对<a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a>查询返回的每个时间序列单独执行计算。</p>
+<p>不像 Prometheus里的 <code>changes()</code> ，它考虑了给定时间窗口 d 中最后一个样本的变化，详情请参阅<a href="https://medium.com/@romanhavronenko/victoriametrics-promql-compliance-d4318203f51e" target="_blank" rel="noopener">这篇文章</a>。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>这个函数 PromQL 中也支持，另请参阅 <a href="https://docs.victoriametrics.com/MetricsQL.html#changes_prometheus" target="_blank" rel="noopener">changes_prometheus</a>。</p>
+<h3>changes_prometheus<span class="hx-absolute -hx-mt-20" id="changes_prometheus"></span>
+    <a href="#changes_prometheus" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>changes_prometheus(series_selector[d])</code> 计算时间窗口 d 中原始样本值变化的次数。针对<a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a>查询返回的每个时间序列单独执行计算。</p>
+<p>它不考虑在时间窗口 d 之前的最后一个样本值的变化，这和 Prometheus 的逻辑是一样的。详情请参阅<a href="https://medium.com/@romanhavronenko/victoriametrics-promql-compliance-d4318203f51e" target="_blank" rel="noopener">这篇文章</a>。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>这个函数 PromQL 中也支持，另请参阅 <a href="https://docs.victoriametrics.com/MetricsQL.html#changes" target="_blank" rel="noopener">changes</a>。</p>
+<h3>count_eq_over_time<span class="hx-absolute -hx-mt-20" id="count_eq_over_time"></span>
+    <a href="#count_eq_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>count_eq_over_time(series_selector[d], eq)</code> 计算时间窗口 d 中原始样本值等于<code>eq</code>的个数。它针对<a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a>查询返回的每个时间序列单独执行计算。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/MetricsQL.html#count_over_time" target="_blank" rel="noopener">count_over_time</a>。</p>
+<h3>count_gt_over_time<span class="hx-absolute -hx-mt-20" id="count_gt_over_time"></span>
+    <a href="#count_gt_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>count_gt_over_time(series_selector[d], gt)</code> 计算时间窗口 d 中原始样本值大于<code>gt</code>的个数。它针对<a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a>查询返回的每个时间序列单独执行计算。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/MetricsQL.html#count_over_time" target="_blank" rel="noopener">count_over_time</a>。</p>
+<h3>count_le_over_time<span class="hx-absolute -hx-mt-20" id="count_le_over_time"></span>
+    <a href="#count_le_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>count_le_over_time(series_selector[d], le)</code> 计算时间窗口 d 中原始样本值小于<code>lt</code>的个数。它针对<a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a>查询返回的每个时间序列单独执行计算。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/MetricsQL.html#count_over_time" target="_blank" rel="noopener">count_over_time</a>。</p>
+<h3>count_ne_over_time<span class="hx-absolute -hx-mt-20" id="count_ne_over_time"></span>
+    <a href="#count_ne_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>count_ne_over_time(series_selector[d], ne)</code> 计算时间窗口 d 中原始样本值不等于<code>ne</code>的个数。它针对<a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a>查询返回的每个时间序列单独执行计算。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/MetricsQL.html#count_over_time" target="_blank" rel="noopener">count_over_time</a>。</p>
+<h3>count_over_time<span class="hx-absolute -hx-mt-20" id="count_over_time"></span>
+    <a href="#count_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>count_over_time(series_selector[d])</code> 计算时间窗口 d 中原始样本值的个数。它针对<a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a>查询返回的每个时间序列单独执行计算。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>这个函数 PromQL 中也支持，另请参阅 <a href="https://docs.victoriametrics.com/MetricsQL.html#count_le_over_time" target="_blank" rel="noopener">count_le_over_time</a>, <a href="https://docs.victoriametrics.com/MetricsQL.html#count_gt_over_time" target="_blank" rel="noopener">count_gt_over_time</a>, <a href="https://docs.victoriametrics.com/MetricsQL.html#count_eq_over_time" target="_blank" rel="noopener">count_eq_over_time</a> 和 <a href="https://docs.victoriametrics.com/MetricsQL.html#count_ne_over_time" target="_blank" rel="noopener">count_ne_over_time</a>。</p>
+<h3>decreases_over_time<span class="hx-absolute -hx-mt-20" id="decreases_over_time"></span>
+    <a href="#decreases_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>decreases_over_time(series_selector[d])</code> 计算给定时间窗口d上原始样本值的下降值。针对<a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a>查询返回的每个时间序列单独执行计算。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/MetricsQL.html#increases_over_time" target="_blank" rel="noopener">increases_over_time</a>。</p>
+<h3>default_rollup<span class="hx-absolute -hx-mt-20" id="default_rollup"></span>
+    <a href="#default_rollup" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>default_rollup(series_selector[d])</code> 返回给定时间窗口d中最后一个原始样本。针对<a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a>查询返回的每个时间序列单独执行计算。</p>
+<h3>delta<span class="hx-absolute -hx-mt-20" id="delta"></span>
+    <a href="#delta" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>delta(series_selector[d])</code> is a <a href="https://docs.victoriametrics.com/MetricsQL.html#rollup-functions" target="_blank" rel="noopener">rollup function</a>,</p>
+<p>计算给定回溯窗口 d 之前的最后一个样本和该窗口的最后一个样本的差异。针对<a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a>查询返回的每个时间序列单独执行计算。</p>
+<p>MetricsQL中 <code>delta()</code> 函数的计算逻辑和 Prometheus 中的 delta() 函数计算逻辑存在轻微差异，详情看<a href="https://www.victoriametrics.com.cn/victoriametrics/shu-ju-cha-xun/metricql/functions/rollup#yu-prometheus-de-pu-bian-cha-yi" target="_blank" rel="noopener">这里</a>。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数 PromQL 也支持. 另请参阅 <a href="https://docs.victoriametrics.com/MetricsQL.html#increase" target="_blank" rel="noopener">increase</a> 和 <a href="https://docs.victoriametrics.com/MetricsQL.html#delta_prometheus" target="_blank" rel="noopener">delta_prometheus</a>。</p>
+<h3>delta_prometheus<span class="hx-absolute -hx-mt-20" id="delta_prometheus"></span>
+    <a href="#delta_prometheus" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>delta_prometheus(series_selector[d])</code> 计算回溯窗口中第一个样本和最后一个样本的差异。针对<a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a>查询返回的每个时间序列单独执行计算。</p>
+<p><code>delta_prometheus()</code> 的计算逻辑和 Prometheus <code>delta()</code> 一致。 详情看<a href="https://www.victoriametrics.com.cn/victoriametrics/shu-ju-cha-xun/metricql/functions/rollup#yu-prometheus-de-pu-bian-cha-yi" target="_blank" rel="noopener">这里</a>。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参见 <a href="#delta" >delta</a>。</p>
+<h3>deriv<span class="hx-absolute -hx-mt-20" id="deriv"></span>
+    <a href="#deriv" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>deriv(series_selector[d])</code> 计算给定回溯窗口 d 中时序数据的每秒导数。针对 <a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a> 查询返回的每个时间序列单独执行计算。该导数使用线性回归计算。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数 PromQL 也支持. 另请参阅 <a href="#WUsKh" >deriv_fast</a> 和 <a href="https://docs.victoriametrics.com/metricsql/#ideriv" target="_blank" rel="noopener">ideriv</a>。</p>
+<h3>deriv_fast<span class="hx-absolute -hx-mt-20" id="deriv_fast"></span>
+    <a href="#deriv_fast" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>deriv_fast(series_selector[d])</code>使用给定回溯窗口 d 中第一个和最后一个 raw sample 来计算每秒导数。针对<a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a>查询返回的每个时间序列单独执行计算。该导数使用线性回归计算。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="#ickEV" >deriv</a> 和 <a href="https://docs.victoriametrics.com/metricsql/#ideriv" target="_blank" rel="noopener">ideriv</a>。</p>
+<h3>descent_over_time<span class="hx-absolute -hx-mt-20" id="descent_over_time"></span>
+    <a href="#descent_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>descent_over_time(series_selector[d])</code> 计算给定回溯窗口 d 中 raw sample 值的下降量。针对 <a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a> 查询查询返回的每个时间序列单独执行计算。</p>
+<p>这个功能对于追踪GPS定位中的海拔高度损失非常有用。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="#ascent_over_time" >ascent_over_time</a>。</p>
+<h3>distinct_over_time<span class="hx-absolute -hx-mt-20" id="distinct_over_time"></span>
+    <a href="#distinct_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>distinct_over_time(series_selector[d])</code> 返回给定回溯窗口 d 中 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a> 值的种类数。针对 <a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a> 查询查询返回的每个时间序列单独执行计算。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#count_values_over_time" target="_blank" rel="noopener">count_values_over_time</a>。</p>
+<h3>duration_over_time<span class="hx-absolute -hx-mt-20" id="duration_over_time"></span>
+    <a href="#duration_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>duration_over_time(series_selector[d], max_interval)</code> <!-- raw HTML omitted -->返回给定的 <!-- raw HTML omitted --><a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> <!-- raw HTML omitted -->返回的时间序列在给定的回溯窗口<!-- raw HTML omitted --><code>&lt;font style=&quot;color:rgb(6, 6, 7);&quot;&gt;d&lt;/font&gt;</code><!-- raw HTML omitted -->内存在的持续时间，以秒为单位。预期每个序列相邻样本之间的间隔不超过<!-- raw HTML omitted --><code>&lt;font style=&quot;color:rgb(6, 6, 7);&quot;&gt;max_interval&lt;/font&gt;</code><!-- raw HTML omitted -->。否则，这样的间隔被忽略不计。<!-- raw HTML omitted --></p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参见 <a href="https://docs.victoriametrics.com/metricsql/#lifetime" target="_blank" rel="noopener">lifetime</a> 和 <a href="https://docs.victoriametrics.com/metricsql/#lag" target="_blank" rel="noopener">lag</a>。</p>
+<h3>first_over_time<span class="hx-absolute -hx-mt-20" id="first_over_time"></span>
+    <a href="#first_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>first_over_time(series_selector[d])</code> 返回给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内的第一个 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a> 值。</p>
+<p>另请参见 <a href="https://docs.victoriametrics.com/metricsql/#last_over_time" target="_blank" rel="noopener">last_over_time</a> 和 <a href="https://docs.victoriametrics.com/metricsql/#tfirst_over_time" target="_blank" rel="noopener">tfirst_over_time</a>。</p>
+<h3>geomean_over_time<span class="hx-absolute -hx-mt-20" id="geomean_over_time"></span>
+    <a href="#geomean_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>geomean_over_time(series_selector[d])</code> 计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a> 值的<a href="https://en.wikipedia.org/wiki/Geometric_mean" target="_blank" rel="noopener">geometric mean</a>。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>这个函数通常应用于 <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>。</p>
+<h3>histogram_over_time<span class="hx-absolute -hx-mt-20" id="histogram_over_time"></span>
+    <a href="#histogram_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>histogram_over_time(series_selector[d])</code> 对给定的回溯窗口<code>d</code>中的 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 计算 <a href="https://godoc.org/github.com/VictoriaMetrics/metrics#Histogram" target="_blank" rel="noopener">VictoriaMetrics histogram</a>。针对 <a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a> 查询查询返回的每个时间序列单独执行计算。其计算出来的histograms 可被用来传递给<a href="https://docs.victoriametrics.com/metricsql/#histogram_quantile" target="_blank" rel="noopener">histogram_quantile</a>，用于计算多个<a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>指标的分位值。比如，下面的语句计算每个国家过去 24 小时的温度中位数：</p>
+<p><code>histogram_quantile(0.5, sum(histogram_over_time(temperature[24h])) by (vmrange,country))</code>。</p>
+<p>该函数通常应用于 <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>。</p>
+<h3>holt_winters<span class="hx-absolute -hx-mt-20" id="holt_winters"></span>
+    <a href="#holt_winters" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>holt_winters(series_selector[d], sf, tf)</code> 使用平滑因子<code>sf</code>和趋势因子<code>tf</code>对给定回溯窗口<code>d</code>中的 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 计算 Holt-Winters（通过<a href="https://en.wikipedia.org/wiki/Exponential_smoothing#Double_exponential_smoothing" target="_blank" rel="noopener">double exponential smoothing</a>） 值。<code>sf</code>和<code>tf</code>的取值范围必须是<code>[0...1]</code>。</p>
+<p>该函数通常应用于 <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>。PromQL 也支持该函数。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#range_linear_regression" target="_blank" rel="noopener">range_linear_regression</a>。</p>
+<h3>idelta<span class="hx-absolute -hx-mt-20" id="idelta"></span>
+    <a href="#idelta" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>idelta(series_selector[d])</code> 计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内最后 2 个 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a> 值的差异。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>PromQL 也支持该函数。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#delta" target="_blank" rel="noopener">delta</a>。</p>
+<h3>ideriv<span class="hx-absolute -hx-mt-20" id="ideriv"></span>
+    <a href="#ideriv" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>ideriv(series_selector[d])</code>基于给定回溯窗口<code>d</code>中最后五个 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 计算秒级导数。该导数针对 <a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a> 查询返回的每个时间序列单独执行计算。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#deriv" target="_blank" rel="noopener">deriv</a>。</p>
+<h3>increase<span class="hx-absolute -hx-mt-20" id="increase"></span>
+    <a href="#increase" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>increase(series_selector[d])</code> 计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内样本值的增量。</p>
+<p>和 Prometheus 不同，它考虑了回溯窗口 d 之前的最后一个 raw sample 值。细节请阅读<a href="https://www.yuque.com/icloudfly/xs51ky/qwvgrmtpg77a33a7" target="_blank" rel="noopener">这篇文档</a>。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于 <a href="https://docs.victoriametrics.com/keyconcepts/#counter" target="_blank" rel="noopener">counters</a>.PromQL 也支持该函数。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#increase_pure" target="_blank" rel="noopener">increase_pure</a>, <a href="https://docs.victoriametrics.com/metricsql/#increase_prometheus" target="_blank" rel="noopener">increase_prometheus</a> and <a href="https://docs.victoriametrics.com/metricsql/#delta" target="_blank" rel="noopener">delta</a>.</p>
+<h3>increase_prometheus<span class="hx-absolute -hx-mt-20" id="increase_prometheus"></span>
+    <a href="#increase_prometheus" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>increase_prometheus(series_selector[d])</code> 计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内样本值的增量。</p>
+<p>计算方式和 Prometheus 一样，它不考虑回溯窗口 d 之前的最后一个 raw sample 值。细节请阅读<a href="https://www.yuque.com/icloudfly/xs51ky/qwvgrmtpg77a33a7" target="_blank" rel="noopener">这篇文档</a>。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于 <a href="https://docs.victoriametrics.com/keyconcepts/#counter" target="_blank" rel="noopener">counters</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#increase_pure" target="_blank" rel="noopener">increase_pure</a> and <a href="https://docs.victoriametrics.com/metricsql/#increase" target="_blank" rel="noopener">increase</a>.</p>
+<h3>increase_pure<span class="hx-absolute -hx-mt-20" id="increase_pure"></span>
+    <a href="#increase_pure" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>increase_pure(series_selector[d])</code>的工作机制和 <a href="https://docs.victoriametrics.com/metricsql/#increase" target="_blank" rel="noopener">increase</a> 一样，除了一种情况：它假定 <a href="https://docs.victoriametrics.com/keyconcepts/#counter" target="_blank" rel="noopener">counters</a> 总是从 0 开始计数，而 <a href="https://docs.victoriametrics.com/metricsql/#increase" target="_blank" rel="noopener">increase</a> 在第一个值过大时会忽略掉它。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#counter" target="_blank" rel="noopener">counters</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#increas" target="_blank" rel="noopener">increase</a> and <a href="https://docs.victoriametrics.com/metricsql/#increase_prometheus" target="_blank" rel="noopener">increase_prometheus</a>.</p>
+<h3>increases_over_time<span class="hx-absolute -hx-mt-20" id="increases_over_time"></span>
+    <a href="#increases_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>increases_over_time(series_selector[d])</code>计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内出现增加的 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a> 值的数量。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#decreases_over_time" target="_blank" rel="noopener">decreases_over_time</a>.</p>
+<h3>integrate<span class="hx-absolute -hx-mt-20" id="integrate"></span>
+    <a href="#integrate" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>integrate(series_selector[d])</code> 计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a>s 积分。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<h3>irate<span class="hx-absolute -hx-mt-20" id="irate"></span>
+    <a href="#irate" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>irate(series_selector[d])</code> 使用给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内最后 2 个 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a> 计算出每秒增量。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于 <a href="https://docs.victoriametrics.com/keyconcepts/#counter" target="_blank" rel="noopener">counters</a>，PromQL 也支持该函数。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#rate" target="_blank" rel="noopener">rate</a> and <a href="https://docs.victoriametrics.com/metricsql/#rollup_rate" target="_blank" rel="noopener">rollup_rate</a>.</p>
+<h3>lag<span class="hx-absolute -hx-mt-20" id="lag"></span>
+    <a href="#lag" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>lag(series_selector[d])</code>返回给定的回溯窗口<code>d</code>内最后一个样本的时间与当前时间的间隔，以秒为单位。其针对 <a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a> 查询返回的每个时间序列单独执行计算。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#lifetime" target="_blank" rel="noopener">lifetime</a> and <a href="https://docs.victoriametrics.com/metricsql/#duration_over_time" target="_blank" rel="noopener">duration_over_time</a>.</p>
+<h3>last_over_time<span class="hx-absolute -hx-mt-20" id="last_over_time"></span>
+    <a href="#last_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>last_over_time(series_selector[d])</code>返回给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内最后 1 个 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a>。</p>
+<p>PromQL 也支持该函数。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#first_over_time" target="_blank" rel="noopener">first_over_time</a> and <a href="https://docs.victoriametrics.com/metricsql/#tlast_over_time" target="_blank" rel="noopener">tlast_over_time</a>。</p>
+<h3>lifetime<span class="hx-absolute -hx-mt-20" id="lifetime"></span>
+    <a href="#lifetime" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>lifetime(series_selector[d])</code>返回给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内第一个和最后一个 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a> 的时间间隔，以秒为单位。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#duration_over_time" target="_blank" rel="noopener">duration_over_time</a> and <a href="https://docs.victoriametrics.com/metricsql/#lag" target="_blank" rel="noopener">lag</a>。</p>
+<h3>mad_over_time<span class="hx-absolute -hx-mt-20" id="mad_over_time"></span>
+    <a href="#mad_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>mad_over_time(series_selector[d])</code>计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a> 的 <a href="https://en.wikipedia.org/wiki/Median_absolute_deviation" target="_blank" rel="noopener">median absolute deviation</a>。</p>
+<p>该函数通常应用于 <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#mad" target="_blank" rel="noopener">mad</a>, <a href="https://docs.victoriametrics.com/metricsql/#range_mad" target="_blank" rel="noopener">range_mad</a> and <a href="https://docs.victoriametrics.com/metricsql/#outlier_iqr_over_time" target="_blank" rel="noopener">outlier_iqr_over_time</a>.</p>
+<h3>max_over_time<span class="hx-absolute -hx-mt-20" id="max_over_time"></span>
+    <a href="#max_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>max_over_time(series_selector[d])</code>计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a>s 的最大值。</p>
+<p>该函数通常应用于 <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>，PromQL 也支持该函数。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#tmax_over_time" target="_blank" rel="noopener">tmax_over_time</a> and <a href="https://docs.victoriametrics.com/metricsql/#min_over_time" target="_blank" rel="noopener">min_over_time</a>.</p>
+<h3>median_over_time<span class="hx-absolute -hx-mt-20" id="median_over_time"></span>
+    <a href="#median_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>median_over_time(series_selector[d])</code>计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a>s 的中位数。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#avg_over_time" target="_blank" rel="noopener">avg_over_time</a>.</p>
+<h3>min_over_time<span class="hx-absolute -hx-mt-20" id="min_over_time"></span>
+    <a href="#min_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>min_over_time(series_selector[d])</code>计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a>s 的最小值。</p>
+<p>该函数通常应用于 <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>，PromQL 也支持该函数。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#tmin_over_time" target="_blank" rel="noopener">tmin_over_time</a> and <a href="https://docs.victoriametrics.com/metricsql/#max_over_time" target="_blank" rel="noopener">max_over_time</a>.</p>
+<h3>mode_over_time<span class="hx-absolute -hx-mt-20" id="mode_over_time"></span>
+    <a href="#mode_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>mode_over_time(series_selector[d])</code> 计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a>s 的<a href="https://en.wikipedia.org/wiki/Mode_%28statistics%29" target="_blank" rel="noopener">高频值</a>。它假定 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a> 值都是离散的</p>
+<p>该函数通常应用于 <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<h3>outlier_iqr_over_time<span class="hx-absolute -hx-mt-20" id="outlier_iqr_over_time"></span>
+    <a href="#outlier_iqr_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>outlier_iqr_over_time(series_selector[d])</code> 返回给定回溯窗口 d 中最后一个样本，如果它的值小于 <code>q25-1.5*iqr</code> 或大于 <code>q75+1.5*iqr</code>，其中：</p>
+<ul>
+<li><code>iqr</code> 回溯窗口<code>d</code>中 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 的 <a href="https://en.wikipedia.org/wiki/Interquartile_range" target="_blank" rel="noopener">Interquartile range</a>。</li>
+<li><code>q25</code>和<code>q75</code> 回溯窗口<code>d</code>中 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 的是 25th and 75th <a href="https://en.wikipedia.org/wiki/Percentile" target="_blank" rel="noopener">分位值</a>。</li>
+</ul>
+<p><code>outlier_iqr_over_time()</code> 主要用于基于 gauge 指标的历史数据来检测异常。例如，<code>outlier_iqr_over_time(memory_usage_bytes[1h])</code> 会在<code>memory_usage_bytes</code>指标突然超出过去一小时的平均值时触发。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#outliers_iqr" target="_blank" rel="noopener">outliers_iqr</a>.</p>
+<h3>predict_linear<span class="hx-absolute -hx-mt-20" id="predict_linear"></span>
+    <a href="#predict_linear" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>predict_linear(series_selector[d], t)</code> 使用回溯窗口 d 中的 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 值，使用线性规划计算在未来 t 秒后的指标值。预测值是针对 <a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a> 查询返回的每个时间序列单独执行计算。</p>
+<p>PromQL 也支持该函数。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#range_linear_regression" target="_blank" rel="noopener">range_linear_regression</a>.</p>
+<h3>present_over_time<span class="hx-absolute -hx-mt-20" id="present_over_time"></span>
+    <a href="#present_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>present_over_time(series_selector[d])</code> 返回 1 ，如果给定的回溯窗口 d 中至少包含一个 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a>，否则就返回空。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>PromQL 也支持该函数。</p>
+<h3>quantile_over_time<span class="hx-absolute -hx-mt-20" id="quantile_over_time"></span>
+    <a href="#quantile_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>quantile_over_time(phi, series_selector[d])</code>计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a>s 的<code>phi</code>分位值。其中 phi 值的取值范围必须是<code>[0...1]</code>。</p>
+<p>该函数通常应用于 <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>，PromQL 也支持该函数。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#quantiles_over_time" target="_blank" rel="noopener">quantiles_over_time</a>.</p>
+<h3>quantiles_over_time<span class="hx-absolute -hx-mt-20" id="quantiles_over_time"></span>
+    <a href="#quantiles_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>quantiles_over_time(&quot;phiLabel&quot;, phi1, ..., phiN, series_selector[d])</code> 计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a>s 的<code>phi*</code>分位值，给函数针对每一个<code>phi*</code>都返回一个独立的带有<code>{phiLabel=&quot;phi*&quot;}</code>Label 的序列。<code>phi*</code> 的取值范围必须是<code>[0...1]</code>.</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#quantile_over_time" target="_blank" rel="noopener">quantile_over_time</a>.</p>
+<h3>range_over_time<span class="hx-absolute -hx-mt-20" id="range_over_time"></span>
+    <a href="#range_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>range_over_time(series_selector[d])</code>计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a>s 的取值范围（最大值-最小值）。它等价于<code>max_over_time(series_selector[d]) - min_over_time(series_selector[d])</code>.</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于 <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<h3>rate<span class="hx-absolute -hx-mt-20" id="rate"></span>
+    <a href="#rate" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>rate(series_selector[d])</code>计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a>s 的平均每秒增长值。</p>
+<p>如果中括号里的回溯窗口大小没有指定，则自动使用<code>max(step, scrape_interval)</code>，其中 step 是传递给 <a href="https://docs.victoriametrics.com/keyconcepts/#range-query" target="_blank" rel="noopener">/api/v1/query_range</a> 或 <a href="https://docs.victoriametrics.com/keyconcepts/#instant-query" target="_blank" rel="noopener">/api/v1/query</a> 的请求参数，而<code>scrape_interval</code>则是 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 之间的间隔。这避免当 step 小于<code>scrape_interval</code>时，图表中出现了非预期的断点现象。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>PromQL 也支持该函数。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#irate" target="_blank" rel="noopener">irate</a> and <a href="https://docs.victoriametrics.com/metricsql/#rollup_rate" target="_blank" rel="noopener">rollup_rate</a>.</p>
+<h3>rate_over_sum<span class="hx-absolute -hx-mt-20" id="rate_over_sum"></span>
+    <a href="#rate_over_sum" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>rate_over_sum(series_selector[d])</code>计算给定回溯窗口<code>d</code>中 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 总和的每秒增量。该计算针对 <a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a> 查询返回的每个时间序列单独执行计算。</p>
+<p>该函数通常应用于 <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<h3>resets<span class="hx-absolute -hx-mt-20" id="resets"></span>
+    <a href="#resets" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>resets(series_selector[d])</code>计算给定的 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的时间序列在给定的回溯窗口<code>d</code>内 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a>s 中出现 <a href="https://docs.victoriametrics.com/keyconcepts/#counter" target="_blank" rel="noopener">counter</a> 重置的次数。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于 <a href="https://docs.victoriametrics.com/keyconcepts/#counter" target="_blank" rel="noopener">counters</a>，Counter 重置通常代表服务发生了重启。</p>
+<p>PromQL 也支持该函数。</p>
+<h3>rollup<span class="hx-absolute -hx-mt-20" id="rollup"></span>
+    <a href="#rollup" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>rollup(series_selector[d])</code> 对给定的回溯窗口<code>d</code>中的 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 计算最小值、最大值和平均值，并在返回的时序数据中带上<code>rollup=&quot;min&quot;</code>, <code>rollup=&quot;max&quot;</code> 和 <code>rollup=&quot;avg&quot;</code>Label。该计算针对 <a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a> 查询返回的每个时间序列单独执行计算。</p>
+<p>支持第二个参数，是可选参数，可传入<code>&quot;min&quot;</code>, <code>&quot;max&quot;</code> 或 <code>&quot;avg&quot;</code> 代表只计算一种值并且不需要追加额外的 rollup label。另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#label_match" target="_blank" rel="noopener">label_match</a>.</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#rollup_rate" target="_blank" rel="noopener">rollup_rate</a>.</p>
+<h3>rollup_candlestick<span class="hx-absolute -hx-mt-20" id="rollup_candlestick"></span>
+    <a href="#rollup_candlestick" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>rollup_candlestick(series_selector[d])</code>对给定的回溯窗口<code>d</code>中的 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 使用 OHLC 计算<code>open</code>, <code>high</code>, <code>low</code> and <code>close</code>，并在返回的时序数据中带上<code>rollup=&quot;open&quot;</code>, <code>rollup=&quot;high&quot;</code>, <code>rollup=&quot;low&quot;</code> and <code>rollup=&quot;close&quot;</code>Label。该计算针对 <a href="https://docs.victoriametrics.com/keyConcepts.html#filtering" target="_blank" rel="noopener">series_selector</a> 查询返回的每个时间序列单独执行计算。</p>
+<p>支持第二个参数，是可选参数，可传入<code>&quot;open&quot;</code>, <code>&quot;high&quot;</code>或<code>&quot;low&quot;</code>或<code>&quot;close&quot;</code> 代表只计算一种值并且不需要追加额外的 rollup label。另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#label_match" target="_blank" rel="noopener">label_match</a>.</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<h3>rollup_delta<span class="hx-absolute -hx-mt-20" id="rollup_delta"></span>
+    <a href="#rollup_delta" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>rollup_delta(series_selector[d]) </code>计算给定回溯窗口<code>d</code>上相邻 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 之间的差异，并返回计算出的差异的最小值、最大值和平均值，并在时间序列中附加<code>rollup=&quot;min&quot;</code>、<code>rollup=&quot;max&quot;</code> 和 <code>rollup=&quot;avg&quot;</code> Label。计算是针对从给定 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的每个时间序列单独进行的。</p>
+<p>可以传递可选的第二个参数 <code>&quot;min&quot;</code>、<code>&quot;max&quot;</code> 或 <code>&quot;avg&quot;</code> 来仅保留一个计算结果，并且不添加标签。</p>
+<p>Metric 名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#rollup_increase" target="_blank" rel="noopener">rollup_increase</a>.</p>
+<h3>rollup_deriv<span class="hx-absolute -hx-mt-20" id="rollup_deriv"></span>
+    <a href="#rollup_deriv" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>rollup_deriv(series_selector[d]) </code>计算给定回溯窗口<code>d</code>上相邻 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 之间的每秒导数，并返回计算出的差异的最小值、最大值和平均值，并在时间序列中附加<code>rollup=&quot;min&quot;</code>、<code>rollup=&quot;max&quot;</code> 和 <code>rollup=&quot;avg&quot;</code> Label。计算是针对从给定 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的每个时间序列单独进行的。</p>
+<p>可以传递可选的第二个参数 <code>&quot;min&quot;</code>、<code>&quot;max&quot;</code> 或 <code>&quot;avg&quot;</code> 来仅保留一个计算结果，并且不添加标签。另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#label_match" target="_blank" rel="noopener">label_match</a>。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#rollup" target="_blank" rel="noopener">rollup</a> and <a href="https://docs.victoriametrics.com/metricsql/#rollup_rate" target="_blank" rel="noopener">rollup_rate</a>.</p>
+<h3>rollup_increase<span class="hx-absolute -hx-mt-20" id="rollup_increase"></span>
+    <a href="#rollup_increase" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>rollup_increase(series_selector[d]) </code>计算给定回溯窗口<code>d</code>上相邻 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 之间的增加值，并返回计算出的差异的最小值、最大值和平均值，并在时间序列中附加<code>rollup=&quot;min&quot;</code>、<code>rollup=&quot;max&quot;</code> 和 <code>rollup=&quot;avg&quot;</code> Label。计算是针对从给定 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的每个时间序列单独进行的。</p>
+<p>可以传递可选的第二个参数 <code>&quot;min&quot;</code>、<code>&quot;max&quot;</code> 或 <code>&quot;avg&quot;</code> 来仅保留一个计算结果，并且不添加标签。另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#label_match" target="_blank" rel="noopener">label_match</a>。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。 另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#rollup_delta" target="_blank" rel="noopener">rollup_delta</a>.</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#counter" target="_blank" rel="noopener">counters</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#rollup" target="_blank" rel="noopener">rollup</a> and <a href="https://docs.victoriametrics.com/metricsql/#rollup_rate" target="_blank" rel="noopener">rollup_rate</a>.</p>
+<h3>rollup_rate<span class="hx-absolute -hx-mt-20" id="rollup_rate"></span>
+    <a href="#rollup_rate" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>rollup_rate(series_selector[d]) </code>计算给定回溯窗口<code>d</code>上相邻 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 之间的每秒变化量，并返回计算出的差异的最小值、最大值和平均值，并在时间序列中附加<code>rollup=&quot;min&quot;</code>、<code>rollup=&quot;max&quot;</code> 和 <code>rollup=&quot;avg&quot;</code> Label。计算是针对从给定 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的每个时间序列单独进行的。</p>
+<p>可以传递可选的第二个参数 <code>&quot;min&quot;</code>、<code>&quot;max&quot;</code> 或 <code>&quot;avg&quot;</code> 来仅保留一个计算结果，并且不添加标签。另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#label_match" target="_blank" rel="noopener">label_match</a>。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#counter" target="_blank" rel="noopener">counters</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#rollup" target="_blank" rel="noopener">rollup</a> and <a href="https://docs.victoriametrics.com/metricsql/#rollup_increase" target="_blank" rel="noopener">rollup_increase</a>.</p>
+<h3>rollup_scrape_interval<span class="hx-absolute -hx-mt-20" id="rollup_scrape_interval"></span>
+    <a href="#rollup_scrape_interval" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>rollup_scrape_interval(series_selector[d]) </code>计算给定回溯窗口<code>d</code>上相邻 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 之间的间隔的秒数（通常是数据的采集间隔），并返回计算出的差异的最小值、最大值和平均值，并在时间序列中附加<code>rollup=&quot;min&quot;</code>、<code>rollup=&quot;max&quot;</code> 和 <code>rollup=&quot;avg&quot;</code> Label。计算是针对从给定 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的每个时间序列单独进行的。</p>
+<p>可以传递可选的第二个参数 <code>&quot;min&quot;</code>、<code>&quot;max&quot;</code> 或 <code>&quot;avg&quot;</code> 来仅保留一个计算结果，并且不添加标签。另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#label_match" target="_blank" rel="noopener">label_match</a>。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。 另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#scrape_interval" target="_blank" rel="noopener">scrape_interval</a>.</p>
+<h3>scrape_interval<span class="hx-absolute -hx-mt-20" id="scrape_interval"></span>
+    <a href="#scrape_interval" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>scrape_interval(series_selector[d]) </code>计算给定回溯窗口<code>d</code>上相邻 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 之间的间隔的平均秒数（通常是数据的采集间隔）并返回。计算是针对从给定 <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a> 返回的每个时间序列单独进行的。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#rollup_scrape_interval" target="_blank" rel="noopener">rollup_scrape_interval</a>.</p>
+<h3>share_gt_over_time<span class="hx-absolute -hx-mt-20" id="share_gt_over_time"></span>
+    <a href="#share_gt_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>share_gt_over_time(series_selector[d], gt)</code> 返回给定回溯窗口<code>d</code>上大于<code>gt</code>的原始样本的比例（范围在<code>[0...1]</code>之间）。该比例是针对从给定<code>series_selector</code>返回的每个时间序列独立计算的。</p>
+<p>此函数对于计算 SLI 和 SLO 非常有用。例如：<code>share_gt_over_time(up[24h], 0)</code> - 返回过去 24 小时的服务可用性。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#share_le_over_time" target="_blank" rel="noopener">share_le_over_time</a> and <a href="https://docs.victoriametrics.com/metricsql/#count_gt_over_time" target="_blank" rel="noopener">count_gt_over_time</a>.</p>
+<h3>share_le_over_time<span class="hx-absolute -hx-mt-20" id="share_le_over_time"></span>
+    <a href="#share_le_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>share_le_over_time(series_selector[d], le)</code> 返回给定回溯窗口<code>d</code>上小于<code>le</code>的原始样本的比例（范围在<code>[0...1]</code>之间）。该比例是针对从给定<code>series_selector</code>返回的每个时间序列独立计算的。</p>
+<p>此函数对于计算 SLI 和 SLO 非常有用。例如：<code>share_le_over_time(memory_usage_bytes[24h], 100*1024*1024)</code> - 返回过去 24 小时的内存使用率小于等于<code>100MB</code>的时间占比。</p>
+<p>Metric名称将从计算结果中剥离。增加 keep_metric_names 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#share_gt_over_time" target="_blank" rel="noopener">share_gt_over_time</a> and <a href="https://docs.victoriametrics.com/metricsql/#count_le_over_time" target="_blank" rel="noopener">count_le_over_time</a>.</p>
+<h3>share_eq_over_time<span class="hx-absolute -hx-mt-20" id="share_eq_over_time"></span>
+    <a href="#share_eq_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>share_eq_over_time(series_selector[d], eq)</code> 返回给定回溯窗口<code>d</code>上等于<code>eq</code>的原始样本的比例（范围在<code>[0...1]</code>之间）。该比例是针对从给定<code>series_selector</code>返回的每个时间序列独立计算的。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#count_eq_over_time" target="_blank" rel="noopener">count_eq_over_time</a>.</p>
+<h3>stddev_over_time<span class="hx-absolute -hx-mt-20" id="stddev_over_time"></span>
+    <a href="#stddev_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>stddev_over_time(series_selector[d])</code> 对 <code>series_selector</code>返回的每个时间序列计算给定回溯窗口<code>d</code>上原始样本的标准差。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>PromQL 也支持该函数。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#stdvar_over_time" target="_blank" rel="noopener">stdvar_over_time</a>.</p>
+<h3>stdvar_over_time<span class="hx-absolute -hx-mt-20" id="stdvar_over_time"></span>
+    <a href="#stdvar_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>stdvar_over_time(series_selector[d])</code> 针对<code>series_selector</code>返回的每条时间序列独立计算，算出给定回溯窗口<code>d</code>上 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 的方差并返回。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>PromQL 也支持该函数。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#stddev_over_time" target="_blank" rel="noopener">stddev_over_time</a>.</p>
+<h3>sum_eq_over_time<span class="hx-absolute -hx-mt-20" id="sum_eq_over_time"></span>
+    <a href="#sum_eq_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>sum_eq_over_time(series_selector[d], eq)</code> 针对 <code>series_selector</code> 返回的每条时间序列独立计算，算出给定回溯窗口 <code>d</code> 上等于 <code>eq</code> 的 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 值的总和并返回。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#sum_over_time" target="_blank" rel="noopener">sum_over_time</a> and <a href="https://docs.victoriametrics.com/metricsql/#count_eq_over_time" target="_blank" rel="noopener">count_eq_over_time</a>.</p>
+<h3>sum_gt_over_time<span class="hx-absolute -hx-mt-20" id="sum_gt_over_time"></span>
+    <a href="#sum_gt_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>sum_gt_over_time(series_selector[d], gt)</code> 针对<code>series_selector</code>返回的每条时间序列独立计算，算出给定回溯窗口 <code>d</code> 上大于 <code>gt</code> 的 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 值的总和并返回。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#sum_over_time" target="_blank" rel="noopener">sum_over_time</a> and <a href="https://docs.victoriametrics.com/metricsql/#count_gt_over_time" target="_blank" rel="noopener">count_gt_over_time</a>.</p>
+<h3>sum_le_over_time<span class="hx-absolute -hx-mt-20" id="sum_le_over_time"></span>
+    <a href="#sum_le_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>sum_le_over_time(series_selector[d], le)</code> 针对<code>series_selector</code>返回的每条时间序列独立计算，算出给定回溯窗口<code>d</code>上小于或等于 <code>le</code> 的 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 值的总和并返回。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#sum_over_time" target="_blank" rel="noopener">sum_over_time</a> and <a href="https://docs.victoriametrics.com/metricsql/#count_le_over_time" target="_blank" rel="noopener">count_le_over_time</a>.</p>
+<h3>sum_over_time<span class="hx-absolute -hx-mt-20" id="sum_over_time"></span>
+    <a href="#sum_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>sum_over_time(series_selector[d])</code>是一个汇总函数，它针对 <code>series_selector</code> 返回的每条时间序列独立计算，算出给定回溯窗口<code>d</code>上 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 值的总和并返回。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>PromQL 也支持该函数。</p>
+<h3>sum2_over_time<span class="hx-absolute -hx-mt-20" id="sum2_over_time"></span>
+    <a href="#sum2_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>sum2_over_time(series_selector[d])</code>针对<code>series_selector</code>返回的每条时间序列独立计算，算出给定回溯窗口<code>d</code>上 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> 值的平方和并返回。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<h3>timestamp<span class="hx-absolute -hx-mt-20" id="timestamp"></span>
+    <a href="#timestamp" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>timestamp(series_selector[d])</code> 针对 <code>series_selector</code> 返回的每条时间序列独立计算，返回给定回溯窗口 <code>d</code> 上最后一个 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a> 的时间戳（以秒为单位，精确到毫秒）。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>PromQL 也支持该函数。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#time" target="_blank" rel="noopener">time</a> 和 <a href="https://docs.victoriametrics.com/metricsql/#now" target="_blank" rel="noopener">now</a>.</p>
+<h3>timestamp_with_name<span class="hx-absolute -hx-mt-20" id="timestamp_with_name"></span>
+    <a href="#timestamp_with_name" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>timestamp_with_name(series_selector[d])</code>针对 <code>series_selector</code> 返回的每条时间序列独立计算，返回给定回溯窗口 <code>d</code> 上最后一个 <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw sample</a> 的时间戳（以秒为单位，精确到毫秒）。</p>
+<p>和 timestamp 函数区别是在汇总结果中保留了 Metric  名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#timestamp" target="_blank" rel="noopener">timestamp</a> 和 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器.</p>
+<h3>tfirst_over_time<span class="hx-absolute -hx-mt-20" id="tfirst_over_time"></span>
+    <a href="#tfirst_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>tfirst_over_time(series_selector[d])</code>针对 <code>series_selector</code> 返回的每条时间序列独立计算，返回给定回溯窗口 <code>d</code> 上第一个 raw sample 的时间戳（以秒为单位，精确到毫秒）。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#first_over_time" target="_blank" rel="noopener">first_over_time</a>.</p>
+<h3>tlast_change_over_time<span class="hx-absolute -hx-mt-20" id="tlast_change_over_time"></span>
+    <a href="#tlast_change_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>tlast_change_over_time (series_selector [d])</code> 针对 <code>series_selector</code> 返回的每条时间序列独立计算，返回给定回溯窗口 <code>d</code> 上最后一次变化的时间戳（以秒为单位，精确到毫秒）。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#last_over_time" target="_blank" rel="noopener">last_over_time</a>.</p>
+<h3>tlast_over_time<span class="hx-absolute -hx-mt-20" id="tlast_over_time"></span>
+    <a href="#tlast_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>tlast_over_time</code> 是 <a href="https://docs.victoriametrics.com/metricsql/#timestamp" target="_blank" rel="noopener">timestamp</a> 函数的别名。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#tlast_change_over_time" target="_blank" rel="noopener">tlast_change_over_time</a>.</p>
+<h3>tmax_over_time<span class="hx-absolute -hx-mt-20" id="tmax_over_time"></span>
+    <a href="#tmax_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>tmax_over_time(series_selector[d])</code>返回给定回溯窗口 <code>d</code> 上具有最大值的 raw sample 的时间戳（以秒为单位，精确到毫秒）。它针对 <code>series_selector</code> 返回的每条时间序列独立计算。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#max_over_time" target="_blank" rel="noopener">max_over_time</a>.</p>
+<h3>tmin_over_time<span class="hx-absolute -hx-mt-20" id="tmin_over_time"></span>
+    <a href="#tmin_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>tmin_over_time(series_selector[d])</code>返回给定回溯窗口 <code>d</code> 上具有最小值的 raw sample 的时间戳（以秒为单位，精确到毫秒）。它针对 <code>series_selector</code> 返回的每条时间序列独立计算。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#min_over_time" target="_blank" rel="noopener">min_over_time</a>.</p>
+<h3>zscore_over_time<span class="hx-absolute -hx-mt-20" id="zscore_over_time"></span>
+    <a href="#zscore_over_time" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p><code>zscore_over_time(series_selector[d])</code> is a <a href="https://docs.victoriametrics.com/metricsql/#rollup-functions" target="_blank" rel="noopener">rollup function</a>, which returns <a href="https://en.wikipedia.org/wiki/Standard_score" target="_blank" rel="noopener">z-score</a> for <a href="https://docs.victoriametrics.com/keyconcepts/#raw-samples" target="_blank" rel="noopener">raw samples</a> on the given lookbehind window <code>d</code>. It is calculated independently per each time series returned from the given <a href="https://docs.victoriametrics.com/keyconcepts/#filtering" target="_blank" rel="noopener">series_selector</a>.</p>
+<p><code>zscore_over_time(series_selector[d])</code>返回给定回溯窗口 <code>d</code> 上 raw samples 的 <a href="https://en.wikipedia.org/wiki/Standard_score" target="_blank" rel="noopener">z-score</a>。它针对 <code>series_selector</code> 返回的每条时间序列独立计算。</p>
+<p>Metric名称将从计算结果中剥离。增加 <a href="https://docs.victoriametrics.com/metricsql/#keep_metric_names" target="_blank" rel="noopener">keep_metric_names</a> 修改器来保留 Metric 名称。</p>
+<p>该函数通常应用于  <a href="https://docs.victoriametrics.com/keyconcepts/#gauge" target="_blank" rel="noopener">gauges</a>.</p>
+<p>另请参阅 <a href="https://docs.victoriametrics.com/metricsql/#zscore" target="_blank" rel="noopener">zscore</a>, <a href="https://docs.victoriametrics.com/metricsql/#range_trim_zscore" target="_blank" rel="noopener">range_trim_zscore</a> and <a href="https://docs.victoriametrics.com/metricsql/#outlier_iqr_over_time" target="_blank" rel="noopener">outlier_iqr_over_time</a>.</p>
+
+        </div>
+        <div class="hx-mt-16"></div>
+        <div class="hx-mb-8 hx-flex hx-items-center hx-border-t hx-pt-8 dark:hx-border-neutral-800 contrast-more:hx-border-neutral-400 dark:contrast-more:hx-border-neutral-400 print:hx-hidden"><a
+        href="/docs/query/metricsql/functions/label/"
+        title="操作 Label"
+        class="hx-flex hx-max-w-[50%] hx-items-center hx-gap-1 hx-py-4 hx-text-base hx-font-medium hx-text-gray-600 hx-transition-colors [word-break:break-word] hover:hx-text-primary-600 dark:hx-text-gray-300 md:hx-text-lg ltr:hx-ml-auto ltr:hx-pl-4 ltr:hx-text-right rtl:hx-mr-auto rtl:hx-pr-4 rtl:hx-text-left"
+      >操作 Label<svg class="hx-inline hx-h-5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></a></div>
+        
+      </main>
+    </article>
+  </div>
+
+      <footer class="hextra-footer hx-bg-gray-100 hx-pb-[env(safe-area-inset-bottom)] dark:hx-bg-neutral-900 print:hx-bg-transparent"><div
+    class="hx-max-w-screen-xl hx-mx-auto hx-flex hx-justify-center hx-py-12 hx-pl-[max(env(safe-area-inset-left),1.5rem)] hx-pr-[max(env(safe-area-inset-right),1.5rem)] hx-text-gray-600 dark:hx-text-gray-400 md:hx-justify-start"
+  >
+    <div class="hx-flex hx-w-full hx-flex-col hx-items-center sm:hx-items-start"><div class="hx-font-semibold"><a class="hx-flex hx-text-sm hx-items-center hx-gap-1 hx-text-current" target="_blank" rel="noopener noreferrer" title="Hextra GitHub Homepage" href="https://github.com/imfing/hextra">
+    <span>Powered by Hextra<svg height=1em class="hx-inline-block ltr:hx-ml-1 rtl:hx-mr-1 hx-align-[-2.5px]" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="m 105.50024,22.224647 c -9.59169,-5.537563 -21.40871,-5.537563 -31.000093,0 L 39.054693,42.689119 C 29.463353,48.226675 23.55484,58.460531 23.55484,69.535642 v 40.928918 c 0,11.07542 5.908513,21.3092 15.499853,26.84652 l 35.445453,20.46446 c 9.591313,5.53732 21.408404,5.53732 31.000094,0 l 35.44507,-20.46446 c 9.59131,-5.53732 15.49985,-15.7711 15.49985,-26.84652 V 69.535642 c 0,-11.075111 -5.90854,-21.308967 -15.49985,-26.846523 z M 34.112797,85.737639 c -1.384445,2.397827 -1.384445,5.352099 0,7.749927 l 24.781554,42.922974 c 1.38437,2.39783 3.942853,3.87496 6.711592,3.87496 h 49.563107 c 2.76905,0 5.3273,-1.47713 6.71144,-3.87496 l 24.78194,-42.922974 c 1.38414,-2.397828 1.38414,-5.3521 0,-7.749927 L 121.88049,42.814746 c -1.38414,-2.397828 -3.94239,-3.874964 -6.71144,-3.874964 H 65.605944 c -2.768739,0 -5.327223,1.477059 -6.711592,3.874964 z" style="stroke-width:0.774993" /></svg></span>
+  </a></div>
+    </div>
+  </div>
+</footer>
+    
+    <script defer src="/js/main.js" integrity=""></script>
+
+
+<script defer src="/lib/flexsearch/flexsearch.bundle.min.0425860527cc9968f9f049421c7a56b39327d475e2e3a8f550416be3a9134327.js" integrity="sha256-BCWGBSfMmWj58ElCHHpWs5Mn1HXi46j1UEFr46kTQyc="></script>
+    <script defer src="/en.search.js" integrity=""></script>
+
+
+  </body>
+</html>
