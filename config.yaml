@@ -1,6 +1,6 @@
 baseURL: https://victoriametrics.com.cn/
 languageCode: zh-CN
-title: 中文手册
+title: 中文手册(WIP)
 
 module:
   imports:

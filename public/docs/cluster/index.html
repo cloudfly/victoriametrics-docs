@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 <link fetchpriority="low" href="/site.webmanifest" rel="manifest" />
 
-  <title>集群版本 – 中文手册</title>
+  <title>集群版本 – 中文手册(WIP)</title>
   <meta name="description" content="架构概览 VictoriaMetrics 集群版本由以下几个服务组成：
 vmstorage - 存储原始数据，并返回在给定时间范围内针对给定 Label 筛选器查询的数据。 vminsert - 接受摄入的数据，并 根据对度量名称及其所有标签的一致散列，将数据分散到 vmstorage 节点中 vmselect - 通过从所有已配置的 vmstorage 节点获取所需数据来执行接收到的查询请求。 每项服务都可独立扩展，并可在最合适的硬件上运行。 vmstorage 节点之间互不相识，互不通信，也不共享任何数据。 这是一种共享无架构 。 它提高了集群的可用性，简化了集群维护和集群扩展。
 多租户 VictoriaMetrics集群支持多个隔离的租户（即命名空间）。租户通过accountID或accountID:projectID进行标识，这些标识符被置于请求URL中。详情请参阅这些文档。
@@ -148,9 +148,9 @@ http_requests_total{path=&#34;/foo&#34;,vm_account_id=&#34;42&#34;} 12 http_requ
 
   <nav class="hx-mx-auto hx-flex hx-items-center hx-justify-end hx-gap-2 hx-h-16 hx-px-6 hx-max-w-[90rem]">
     <a class="hx-flex hx-items-center hover:hx-opacity-75 ltr:hx-mr-auto rtl:hx-ml-auto" href="/">
-        <img class="hx-block dark:hx-hidden" src="/logo-victoriametrics.svg" alt="中文手册" height="80" width="160" />
-        <img class="hx-hidden dark:hx-block" src="/logo-victoriametrics-dark.svg" alt="中文手册" height="80" width="160" />
-        <span class="hx-mx-2 hx-font-extrabold hx-inline hx-select-none" title="中文手册">中文手册</span>
+        <img class="hx-block dark:hx-hidden" src="/logo-victoriametrics.svg" alt="中文手册(WIP)" height="80" width="160" />
+        <img class="hx-hidden dark:hx-block" src="/logo-victoriametrics-dark.svg" alt="中文手册(WIP)" height="80" width="160" />
+        <span class="hx-mx-2 hx-font-extrabold hx-inline hx-select-none" title="中文手册(WIP)">中文手册(WIP)</span>
     </a><a
             title="手册"
             href="/docs"

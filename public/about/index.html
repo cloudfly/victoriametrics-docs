@@ -11,14 +11,13 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 <link fetchpriority="low" href="/site.webmanifest" rel="manifest" />
 
-  <title>中文手册</title>
+  <title>中文手册(WIP)</title>
   <meta name="description" content="关于本书 本书大部分内容都源自官方文档，但并没有对原文进行逐字逐句地翻译；对于冗余啰嗦，或是推广性质的，以及企业版特性内容会被省略掉，以减少一些学习干扰。
-此外，对官方文档的结构也会进行重新排版，因为作者本人因工作原因经常翻阅官方文档，发现其文档结构很是混乱；来来回回翻阅了一年还是经常找不到想要的内容，每次只能靠搜索。所以为了降低读者的学习成本，我对文档结构进行了一定的重排。
-在翻译文档的同时，也会夹杂一些个人思考，这些内容会文档中特殊标注出来。同时也欢迎读者参与讨论，互相交流看法。
-关于作者 我个人在可观测方向工作了快十年之久，亲身经历了该方向技术的快速演变发展，走过很多弯路，掉过不少坑。数据存储问题一直是这个方向的一大技术难题，从最早期用 MySQL &#43; Redis 或 Mongo 或 Graphite，到后来TSDB 领域出现了 InfluxDB、Prometheus、OpenTSDB 等基于 LSM Tree 或列式存储的数据库方案，再到后来出现了 Thanos，M3DB 等针对 Prometheus 的开源分布式解决方案，到现在还出现很多使用 Clickhouse 作为 timeseries 数据存储方案。可是当我们遇到真正的大数据量时，他们表现总是差强人意的，我们总是不得不付出高昂的维护成本或二次开发，才能让系统勉强稳定。
-2022年初接触到了 VictoriaMetrics ，其性能、稳定性以及代码质量都让我为之惊叹，而且彻底地把我从 5千万 QPS 的高压需求中解脱了出来；在存储技术上它参考了 Clickhouse 的 MergeTree，然后针对 timeseries 领域做了诸多针对性优化。我在阅读其源码时，也发现了很多共鸣的设计理念。兴奋之余多少也有些惭愧，惭愧于自己曾经也有过很多相同 idea，但受困于业务和团队环境没有精力去实践。
+此外，对官方文档的结构也会进行重新排版，因为作者本人因工作原因经常翻阅官方文档，感觉其文档结构比较混乱；来来回回翻阅了一年还是经常找不到想要的内容，每次只能靠搜索。所以为了降低读者的学习成本，我对文档结构进行了一定的重排。同时也是增加一些个人撰写的内容。
+关于作者 我个人在可观测方向工作了快十年之久，亲身经历了该方向技术的快速演变发展，走过很多弯路，掉过不少坑。数据存储问题一直是这个方向的一大技术难题，从最早期用 MySQL &#43; Redis 或 Mongo 或 Graphite，到后来TSDB 领域出现了 InfluxDB、Prometheus、OpenTSDB 等基于 LSM Tree 或列式存储的数据库方案，再到后来出现了 Thanos，M3DB 等针对 Prometheus 的开源分布式解决方案，到现在还出现很多使用 Clickhouse 作为 timeseries 数据存储方案。可是当我们遇到真正的大数据量时，它们表现总是有些差强人意，我们经常不得不付出高昂的维护成本或二次开发，才能让系统勉强稳定。
+2022年初接触到了 VictoriaMetrics ，其性能、稳定性以及代码质量都让我为之叹服，而且彻底地把我从 5千万 QPS 的高压需求中解脱了出来；在存储技术上它参考了 Clickhouse 的 MergeTree，然后针对 timeseries 领域做了诸多针对性优化。我在阅读其源码时，也发现了很多共鸣的设计理念。兴奋之余多少也有些惭愧，惭愧于自己曾经也有过很多相同 idea，但受困于业务和团队环境没有精力去实践。
 之前有朋友创业，向我咨询 K8S 监控的解决方案。经我的简单一番介绍说明，他表示没想到这个方向水还挺深，这些踩坑经验太宝贵了，不然他们还要在这方面花很多精力。
-后来想着，干嘛不把这些经验总结分享下呢，一来也算是自己多年工作的一次复盘总结，温故而知新；二来也可以帮助更多的人或公司减少在可观测领域无效投入。" />
+后来想着，为什么不把这些经验总结分享下呢，一来也算是自己多年工作的一次复盘总结，温故而知新；二来也可以帮助更多的人或公司减少在可观测领域无效投入。" />
 
   
     <link rel="canonical" href="http://localhost:1313/about/" itemprop="url" />
@@ -32,26 +31,24 @@
 <meta property="og:url" content="http://localhost:1313/about/" />
 
   
-  <meta itemprop="name" content="中文手册">
+  <meta itemprop="name" content="中文手册(WIP)">
   <meta itemprop="description" content="关于本书 本书大部分内容都源自官方文档，但并没有对原文进行逐字逐句地翻译；对于冗余啰嗦，或是推广性质的，以及企业版特性内容会被省略掉，以减少一些学习干扰。
-此外，对官方文档的结构也会进行重新排版，因为作者本人因工作原因经常翻阅官方文档，发现其文档结构很是混乱；来来回回翻阅了一年还是经常找不到想要的内容，每次只能靠搜索。所以为了降低读者的学习成本，我对文档结构进行了一定的重排。
-在翻译文档的同时，也会夹杂一些个人思考，这些内容会文档中特殊标注出来。同时也欢迎读者参与讨论，互相交流看法。
-关于作者 我个人在可观测方向工作了快十年之久，亲身经历了该方向技术的快速演变发展，走过很多弯路，掉过不少坑。数据存储问题一直是这个方向的一大技术难题，从最早期用 MySQL &#43; Redis 或 Mongo 或 Graphite，到后来TSDB 领域出现了 InfluxDB、Prometheus、OpenTSDB 等基于 LSM Tree 或列式存储的数据库方案，再到后来出现了 Thanos，M3DB 等针对 Prometheus 的开源分布式解决方案，到现在还出现很多使用 Clickhouse 作为 timeseries 数据存储方案。可是当我们遇到真正的大数据量时，他们表现总是差强人意的，我们总是不得不付出高昂的维护成本或二次开发，才能让系统勉强稳定。
-2022年初接触到了 VictoriaMetrics ，其性能、稳定性以及代码质量都让我为之惊叹，而且彻底地把我从 5千万 QPS 的高压需求中解脱了出来；在存储技术上它参考了 Clickhouse 的 MergeTree，然后针对 timeseries 领域做了诸多针对性优化。我在阅读其源码时，也发现了很多共鸣的设计理念。兴奋之余多少也有些惭愧，惭愧于自己曾经也有过很多相同 idea，但受困于业务和团队环境没有精力去实践。
+此外，对官方文档的结构也会进行重新排版，因为作者本人因工作原因经常翻阅官方文档，感觉其文档结构比较混乱；来来回回翻阅了一年还是经常找不到想要的内容，每次只能靠搜索。所以为了降低读者的学习成本，我对文档结构进行了一定的重排。同时也是增加一些个人撰写的内容。
+关于作者 我个人在可观测方向工作了快十年之久，亲身经历了该方向技术的快速演变发展，走过很多弯路，掉过不少坑。数据存储问题一直是这个方向的一大技术难题，从最早期用 MySQL &#43; Redis 或 Mongo 或 Graphite，到后来TSDB 领域出现了 InfluxDB、Prometheus、OpenTSDB 等基于 LSM Tree 或列式存储的数据库方案，再到后来出现了 Thanos，M3DB 等针对 Prometheus 的开源分布式解决方案，到现在还出现很多使用 Clickhouse 作为 timeseries 数据存储方案。可是当我们遇到真正的大数据量时，它们表现总是有些差强人意，我们经常不得不付出高昂的维护成本或二次开发，才能让系统勉强稳定。
+2022年初接触到了 VictoriaMetrics ，其性能、稳定性以及代码质量都让我为之叹服，而且彻底地把我从 5千万 QPS 的高压需求中解脱了出来；在存储技术上它参考了 Clickhouse 的 MergeTree，然后针对 timeseries 领域做了诸多针对性优化。我在阅读其源码时，也发现了很多共鸣的设计理念。兴奋之余多少也有些惭愧，惭愧于自己曾经也有过很多相同 idea，但受困于业务和团队环境没有精力去实践。
 之前有朋友创业，向我咨询 K8S 监控的解决方案。经我的简单一番介绍说明，他表示没想到这个方向水还挺深，这些踩坑经验太宝贵了，不然他们还要在这方面花很多精力。
-后来想着，干嘛不把这些经验总结分享下呢，一来也算是自己多年工作的一次复盘总结，温故而知新；二来也可以帮助更多的人或公司减少在可观测领域无效投入。">
+后来想着，为什么不把这些经验总结分享下呢，一来也算是自己多年工作的一次复盘总结，温故而知新；二来也可以帮助更多的人或公司减少在可观测领域无效投入。">
   <meta itemprop="datePublished" content="2024-09-28T19:11:04+08:00">
   <meta itemprop="dateModified" content="2024-09-28T19:11:04+08:00">
-  <meta itemprop="wordCount" content="43">
+  <meta itemprop="wordCount" content="42">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="中文手册">
+  <meta name="twitter:title" content="中文手册(WIP)">
   <meta name="twitter:description" content="关于本书 本书大部分内容都源自官方文档，但并没有对原文进行逐字逐句地翻译；对于冗余啰嗦，或是推广性质的，以及企业版特性内容会被省略掉，以减少一些学习干扰。
-此外，对官方文档的结构也会进行重新排版，因为作者本人因工作原因经常翻阅官方文档，发现其文档结构很是混乱；来来回回翻阅了一年还是经常找不到想要的内容，每次只能靠搜索。所以为了降低读者的学习成本，我对文档结构进行了一定的重排。
-在翻译文档的同时，也会夹杂一些个人思考，这些内容会文档中特殊标注出来。同时也欢迎读者参与讨论，互相交流看法。
-关于作者 我个人在可观测方向工作了快十年之久，亲身经历了该方向技术的快速演变发展，走过很多弯路，掉过不少坑。数据存储问题一直是这个方向的一大技术难题，从最早期用 MySQL &#43; Redis 或 Mongo 或 Graphite，到后来TSDB 领域出现了 InfluxDB、Prometheus、OpenTSDB 等基于 LSM Tree 或列式存储的数据库方案，再到后来出现了 Thanos，M3DB 等针对 Prometheus 的开源分布式解决方案，到现在还出现很多使用 Clickhouse 作为 timeseries 数据存储方案。可是当我们遇到真正的大数据量时，他们表现总是差强人意的，我们总是不得不付出高昂的维护成本或二次开发，才能让系统勉强稳定。
-2022年初接触到了 VictoriaMetrics ，其性能、稳定性以及代码质量都让我为之惊叹，而且彻底地把我从 5千万 QPS 的高压需求中解脱了出来；在存储技术上它参考了 Clickhouse 的 MergeTree，然后针对 timeseries 领域做了诸多针对性优化。我在阅读其源码时，也发现了很多共鸣的设计理念。兴奋之余多少也有些惭愧，惭愧于自己曾经也有过很多相同 idea，但受困于业务和团队环境没有精力去实践。
+此外，对官方文档的结构也会进行重新排版，因为作者本人因工作原因经常翻阅官方文档，感觉其文档结构比较混乱；来来回回翻阅了一年还是经常找不到想要的内容，每次只能靠搜索。所以为了降低读者的学习成本，我对文档结构进行了一定的重排。同时也是增加一些个人撰写的内容。
+关于作者 我个人在可观测方向工作了快十年之久，亲身经历了该方向技术的快速演变发展，走过很多弯路，掉过不少坑。数据存储问题一直是这个方向的一大技术难题，从最早期用 MySQL &#43; Redis 或 Mongo 或 Graphite，到后来TSDB 领域出现了 InfluxDB、Prometheus、OpenTSDB 等基于 LSM Tree 或列式存储的数据库方案，再到后来出现了 Thanos，M3DB 等针对 Prometheus 的开源分布式解决方案，到现在还出现很多使用 Clickhouse 作为 timeseries 数据存储方案。可是当我们遇到真正的大数据量时，它们表现总是有些差强人意，我们经常不得不付出高昂的维护成本或二次开发，才能让系统勉强稳定。
+2022年初接触到了 VictoriaMetrics ，其性能、稳定性以及代码质量都让我为之叹服，而且彻底地把我从 5千万 QPS 的高压需求中解脱了出来；在存储技术上它参考了 Clickhouse 的 MergeTree，然后针对 timeseries 领域做了诸多针对性优化。我在阅读其源码时，也发现了很多共鸣的设计理念。兴奋之余多少也有些惭愧，惭愧于自己曾经也有过很多相同 idea，但受困于业务和团队环境没有精力去实践。
 之前有朋友创业，向我咨询 K8S 监控的解决方案。经我的简单一番介绍说明，他表示没想到这个方向水还挺深，这些踩坑经验太宝贵了，不然他们还要在这方面花很多精力。
-后来想着，干嘛不把这些经验总结分享下呢，一来也算是自己多年工作的一次复盘总结，温故而知新；二来也可以帮助更多的人或公司减少在可观测领域无效投入。">
+后来想着，为什么不把这些经验总结分享下呢，一来也算是自己多年工作的一次复盘总结，温故而知新；二来也可以帮助更多的人或公司减少在可观测领域无效投入。">
 
     <link href="/css/compiled/main.css" rel="stylesheet" />
 
@@ -93,9 +90,9 @@
 
   <nav class="hx-mx-auto hx-flex hx-items-center hx-justify-end hx-gap-2 hx-h-16 hx-px-6 hx-max-w-[90rem]">
     <a class="hx-flex hx-items-center hover:hx-opacity-75 ltr:hx-mr-auto rtl:hx-ml-auto" href="/">
-        <img class="hx-block dark:hx-hidden" src="/logo-victoriametrics.svg" alt="中文手册" height="80" width="160" />
-        <img class="hx-hidden dark:hx-block" src="/logo-victoriametrics-dark.svg" alt="中文手册" height="80" width="160" />
-        <span class="hx-mx-2 hx-font-extrabold hx-inline hx-select-none" title="中文手册">中文手册</span>
+        <img class="hx-block dark:hx-hidden" src="/logo-victoriametrics.svg" alt="中文手册(WIP)" height="80" width="160" />
+        <img class="hx-hidden dark:hx-block" src="/logo-victoriametrics-dark.svg" alt="中文手册(WIP)" height="80" width="160" />
+        <span class="hx-mx-2 hx-font-extrabold hx-inline hx-select-none" title="中文手册(WIP)">中文手册(WIP)</span>
     </a><a
             title="手册"
             href="/docs"
@@ -374,13 +371,12 @@
         
         <div class="content"><h2>关于本书<span class="hx-absolute -hx-mt-20" id="关于本书"></span>
     <a href="#%e5%85%b3%e4%ba%8e%e6%9c%ac%e4%b9%a6" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>本书大部分内容都源自官方文档，但并没有对原文进行逐字逐句地翻译；对于冗余啰嗦，或是推广性质的，以及企业版特性内容会被省略掉，以减少一些学习干扰。</p>
-<p>此外，对官方文档的结构也会进行重新排版，因为作者本人因工作原因经常翻阅官方文档，发现其文档结构很是混乱；来来回回翻阅了一年还是经常找不到想要的内容，每次只能靠搜索。所以为了降低读者的学习成本，我对文档结构进行了一定的重排。</p>
-<p>在翻译文档的同时，也会夹杂一些个人思考，这些内容会文档中特殊标注出来。同时也欢迎读者参与讨论，互相交流看法。</p>
+<p>此外，对官方文档的结构也会进行重新排版，因为作者本人因工作原因经常翻阅官方文档，感觉其文档结构比较混乱；来来回回翻阅了一年还是经常找不到想要的内容，每次只能靠搜索。所以为了降低读者的学习成本，我对文档结构进行了一定的重排。同时也是增加一些个人撰写的内容。</p>
 <h2>关于作者<span class="hx-absolute -hx-mt-20" id="关于作者"></span>
-    <a href="#%e5%85%b3%e4%ba%8e%e4%bd%9c%e8%80%85" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>我个人在可观测方向工作了快十年之久，亲身经历了该方向技术的快速演变发展，走过很多弯路，掉过不少坑。数据存储问题一直是这个方向的一大技术难题，从最早期用 MySQL + Redis 或 Mongo 或 Graphite，到后来TSDB 领域出现了 InfluxDB、Prometheus、OpenTSDB 等基于 LSM Tree 或列式存储的数据库方案，再到后来出现了 Thanos，M3DB 等针对 Prometheus 的开源分布式解决方案，到现在还出现很多使用 Clickhouse 作为 timeseries 数据存储方案。可是当我们遇到真正的大数据量时，他们表现总是差强人意的，我们总是不得不付出高昂的维护成本或二次开发，才能让系统勉强稳定。</p>
-<p>2022年初接触到了 VictoriaMetrics ，其性能、稳定性以及代码质量都让我为之惊叹，而且彻底地把我从 5千万 QPS 的高压需求中解脱了出来；在存储技术上它参考了 Clickhouse 的 MergeTree，然后针对 timeseries 领域做了诸多针对性优化。我在阅读其源码时，也发现了很多共鸣的设计理念。兴奋之余多少也有些惭愧，惭愧于自己曾经也有过很多相同 idea，但受困于业务和团队环境没有精力去实践。</p>
+    <a href="#%e5%85%b3%e4%ba%8e%e4%bd%9c%e8%80%85" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>我个人在可观测方向工作了快十年之久，亲身经历了该方向技术的快速演变发展，走过很多弯路，掉过不少坑。数据存储问题一直是这个方向的一大技术难题，从最早期用 MySQL + Redis 或 Mongo 或 Graphite，到后来TSDB 领域出现了 InfluxDB、Prometheus、OpenTSDB 等基于 LSM Tree 或列式存储的数据库方案，再到后来出现了 Thanos，M3DB 等针对 Prometheus 的开源分布式解决方案，到现在还出现很多使用 Clickhouse 作为 timeseries 数据存储方案。可是当我们遇到真正的大数据量时，它们表现总是有些差强人意，我们经常不得不付出高昂的维护成本或二次开发，才能让系统勉强稳定。</p>
+<p>2022年初接触到了 VictoriaMetrics ，其性能、稳定性以及代码质量都让我为之叹服，而且彻底地把我从 5千万 QPS 的高压需求中解脱了出来；在存储技术上它参考了 Clickhouse 的 MergeTree，然后针对 timeseries 领域做了诸多针对性优化。我在阅读其源码时，也发现了很多共鸣的设计理念。兴奋之余多少也有些惭愧，惭愧于自己曾经也有过很多相同 idea，但受困于业务和团队环境没有精力去实践。</p>
 <p>之前有朋友创业，向我咨询 K8S 监控的解决方案。经我的简单一番介绍说明，他表示没想到这个方向水还挺深，这些踩坑经验太宝贵了，不然他们还要在这方面花很多精力。</p>
-<p>后来想着，干嘛不把这些经验总结分享下呢，一来也算是自己多年工作的一次复盘总结，温故而知新；二来也可以帮助更多的人或公司减少在可观测领域无效投入。</p>
+<p>后来想着，为什么不把这些经验总结分享下呢，一来也算是自己多年工作的一次复盘总结，温故而知新；二来也可以帮助更多的人或公司减少在可观测领域无效投入。</p>
 </div></main>
     </article>
     <div class="max-xl:hx-hidden hx-h-0 hx-w-64 hx-shrink-0"></div>

@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 <link fetchpriority="low" href="/site.webmanifest" rel="manifest" />
 
-  <title>HTTP 查询接口 – 中文手册</title>
+  <title>HTTP 查询接口 – 中文手册(WIP)</title>
   <meta name="description" content="单机版 Prometheus 查询接口 VictoriaMetrics 支持下面这些 Prometheus 查询 API:
 /api/v1/query /api/v1/query_range /api/v1/series /api/v1/labels /api/v1/label/…/values /api/v1/status/tsdb. See these docs for details. /api/v1/targets - see these docs for more details. /federate - see these docs for more details. 这些接口可以被Prometheus兼容的客户端（如Grafana或curl）查询。所有Prometheus查询API处理程序都可以使用/prometheus前缀进行查询。例如，/prometheus/api/v1/query和/api/v1/query都可以正常工作。
 查询优化 VictoriaMetrics 接受extra_label=&lt;label_name&gt;=&lt;label_value&gt;查询参数（可选），可以用于强制使用额外 Label 过滤器执行查询。例如，/api/v1/query_range?extra_label=user_id=123&amp;extra_label=group_id=456&amp;query=&lt;query&gt;会自动将{user_id=&#34;123&#34;,group_id=&#34;456&#34;}Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。一般extra_label查询参数由位于 VictoriaMetrics 前面的查询代理服务自动设置。例如，可以参考使用 vmauth 和 vmgateway 作为查询代理的示例。 VictoriaMetrics 接受extra_filters[]=series_selector查询参数（可选），可用于对查询强制执行任意的 Label 过滤器。例如，/api/v1/query_range?extra_filters[]={env=~&#34;prod|staging&#34;,user=&#34;xyz&#34;}&amp;query=&lt;query&gt;将自动将{env=~&#34;prod|staging&#34;,user=&#34;xyz&#34;}Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。我们建议在 VictoriaMetrics 前面的查询代理自动设置extra_filters[]查询参数。您可以将vmauth和vmgateway作为这种代理的示例。 VictoriaMetrics 接受多种格式的 time，start 和 end 查询参数，可参考这些文档。 VictoriaMetrics对于/api/v1/query和/api/v1/query_range接口支持round_digits查询参数。它可用于指定返回的指标值的保留小数点位数。例如，/api/v1/query?query=avg_over_time(temperature[1h])&amp;round_digits=2会将让返回的指标值保留小数点后面 2 位。 VictoriaMetrics允许在/api/v1/labels和/api/v1/label//values接口中使用limit查询参数来限制返回的条目数量。例如，对/api/v1/labels?limit=5的查询请求最多返回5个唯一的 Label 值，并忽略其他 Label。如果提供的limit值超过了相应的-command-line命令行参数-search.maxTagKeys或-search.maxTagValues，则会使用命令行参数中指定的限制。 默认情况下，VictoriaMetrics从/api/v1/series、/api/v1/labels和/api/v1/label//values返回最近一天从00:00 UTC开始的 series 数据，而Prometheus API默认返回所有时间的数据。如果要选择特定的时间范围的 series 数据，可使用 start 和 end 参数指定。由于性能优化的考虑，VictoriaMetrics会将指定的 start..end 时间范围舍入到天的粒度。如果您需要在给定时间范围内获取精确的 Label 集合，请将查询发送到/api/v1/query或/api/v1/query_range。 VictoriaMetrics在/api/v1/series中接受limit查询参数，用于限制返回的条目数量。例如，对/api/v1/series?limit=5的查询将最多返回5个 series，并忽略其余的时间序列。如果提供的limit值超过了相应的命令行参数-search.maxSeries的值，则会使用命令行中指定的限制。 此外，VictoriaMetrics还提供了以下接口： /vmui - 基本的 Web UI 界面，阅读这些文档。 /api/v1/series/count - 返回数据库中 time series 的总数量。注意： 该接口扫描了整个数据库的倒排索引，所以如果数据库包含数千万个 series 时间序列，它可能会变慢。 该接口可能把删除 time series 计算在内，这是内部实现导致的。 /api/v1/status/active_queries - 返回当前正在执行的查询。 /api/v1/status/top_queries - 返回下面几个查询列表: 执行最频繁的查询列表 - topByCount 平均执行时间最长的查询列表 - topByAvgDuration 执行时间最长的查询列表 - topBySumDuration 返回的查询个数可以使用 topN 参数进行限制。历史查询可以使用 maxLifetime 参数过滤掉。比如，请求/api/v1/status/top_queries?topN=5&amp;maxLifetime=30s返回最近 30 秒内每个类型的 Top5 个查询列表。VictoriaMetrics 会跟踪统计最近-s earch.queryStats.lastQueriesCount时间内，且执行时间大于search.queryStats.minQueryDuration的查询。 Timestamp 格式 VictoriaMetrics 接受下面这些格式的 time, start and end 参数， 在 query APIs 和 export APIs 中皆是如此。" />
@@ -126,9 +126,9 @@ Timestamp 格式
 
   <nav class="hx-mx-auto hx-flex hx-items-center hx-justify-end hx-gap-2 hx-h-16 hx-px-6 hx-max-w-[90rem]">
     <a class="hx-flex hx-items-center hover:hx-opacity-75 ltr:hx-mr-auto rtl:hx-ml-auto" href="/">
-        <img class="hx-block dark:hx-hidden" src="/logo-victoriametrics.svg" alt="中文手册" height="80" width="160" />
-        <img class="hx-hidden dark:hx-block" src="/logo-victoriametrics-dark.svg" alt="中文手册" height="80" width="160" />
-        <span class="hx-mx-2 hx-font-extrabold hx-inline hx-select-none" title="中文手册">中文手册</span>
+        <img class="hx-block dark:hx-hidden" src="/logo-victoriametrics.svg" alt="中文手册(WIP)" height="80" width="160" />
+        <img class="hx-hidden dark:hx-block" src="/logo-victoriametrics-dark.svg" alt="中文手册(WIP)" height="80" width="160" />
+        <span class="hx-mx-2 hx-font-extrabold hx-inline hx-select-none" title="中文手册(WIP)">中文手册(WIP)</span>
     </a><a
             title="手册"
             href="/docs"

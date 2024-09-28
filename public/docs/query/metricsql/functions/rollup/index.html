@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 <link fetchpriority="low" href="/site.webmanifest" rel="manifest" />
 
-  <title>汇总（Rollup） – 中文手册</title>
+  <title>汇总（Rollup） – 中文手册(WIP)</title>
   <meta name="description" content="什么是Rollup Rollup函数（也称为范围函数或窗口函数）在所选 timeseries 的给定回溯窗口上对原始样本的汇总计算。例如，avg_over_time(temperature[24h])计算过去 24 小时内所有原始样本的平均温度值。
 更多细节：
 如果在Grafana中使用rollup函数来构建图形，那么每个点上的rollup都是独立计算的。例如，avg_over_time(temperature[24h])图表中的每个点显示了截止到该时间点的过去24小时内的平均温度。点之间的间隔由Grafana传递给/api/v1/query_range接口作为step查询参数设置。 如果给定的查询语句返回多个 timeseries，则每个返回的序列都会单独计算汇总。 如果方括号中的回溯窗口缺失，则MetricsQL会自动将回溯窗口设置为图表上点之间的间隔（即/api/v1/query_range中的step查询参数，Grafana中的$__interval值或MetricsQL中的1i持续时间）。例如，rate(http_requests_total)在Grafana中等同于rate(http_requests_total[$__interval])。它也等同于rate(http_requests_total[1i])。 每个在MetricsQL中的系列选择器都必须包装在一个rollup函数中。否则，它会自动被包装成default_rollup。例如，foo{bar=&#34;baz&#34;} 在执行计算之前会自动转换为 default_rollup(foo{bar=&#34;baz&#34;}[1i])。 如果在rollup函数中传递的参数不是series selector，那么内部的参数会自动转换为子查询。 所有的汇总函数都接受可选的 keep_metric_names 修饰符。如果设置了该修饰符，函数将在结果中保留指标名称。请参阅这些文档。 更多参见隐式查询转换。
@@ -116,9 +116,9 @@ aggr_over_time aggr_over_time((&#34;rollup_func1&#34;, &#34;rollup_func2&#34;, .
 
   <nav class="hx-mx-auto hx-flex hx-items-center hx-justify-end hx-gap-2 hx-h-16 hx-px-6 hx-max-w-[90rem]">
     <a class="hx-flex hx-items-center hover:hx-opacity-75 ltr:hx-mr-auto rtl:hx-ml-auto" href="/">
-        <img class="hx-block dark:hx-hidden" src="/logo-victoriametrics.svg" alt="中文手册" height="80" width="160" />
-        <img class="hx-hidden dark:hx-block" src="/logo-victoriametrics-dark.svg" alt="中文手册" height="80" width="160" />
-        <span class="hx-mx-2 hx-font-extrabold hx-inline hx-select-none" title="中文手册">中文手册</span>
+        <img class="hx-block dark:hx-hidden" src="/logo-victoriametrics.svg" alt="中文手册(WIP)" height="80" width="160" />
+        <img class="hx-hidden dark:hx-block" src="/logo-victoriametrics-dark.svg" alt="中文手册(WIP)" height="80" width="160" />
+        <span class="hx-mx-2 hx-font-extrabold hx-inline hx-select-none" title="中文手册(WIP)">中文手册(WIP)</span>
     </a><a
             title="手册"
             href="/docs"
