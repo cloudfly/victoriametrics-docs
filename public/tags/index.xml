@@ -1,12 +1,12 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>My New Hugo Site – Tags</title>
-    <link>http://example.org/tags/</link>
-    <description>Recent content in Tags on My New Hugo Site</description>
+    <title>VictoriaMetrics 中文手册 – Tags</title>
+    <link>https://victoriametrics.com.cn/tags/</link>
+    <description>Recent content in Tags on VictoriaMetrics 中文手册</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
+    <language>zh-CN</language>
     
-	  <atom:link href="http://example.org/tags/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://victoriametrics.com.cn/tags/index.xml" rel="self" type="application/rss+xml" />
     
     
       
