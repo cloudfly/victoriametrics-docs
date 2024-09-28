@@ -27,7 +27,7 @@ Metric 最常见的用途包括：
 
 选择一个指标名称非常重要，它应该能够清楚地向每个看到它的人传达正确信息：实际测量到了什么内容；就像编程中的变量名一样。在其他的 tsdb 中，也有使用 **measurement** 这个单词的，其表达的核心内容是一样的。
 
-## Labels（标签）
+### Labels（标签）
 > 不翻译
 >
 
@@ -49,7 +49,7 @@ requests_total{path="/", code="200"}
 
 Labels可以自动附加到通过vmagent或Prometheus采集的 [timeseries](#zZt47) 上。VictoriaMetrics支持对查询API强制执行 Label 过滤器以实现数据的软隔离。然而，真正的数据隔离可以通过[多租户](#S6Dpt)实现。
 
-## Timeseries（时间序列）
+### Timeseries（时间序列）
 > 不翻译
 >
 
@@ -57,10 +57,10 @@ Labels可以自动附加到通过vmagent或Prometheus采集的 [timeseries](#zZt
 
 唯一时间序列的数量对数据库资源用量产生影响。详细信息请参阅[什么是活跃时间序列](https://www.yuque.com/icloudfly/xs51ky/dh8a9omrcvlana4n#what-is-an-active-time-series)以及[什么是高流失率](https://www.yuque.com/icloudfly/xs51ky/dh8a9omrcvlana4n#gao-liu-shilshi-zhi-shen-me)。
 
-## Cardinality（基数）
+### Cardinality（基数）
 唯一时间序列的数量被称为基数。过多的唯一时间序列被称为[高基数](https://www.yuque.com/icloudfly/xs51ky/dh8a9omrcvlana4n#shen-me-shi-gao-ji-shu)。高基数可能导致在VictoriaMetrics中增加资源使用量。请参阅[这篇文档](https://www.yuque.com/icloudfly/xs51ky/dh8a9omrcvlana4n#shen-me-shi-gao-ji-shu)以获取更多详细信息。
 
-## Raw samples（原始样本）
+### Raw samples（原始样本）
 > 不翻译
 >
 
@@ -76,7 +76,7 @@ requests_total{path="/", code="200"} 123 4567890
 + `123` 是一个样本值。 
 + `4567890` 是可选的样本时间戳。如果缺失，则数据被存储到VictoriaMetrics中时使用数据库的当前时间戳。
 
-## Timeseries resolution（时间序列粒度）
+### Timeseries resolution（时间序列粒度）
 分辨率是 [timeseries](#zZt47) 的 [samples](#WZ9Ad) 之间的最小间隔。考虑以下示例：
 
 ```scheme
@@ -98,7 +98,7 @@ requests_total{path="/", code="200"} 123 4567890
 ## Metric 类型
 在 VictoriaMetrics 内部，并 metric type 的概念。此概念存在是为了帮助用户理解度量是如何测量的。有四种常见的度量类型。
 
-## Counter（计数器）
+### Counter（计数器）
 `Counter` 是一种用于统计某些事件的发生次数的 Metric。它的值是累加的，随着时间增加或保持不变，在一般情况下不会减少。唯一的例外是当计数器重置为零时，例如`计数器重置`。当暴露 Counter 指标的服务重新启动时，可能会发生`计数器重置`。因此，`Counter`指标显示了自服务启动以来观察到的事件数量。
 
 在编程中，Counter 是一个变量，在每次发生某个事件时递增其值。
@@ -116,7 +116,7 @@ Counter 可以具有小数值。例如，`request_duration_seconds_sum` 计数�
 
 建议在 `Counter` 指标名称中添加 `_total`、`_sum` 或 `_count` 后缀，这样人们就可以轻松区分这些指标与其他类型的指标。
 
-## Gauge（仪表）
+### Gauge（仪表）
 Gauge 用于测量可以上下变化的值：
 
 ![](gauge.png)
@@ -131,7 +131,7 @@ Gauge 用于测量可以上下变化的值：
 
 与 gauges 最常用的 [MetricsQL](https://www.yuque.com/icloudfly/xs51ky/hxr2527r9vai0bzm) 函数是聚合函数和滚动函数。
 
-## Histogram（直方图）
+### Histogram（直方图）
 Histogram是一组具有不同`vmrange`或`le`标签的 Counter 指标。 `vmrange`或`le`标签定义了特定`bucket`（桶）的测量边界。当观察到的测量值命中特定的`bucket`时，相应的`Counter`会递增。
 
 直方图桶通常在其名称中带有`_bucket`后缀。例如，VictoriaMetrics使用`vm_rows_read_per_query`直方图跟踪每个查询处理的行分布情况。该 Histogram 的暴露格式如下：
@@ -209,7 +209,7 @@ histogram 通常用于测量延迟分布、元素大小（例如批处理大小�
 3. [How does a Prometheus Histogram work?](https://www.robustperception.io/how-does-a-prometheus-histogram-work)
 4. [Improving histogram usability for Prometheus and Grafana](https://valyala.medium.com/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350)
 
-## Summary（摘要）
+### Summary（摘要）
 Summary 与 Histogram 非常相似，用于计算[分位数](https://prometheus.io/docs/practices/histograms/#quantiles)。主要区别在于 Summary 是在客户端进行计算的，因此指标公开格式已经包含了预定义的分位数：
 
 
@@ -242,10 +242,10 @@ Summary 通常用于跟踪延迟、元素大小（例如批处理大小）等预
 
 VictoriaMetrics还与[Prometheus客户端库兼容](https://prometheus.io/docs/instrumenting/clientlibs/)。
 
-## 命名
+### 命名
 我们建议遵循[Prometheus的指标命名规范](https://prometheus.io/docs/practices/naming/)。对于 VictoriaMetrics 来说，没有严格的限制，所以任何指标名称和 Label 名称都是可以接受的。但是遵循这个约定有助于保持名称有意义、描述性强，并且清晰易懂给其他人。遵循这个约定是一个好习惯。
 
-## Label
+### Label
 每个 Metric 都可以包含任意数量的`key="value"`标签。良好的实践是保持这个数量可控。否则，处理包含大量Label的数据将会很困难。默认情况下，VictoriaMetrics将每个Metric的Label数限制为`30`，并丢弃其他标签。如果需要，可以通过`-maxLabelsPerTimeseries`命令行参数来更改此限制（但不建议这样做）。
 
 每个Label的值都可以包含任意字符串值。良好的实践是使用简短而有意义的标签值来描述指标属性，而不是讲述它们的故事。例如，`environment="prod"`是可以接受的正常Label，但`log_message="long log message with a lot of details..."`就不是可接受的。默认情况下，VictoriaMetrics将标签值大小限制为`16kB`。可以通过`-maxLabelValueLen`命令行参数来更改此限制（同样强烈不建议这样做）。
