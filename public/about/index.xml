@@ -1,20 +1,12 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>中文手册(WIP) – </title>
+    <title>中文手册(WIP)</title>
     <link>http://localhost:1313/about/</link>
     <description>Recent content on 中文手册(WIP)</description>
-    <generator>Hugo -- gohugo.io</generator>
-    <language>zh-CN</language>
-    <copyright>© 2024 Cloudfly,陈云飞</copyright>
-    <lastBuildDate>Sat, 28 Sep 2024 19:11:04 +0800</lastBuildDate>
-    
-	  <atom:link href="http://localhost:1313/about/index.xml" rel="self" type="application/rss+xml" />
-    
-    
-      
-        
-      
-    
-    
+    <generator>Hugo</generator>
+    <language>zh-cn</language>
+    <lastBuildDate></lastBuildDate>
+    <atom:link href="http://localhost:1313/about/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

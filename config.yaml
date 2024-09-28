@@ -1,5 +1,5 @@
 baseURL: https://victoriametrics.com.cn/
-languageCode: zh-CN
+languageCode: zh-cn
 title: 中文手册(WIP)
 
 module:
@@ -28,7 +28,6 @@ params:
   search:
     enable: true
     type: flexsearch
-
     flexsearch:
       # index page by: content | summary | heading | title
       index: content
@@ -43,7 +42,10 @@ params:
       repoId: R_kgDOM4cSJQ
       category: General
       categoryId: DIC_kwDOM4cSJc4Ci4Hu
+  footer:
+    displayCopyright: true
+    displayPoweredBy: false
+  theme:
+    displayToggle: true
 
-
-
-copyright: "© 2024 Cloudfly,陈云飞"
+  copyright: "© 2024 陈云飞."
