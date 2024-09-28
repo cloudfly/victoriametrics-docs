@@ -687,7 +687,8 @@ curl &#39;http://localhost:8442/internal/force_merge?partition_prefix=2022_01&#3
   
 </div>
 <p>效果如图所示：</p>
-<p><img src="https://cdn.nlark.com/yuque/0/2024/png/327391/1723474122778-1ed5a421-6b1d-457a-8654-9ef17012d4d4.png" alt="" loading="lazy" /></p>
+<p>
+    <img src="../disk-usage.png" alt="" loading="lazy" /></p>
 <p>磁盘使用率上升是因为 merge 过程创建新的 part 来  merge 老的多个 parts。突然下降代表 merge 结束，删掉老的 parts。</p>
 <p>整个 merge 过程，CPU 和 Memory 几乎没有什么影响。merge 的耗时数个小时，跟数据量大小有关。</p>
 <h2>等待<span class="hx-absolute -hx-mt-20" id="等待"></span>

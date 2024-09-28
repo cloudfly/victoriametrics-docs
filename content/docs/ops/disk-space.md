@@ -15,7 +15,7 @@ curl 'http://localhost:8442/internal/force_merge?partition_prefix=2022_01'
 
 效果如图所示：
 
-![](https://cdn.nlark.com/yuque/0/2024/png/327391/1723474122778-1ed5a421-6b1d-457a-8654-9ef17012d4d4.png)
+![](disk-usage.png)
 
 磁盘使用率上升是因为 merge 过程创建新的 part 来  merge 老的多个 parts。突然下降代表 merge 结束，删掉老的 parts。
 

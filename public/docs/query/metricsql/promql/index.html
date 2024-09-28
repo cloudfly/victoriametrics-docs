@@ -971,7 +971,8 @@ FROM (
 <p>运算符 <code>&gt;</code> 和 <code>*</code> 在下面会有介绍。</p>
 <h2>计算速率<span class="hx-absolute -hx-mt-20" id="计算速率"></span>
     <a href="#%e8%ae%a1%e7%ae%97%e9%80%9f%e7%8e%87" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>细心的读者会注意到上面的查询语句在 <a href="http://docs.grafana.org/features/datasources/prometheus/" target="_blank" rel="noopener">Grafana</a> 上绘制的线条都是下面这样递增的样式：</p>
-<p><img src="https://cdn.nlark.com/yuque/0/2024/png/327391/1722440580817-9e440abc-f80f-4e93-a956-7e87a58bb9d6.png" alt="Counter 类型" loading="lazy" /></p>
+<p>
+    <img src="../promql-demo-1.png" alt="Counter 类型" loading="lazy" /></p>
 <p>这样的图表实用性几乎为零，因为它们显示的是难以解释的不断增长的Counter值，而我们想要的是网络带宽图表 —— 在图表左侧看到<code>MB/s</code>。PromQL有一个神奇的函数可以实现这个功能 —— <code>rate()</code>。它可以计算所有匹配时间序列的每秒速率：</p>
 <div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
   
@@ -989,7 +990,8 @@ FROM (
   
 </div>
 <p>这样监控图就变正确了：</p>
-<p><img src="https://cdn.nlark.com/yuque/0/2024/png/327391/1722440581004-c61de2df-5bbe-4539-bfb5-a4dd22d112b6.png" alt="rate(counter[5m])" loading="lazy" /></p>
+<p>
+    <img src="../promql-demo-2.png" alt="rate(counter[5m])" loading="lazy" /></p>
 <p>查询语句中的 <code>[5m]</code> 是什么意思呢？这是一个代表 <code>5m</code>（5分钟）时间区间。在这个场景中，在计算每个时间点的每秒平均增长率时， 会往回看<code>5m</code>的数据，即最近5分钟的每秒平均增长。每个数据点的计算公式可以简化为<code>(Vcurr-Vprev)/(Tcurr-Tprev)</code>，<code>Vcurr</code> 代表当前时间<code>Tcurr</code>上的数值，<code>Vprev</code> 代表在时间<code>Tprev</code> 上的数值，其中<code>Tprev=Tcurr-5m</code>。</p>
 <p>如果这看起来太复杂，那么就记住，这个时间区间越大，监控图就会约平滑；而更小的时间区间会让监控图变得更加跳跃（抖动）。VictoriaMetrics 对 PromQL 进行了扩展，这个时间区间<code>[d]</code>可以省略不写，缺省情况下就是2个数据点之间的间隔（通过<code>step</code>参数指定的），而<code>step</code>的默认缺省值是<code>5m</code>。</p>
 <div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
@@ -1086,7 +1088,8 @@ FROM (
   
 </div>
 <p>其结果如下图所示，图中会出现带宽超过 2300 字节/秒的间隙：</p>
-<p><img src="https://cdn.nlark.com/yuque/0/2024/png/327391/1722440580873-c594353c-f5c1-4afe-a5c6-10f61ea2956a.png" alt="rate(node_network_receive_bytes_total[5m]) &lt; 2300" loading="lazy" /></p>
+<p>
+    <img src="../promql-demo-3.png" alt="rate(node_network_receive_bytes_total[5m]) &lt; 2300" loading="lazy" /></p>
 <p>比较运算符的结果可以使用 bool 修饰符进行修改：</p>
 <div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
   
@@ -1104,7 +1107,8 @@ FROM (
   
 </div>
 <p>在这个例子中，对于有数据的部分会被转化为<code>true（1）</code>，没有数据的转换成<code>false（0）</code>：</p>
-<p><img src="https://cdn.nlark.com/yuque/0/2024/png/327391/1722440580886-82ffc5fb-b81a-4fe3-99c4-230d705be26f.png" alt="rate(node_network_receive_bytes_total[5m]) &lt; bool 2300" loading="lazy" /></p>
+<p>
+    <img src="../promql-demo-4.png" alt="rate(node_network_receive_bytes_total[5m]) &lt; bool 2300" loading="lazy" /></p>
 <h2>分组聚合函数<span class="hx-absolute -hx-mt-20" id="分组聚合函数"></span>
     <a href="#%e5%88%86%e7%bb%84%e8%81%9a%e5%90%88%e5%87%bd%e6%95%b0" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>PromQL 支持对时间序列进行<a href="https://prometheus.io/docs/prometheus/latest/querying/operators/#aggregation-operators" target="_blank" rel="noopener">分组聚合</a>。时间序列按给定的标签集（Labels）进行分组，然后将给定的聚合函数应用于每个组。 例如，以下查询将返回按实例分组的所有网络接口的入口流量总和：</p>
 <div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">

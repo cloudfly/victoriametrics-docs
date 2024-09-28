@@ -9,7 +9,7 @@ VictoriaMetrics 支持当今监控应用的 2 种主流写入模式：Push 和 P
 ## Push 模型
 客户端定期以推送模式将收集到的指标数据发送给服务端：
 
-![](https://cdn.nlark.com/yuque/0/2024/jpeg/327391/1722440310760-1f557d96-d4fc-4a9f-85df-c8a25af28aaf.jpeg)
+![](push-model.png)
 
 客户端（应用程序）决定何时何地发送其指标。VictoriaMetrics支持以下数据摄取协议（也称为推送协议）：
 
@@ -51,7 +51,7 @@ Push 模型的缺点：
 ## Pull 模型
 Pull 模型是由Prometheus推广的一种方法，其中监控系统决定何时以及从哪里拉取指标：
 
-![](https://cdn.nlark.com/yuque/0/2024/jpeg/327391/1722440310657-7a28447b-db8d-445c-a7fb-a1d9762f17a9.jpeg)
+![](pull-model.png)
 
 在 Pull 模型中，监控系统需要知道所有需要监控的应用程序的地址。指标是定期从已知的应用程序（也称为抓取目标）通过HTTP协议进行抓取（拉取）。
 
@@ -75,7 +75,7 @@ VictoriaMetrics支持数据收集的 Push 和 Pull 模式。许多场景只使�
 
 对于数据收集来说，最常见的方法是同时使用这两种模式：
 
-![](https://cdn.nlark.com/yuque/0/2024/jpeg/327391/1722440310630-727b8e88-eb5f-4c9a-9aa1-4488c2852155.jpeg)
+![](pull-and-push.png)
 
 在这种方法中，使用了额外的组件 - vmagent。vmagent是一个轻量级代理程序，其主要目的是收集、过滤、重新标记和发送指标给VictoriaMetrics。它支持上述提到的所有Push和Pull协议。
 
@@ -83,7 +83,7 @@ VictoriaMetrics支持数据收集的 Push 和 Pull 模式。许多场景只使�
 
 VictoriaMetrics组件允许构建更高级的拓扑结构。例如，vmagents可以从不同数据中心推送指标到中央的VictoriaMetrics：
 
-![](https://cdn.nlark.com/yuque/0/2024/png/327391/1722440310651-1913eb2b-9dc2-4e4d-a50c-29440bd9bebf.png)
+![](pull-and-push-2.png)
 
 在这个例子中，VictoriaMetrics可以是单机版的VictoriaMetrics或者是集群版本VictoriaMetrics。vmagent还允许将相同的数据复制到多个目标。
 

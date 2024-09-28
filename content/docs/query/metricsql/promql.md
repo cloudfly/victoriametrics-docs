@@ -120,7 +120,7 @@ go_memstats_gc_cpu_fraction > 1.5 * (go_memstats_gc_cpu_fraction offset 1h)
 ## 计算速率
 细心的读者会注意到上面的查询语句在 [Grafana](http://docs.grafana.org/features/datasources/prometheus/) 上绘制的线条都是下面这样递增的样式：
 
-![Counter 类型](https://cdn.nlark.com/yuque/0/2024/png/327391/1722440580817-9e440abc-f80f-4e93-a956-7e87a58bb9d6.png)
+![Counter 类型](promql-demo-1.png)
 
 这样的图表实用性几乎为零，因为它们显示的是难以解释的不断增长的Counter值，而我们想要的是网络带宽图表 —— 在图表左侧看到`MB/s`。PromQL有一个神奇的函数可以实现这个功能 —— `rate()`。它可以计算所有匹配时间序列的每秒速率：
 
@@ -130,7 +130,7 @@ rate(node_network_receive_bytes_total[5m])
 
 这样监控图就变正确了：
 
-![rate(counter[5m])](https://cdn.nlark.com/yuque/0/2024/png/327391/1722440581004-c61de2df-5bbe-4539-bfb5-a4dd22d112b6.png)
+![rate(counter[5m])](promql-demo-2.png)
 
 查询语句中的 `[5m]` 是什么意思呢？这是一个代表 `5m`（5分钟）时间区间。在这个场景中，在计算每个时间点的每秒平均增长率时， 会往回看`5m`的数据，即最近5分钟的每秒平均增长。每个数据点的计算公式可以简化为`(Vcurr-Vprev)/(Tcurr-Tprev)`，`Vcurr` 代表当前时间`Tcurr`上的数值，`Vprev` 代表在时间`Tprev` 上的数值，其中`Tprev=Tcurr-5m`。
 
@@ -194,7 +194,7 @@ rate(node_network_receive_bytes_total[5m]) < 2300
 
 其结果如下图所示，图中会出现带宽超过 2300 字节/秒的间隙：
 
-![rate(node_network_receive_bytes_total[5m]) < 2300](https://cdn.nlark.com/yuque/0/2024/png/327391/1722440580873-c594353c-f5c1-4afe-a5c6-10f61ea2956a.png)
+![rate(node_network_receive_bytes_total[5m]) < 2300](promql-demo-3.png)
 
 比较运算符的结果可以使用 bool 修饰符进行修改：
 
@@ -204,7 +204,7 @@ rate(node_network_receive_bytes_total[5m]) < bool 2300
 
 在这个例子中，对于有数据的部分会被转化为`true（1）`，没有数据的转换成`false（0）`：
 
-![rate(node_network_receive_bytes_total[5m]) < bool 2300](https://cdn.nlark.com/yuque/0/2024/png/327391/1722440580886-82ffc5fb-b81a-4fe3-99c4-230d705be26f.png)
+![rate(node_network_receive_bytes_total[5m]) < bool 2300](promql-demo-4.png)
 
 ## 分组聚合函数
 PromQL 支持对时间序列进行[分组聚合](https://prometheus.io/docs/prometheus/latest/querying/operators/#aggregation-operators)。时间序列按给定的标签集（Labels）进行分组，然后将给定的聚合函数应用于每个组。 例如，以下查询将返回按实例分组的所有网络接口的入口流量总和：

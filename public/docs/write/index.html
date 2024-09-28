@@ -30,6 +30,7 @@ curl -d &#39;{&#34;metric&#34;:{&#34;__name__&#34;:&#34;foo&#34;,&#34;job&#34;:&
 Push 模型
     客户端定期以推送模式将收集到的指标数据发送给服务端：
 
+    
 客户端（应用程序）决定何时何地发送其指标。VictoriaMetrics支持以下数据摄取协议（也称为推送协议）：
 
 Prometheus remote write API.
@@ -650,7 +651,8 @@ curl -d &#39;{&#34;metric&#34;:{&#34;__name__&#34;:&#34;foo&#34;,&#34;job&#34;:&
           <p>VictoriaMetrics 支持当今监控应用的 2 种主流写入模式：Push 和 Pull。</p>
 <h2>Push 模型<span class="hx-absolute -hx-mt-20" id="push-模型"></span>
     <a href="#push-%e6%a8%a1%e5%9e%8b" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>客户端定期以推送模式将收集到的指标数据发送给服务端：</p>
-<p><img src="https://cdn.nlark.com/yuque/0/2024/jpeg/327391/1722440310760-1f557d96-d4fc-4a9f-85df-c8a25af28aaf.jpeg" alt="" loading="lazy" /></p>
+<p>
+    <img src="../push-model.png" alt="" loading="lazy" /></p>
 <p>客户端（应用程序）决定何时何地发送其指标。VictoriaMetrics支持以下数据摄取协议（也称为推送协议）：</p>
 <ul>
 <li><a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#prometheus-setup" target="_blank" rel="noopener">Prometheus remote write API</a>.</li>
@@ -696,7 +698,8 @@ curl -d &#39;{&#34;metric&#34;:{&#34;__name__&#34;:&#34;foo&#34;,&#34;job&#34;:&
 </ul>
 <h2>Pull 模型<span class="hx-absolute -hx-mt-20" id="pull-模型"></span>
     <a href="#pull-%e6%a8%a1%e5%9e%8b" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>Pull 模型是由Prometheus推广的一种方法，其中监控系统决定何时以及从哪里拉取指标：</p>
-<p><img src="https://cdn.nlark.com/yuque/0/2024/jpeg/327391/1722440310657-7a28447b-db8d-445c-a7fb-a1d9762f17a9.jpeg" alt="" loading="lazy" /></p>
+<p>
+    <img src="../pull-model.png" alt="" loading="lazy" /></p>
 <p>在 Pull 模型中，监控系统需要知道所有需要监控的应用程序的地址。指标是定期从已知的应用程序（也称为抓取目标）通过HTTP协议进行抓取（拉取）。</p>
 <p>VictoriaMetrics支持发现与Prometheus兼容的目标，并以与Prometheus相同的方式从这些目标中抓取指标-请参阅这些文档。</p>
 <p><a href="https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben" target="_blank" rel="noopener">单机版VictoriaMetrics</a>和<a href="https://www.victoriametrics.com.cn/victoriametrics/xi-tong-zu-jian/vmagent" target="_blank" rel="noopener">vmagent</a>都支持指标抓取。</p>
@@ -714,11 +717,13 @@ curl -d &#39;{&#34;metric&#34;:{&#34;__name__&#34;:&#34;foo&#34;,&#34;job&#34;:&
 <h2>常见的数据收集方法<span class="hx-absolute -hx-mt-20" id="常见的数据收集方法"></span>
     <a href="#%e5%b8%b8%e8%a7%81%e7%9a%84%e6%95%b0%e6%8d%ae%e6%94%b6%e9%9b%86%e6%96%b9%e6%b3%95" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>VictoriaMetrics支持数据收集的 Push 和 Pull 模式。许多场景只使用其中一种模式，或同时使用两种模式。</p>
 <p>对于数据收集来说，最常见的方法是同时使用这两种模式：</p>
-<p><img src="https://cdn.nlark.com/yuque/0/2024/jpeg/327391/1722440310630-727b8e88-eb5f-4c9a-9aa1-4488c2852155.jpeg" alt="" loading="lazy" /></p>
+<p>
+    <img src="../pull-and-push.png" alt="" loading="lazy" /></p>
 <p>在这种方法中，使用了额外的组件 - vmagent。vmagent是一个轻量级代理程序，其主要目的是收集、过滤、重新标记和发送指标给VictoriaMetrics。它支持上述提到的所有Push和Pull协议。</p>
 <p>关于VictoriaMetrics和vmagent的基本监控设置已在示例docker-compose清单中进行了描述。在这个示例中，vmagent会抓取一系列目标，并将收集到的数据转发给VictoriaMetrics。然后，VictoriaMetrics被作为Grafana上的一个Prometheus类型数据源，以查询收集到的数据。</p>
 <p>VictoriaMetrics组件允许构建更高级的拓扑结构。例如，vmagents可以从不同数据中心推送指标到中央的VictoriaMetrics：</p>
-<p><img src="https://cdn.nlark.com/yuque/0/2024/png/327391/1722440310651-1913eb2b-9dc2-4e4d-a50c-29440bd9bebf.png" alt="" loading="lazy" /></p>
+<p>
+    <img src="../pull-and-push-2.png" alt="" loading="lazy" /></p>
 <p>在这个例子中，VictoriaMetrics可以是单机版的VictoriaMetrics或者是集群版本VictoriaMetrics。vmagent还允许将相同的数据复制到多个目标。</p>
 
         </div>

@@ -328,7 +328,8 @@ requests_total{path=&amp;#34;/&amp;#34;, code=&amp;#34;403&amp;#34;}&lt;/code&gt
   
 &lt;/div&gt;
 &lt;p&gt;效果如图所示：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/png/327391/1723474122778-1ed5a421-6b1d-457a-8654-9ef17012d4d4.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;
+    &lt;img src=&#34;../disk-usage.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;磁盘使用率上升是因为 merge 过程创建新的 part 来  merge 老的多个 parts。突然下降代表 merge 结束，删掉老的 parts。&lt;/p&gt;
 &lt;p&gt;整个 merge 过程，CPU 和 Memory 几乎没有什么影响。merge 的耗时数个小时，跟数据量大小有关。&lt;/p&gt;
 &lt;h2&gt;等待&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;等待&#34;&gt;&lt;/span&gt;
@@ -1487,7 +1488,8 @@ FROM (
 &lt;p&gt;运算符 &lt;code&gt;&amp;gt;&lt;/code&gt; 和 &lt;code&gt;*&lt;/code&gt; 在下面会有介绍。&lt;/p&gt;
 &lt;h2&gt;计算速率&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;计算速率&#34;&gt;&lt;/span&gt;
     &lt;a href=&#34;#%e8%ae%a1%e7%ae%97%e9%80%9f%e7%8e%87&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;细心的读者会注意到上面的查询语句在 &lt;a href=&#34;http://docs.grafana.org/features/datasources/prometheus/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Grafana&lt;/a&gt; 上绘制的线条都是下面这样递增的样式：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/png/327391/1722440580817-9e440abc-f80f-4e93-a956-7e87a58bb9d6.png&#34; alt=&#34;Counter 类型&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;
+    &lt;img src=&#34;../promql-demo-1.png&#34; alt=&#34;Counter 类型&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;这样的图表实用性几乎为零，因为它们显示的是难以解释的不断增长的Counter值，而我们想要的是网络带宽图表 —— 在图表左侧看到&lt;code&gt;MB/s&lt;/code&gt;。PromQL有一个神奇的函数可以实现这个功能 —— &lt;code&gt;rate()&lt;/code&gt;。它可以计算所有匹配时间序列的每秒速率：&lt;/p&gt;
 &lt;div class=&#34;hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code&#34;&gt;
   
@@ -1505,7 +1507,8 @@ FROM (
   
 &lt;/div&gt;
 &lt;p&gt;这样监控图就变正确了：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/png/327391/1722440581004-c61de2df-5bbe-4539-bfb5-a4dd22d112b6.png&#34; alt=&#34;rate(counter[5m])&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;
+    &lt;img src=&#34;../promql-demo-2.png&#34; alt=&#34;rate(counter[5m])&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;查询语句中的 &lt;code&gt;[5m]&lt;/code&gt; 是什么意思呢？这是一个代表 &lt;code&gt;5m&lt;/code&gt;（5分钟）时间区间。在这个场景中，在计算每个时间点的每秒平均增长率时， 会往回看&lt;code&gt;5m&lt;/code&gt;的数据，即最近5分钟的每秒平均增长。每个数据点的计算公式可以简化为&lt;code&gt;(Vcurr-Vprev)/(Tcurr-Tprev)&lt;/code&gt;，&lt;code&gt;Vcurr&lt;/code&gt; 代表当前时间&lt;code&gt;Tcurr&lt;/code&gt;上的数值，&lt;code&gt;Vprev&lt;/code&gt; 代表在时间&lt;code&gt;Tprev&lt;/code&gt; 上的数值，其中&lt;code&gt;Tprev=Tcurr-5m&lt;/code&gt;。&lt;/p&gt;
 &lt;p&gt;如果这看起来太复杂，那么就记住，这个时间区间越大，监控图就会约平滑；而更小的时间区间会让监控图变得更加跳跃（抖动）。VictoriaMetrics 对 PromQL 进行了扩展，这个时间区间&lt;code&gt;[d]&lt;/code&gt;可以省略不写，缺省情况下就是2个数据点之间的间隔（通过&lt;code&gt;step&lt;/code&gt;参数指定的），而&lt;code&gt;step&lt;/code&gt;的默认缺省值是&lt;code&gt;5m&lt;/code&gt;。&lt;/p&gt;
 &lt;div class=&#34;hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code&#34;&gt;
@@ -1602,7 +1605,8 @@ FROM (
   
 &lt;/div&gt;
 &lt;p&gt;其结果如下图所示，图中会出现带宽超过 2300 字节/秒的间隙：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/png/327391/1722440580873-c594353c-f5c1-4afe-a5c6-10f61ea2956a.png&#34; alt=&#34;rate(node_network_receive_bytes_total[5m]) &amp;lt; 2300&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;
+    &lt;img src=&#34;../promql-demo-3.png&#34; alt=&#34;rate(node_network_receive_bytes_total[5m]) &amp;lt; 2300&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;比较运算符的结果可以使用 bool 修饰符进行修改：&lt;/p&gt;
 &lt;div class=&#34;hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code&#34;&gt;
   
@@ -1620,7 +1624,8 @@ FROM (
   
 &lt;/div&gt;
 &lt;p&gt;在这个例子中，对于有数据的部分会被转化为&lt;code&gt;true（1）&lt;/code&gt;，没有数据的转换成&lt;code&gt;false（0）&lt;/code&gt;：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/png/327391/1722440580886-82ffc5fb-b81a-4fe3-99c4-230d705be26f.png&#34; alt=&#34;rate(node_network_receive_bytes_total[5m]) &amp;lt; bool 2300&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;
+    &lt;img src=&#34;../promql-demo-4.png&#34; alt=&#34;rate(node_network_receive_bytes_total[5m]) &amp;lt; bool 2300&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
 &lt;h2&gt;分组聚合函数&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;分组聚合函数&#34;&gt;&lt;/span&gt;
     &lt;a href=&#34;#%e5%88%86%e7%bb%84%e8%81%9a%e5%90%88%e5%87%bd%e6%95%b0&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;PromQL 支持对时间序列进行&lt;a href=&#34;https://prometheus.io/docs/prometheus/latest/querying/operators/#aggregation-operators&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;分组聚合&lt;/a&gt;。时间序列按给定的标签集（Labels）进行分组，然后将给定的聚合函数应用于每个组。 例如，以下查询将返回按实例分组的所有网络接口的入口流量总和：&lt;/p&gt;
 &lt;div class=&#34;hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code&#34;&gt;
@@ -3496,12 +3501,15 @@ FROM (
 &lt;h1&gt;Better rate()&lt;/h1&gt;&lt;p&gt;凡是涉及对回溯窗口样本值首尾样本值进行计算的 rollup 函数，比如 &lt;code&gt;rate&lt;/code&gt;、&lt;code&gt;delta&lt;/code&gt;、&lt;code&gt;increase&lt;/code&gt; 等函数；其MetricsQL 和 PromQL 都存在统一的计算差异。因此 VictoriaMetrics 使用 &lt;code&gt;xxx_prometheus&lt;/code&gt; 的命名提供了兼容 Prometheus 统计方式的 rollup 函数，如 &lt;code&gt;rate_prometheus&lt;/code&gt;、&lt;code&gt;delta_prometheus&lt;/code&gt;、&lt;code&gt;increase_prometheus&lt;/code&gt; 等。而默认则使用 MetricsQL 的统计方式。&lt;/p&gt;
 &lt;p&gt;以 increase 函数为例，MetricsQL 的计算方式更加精准，如下图所示。&lt;/p&gt;
 &lt;p&gt;假设我们有5个样本值，当回溯窗口大小是&lt;code&gt;$__interval&lt;/code&gt; 时，我们期望得到的就是&lt;code&gt;V3-V1&lt;/code&gt;和&lt;code&gt;V5-V3&lt;/code&gt;两个值。即当前回溯窗口的最后一个样本值应该与前一个回溯窗口的最后一个样本值计算，而不是和本窗口的第一个样本值计算。&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/png/327391/1722440686793-e31e9908-d1be-4d29-8a72-aba08c0c8f2b.png&#34; alt=&#34;MetricsQL&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;
+    &lt;img src=&#34;../promql-diff-demo-1.png&#34; alt=&#34;MetricsQL&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;再看 Prometheus 的计算方式，如下图所示。它使用一个回溯窗口的最后一个样本值，与该窗口的第一个值进行计算。因为 V1 样本不在第一个窗口内，V3 不再第二个窗口内，这就导致 Prometheus 计算出来的值是&lt;code&gt;V3-V2&lt;/code&gt;和&lt;code&gt;V5-V4&lt;/code&gt;，结果并不正确。&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/jpeg/327391/1722440686639-47e8b8bc-848a-4192-b94f-3f267f41a7b5.jpeg&#34; alt=&#34;PromQL&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;
+    &lt;img src=&#34;../promql-diff-demo-2.png&#34; alt=&#34;PromQL&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;此外，Prometheus 的这种统计方式还有另外一个问题。就是如果&lt;code&gt;$_interval&lt;/code&gt;大小的时间窗口内只有一个样本值，那么&lt;code&gt;rate&lt;/code&gt;和&lt;code&gt;increase&lt;/code&gt;这种汇总函数的结果为空。&lt;/p&gt;
 &lt;p&gt;MetricsQL doesn&amp;rsquo;t apply extrapolation when calculating &lt;code&gt;rate&lt;/code&gt; and &lt;code&gt;increase&lt;/code&gt;. This solves the issue of fractional &lt;code&gt;increase()&lt;/code&gt; results over integer counters:&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/png/327391/1722440757828-574d7fdf-ea08-4b0e-ab64-6e8486cc0479.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;
+    &lt;img src=&#34;../promql-diff-demo-3.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;increase() query over time series generated by integer counter results in decimal values for Prometheus due to extrapolation.&lt;/p&gt;
 &lt;p&gt;It is &lt;a href=&#34;https://www.robustperception.io/what-range-should-i-use-with-rate&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;quite important&lt;/a&gt; to choose the correct lookbehind window for &lt;code&gt;rate&lt;/code&gt; and &lt;code&gt;increase&lt;/code&gt; in Prometheus. Otherwise, incorrect or no data may be returned. &lt;a href=&#34;https://grafana.com/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Grafana&lt;/a&gt; even introduced a special variable &lt;a href=&#34;https://grafana.com/blog/2020/09/28/new-in-grafana-7.2-__rate_interval-for-prometheus-rate-queries-that-just-work/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;$__rate_interval&lt;/a&gt; to address this issue, but it may cause more problems than it solves:&lt;/p&gt;
 &lt;ul&gt;
@@ -3536,7 +3544,8 @@ FROM (
 &lt;p&gt;MetricsQL consistently deletes NaN from query responses. This behavior is intentional because there is no meaningful way to use such results. That&amp;rsquo;s why testing queries such as &lt;code&gt;demo_num_cpus * NaN&lt;/code&gt; or &lt;code&gt;sqrt(-demo_num_cpus)&lt;/code&gt; return an empty response in MetricsQL, and returns NaNs in PromQL.&lt;/p&gt;
 &lt;p&gt;There were 6 (~1% of 529 tests total) queries in thetest suite expecting NaNs in responses: &lt;code&gt;sqrt(-metric)&lt;/code&gt; , &lt;code&gt;ln(-metric)&lt;/code&gt; , &lt;code&gt;log2(-metric)&lt;/code&gt; , &lt;code&gt;log10(-metric)&lt;/code&gt; and &lt;code&gt;metric * NaN&lt;/code&gt; .&lt;/p&gt;
 &lt;h1&gt;Negative offsets&lt;/h1&gt;&lt;p&gt;VictoriaMetrics supports negative offsets and Prometheus also does as well starting with version &lt;a href=&#34;https://github.com/prometheus/prometheus/releases/tag/v2.26.0&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;2.26&lt;/a&gt; if a specific feature flag is enabled. However, query results are different even with the enabled feature flag due to the fact that Prometheus continues the last value of the metric during the additional 5min:&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/png/327391/1722440758086-707ffe51-0ff6-400f-9372-11d0fe7e959e.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;
+    &lt;img src=&#34;../promql-diff-demo-4.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;VictoriaMetrics vs Prometheus negative offset query. VictoriaMetrics response value is shifted by 1e7 to show the difference between the lines visually. Without this shift, they are identical except the last 5min.&lt;/p&gt;
 &lt;p&gt;Such behavior was unexpected to us. To get more details about it please check the following discussion:&lt;/p&gt;
 &lt;p&gt;&lt;a href=&#34;https://github.com/prometheus/prometheus/discussions/9428&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Series with negative offset are continued with the last value up to 5min · Discussion #9428 ·…You can&amp;rsquo;t perform that action at this time. You signed in with another tab or window. You signed out in another tab or…github.com&lt;/a&gt;&lt;/p&gt;
@@ -4858,7 +4867,8 @@ FROM (
         &lt;p&gt;VictoriaMetrics 支持当今监控应用的 2 种主流写入模式：Push 和 Pull。&lt;/p&gt;
 &lt;h2&gt;Push 模型&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;push-模型&#34;&gt;&lt;/span&gt;
     &lt;a href=&#34;#push-%e6%a8%a1%e5%9e%8b&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;客户端定期以推送模式将收集到的指标数据发送给服务端：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/jpeg/327391/1722440310760-1f557d96-d4fc-4a9f-85df-c8a25af28aaf.jpeg&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;
+    &lt;img src=&#34;../push-model.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;客户端（应用程序）决定何时何地发送其指标。VictoriaMetrics支持以下数据摄取协议（也称为推送协议）：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#prometheus-setup&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;Prometheus remote write API&lt;/a&gt;.&lt;/li&gt;
@@ -4904,7 +4914,8 @@ FROM (
 &lt;/ul&gt;
 &lt;h2&gt;Pull 模型&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;pull-模型&#34;&gt;&lt;/span&gt;
     &lt;a href=&#34;#pull-%e6%a8%a1%e5%9e%8b&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Pull 模型是由Prometheus推广的一种方法，其中监控系统决定何时以及从哪里拉取指标：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/jpeg/327391/1722440310657-7a28447b-db8d-445c-a7fb-a1d9762f17a9.jpeg&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;
+    &lt;img src=&#34;../pull-model.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;在 Pull 模型中，监控系统需要知道所有需要监控的应用程序的地址。指标是定期从已知的应用程序（也称为抓取目标）通过HTTP协议进行抓取（拉取）。&lt;/p&gt;
 &lt;p&gt;VictoriaMetrics支持发现与Prometheus兼容的目标，并以与Prometheus相同的方式从这些目标中抓取指标-请参阅这些文档。&lt;/p&gt;
 &lt;p&gt;&lt;a href=&#34;https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;单机版VictoriaMetrics&lt;/a&gt;和&lt;a href=&#34;https://www.victoriametrics.com.cn/victoriametrics/xi-tong-zu-jian/vmagent&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;vmagent&lt;/a&gt;都支持指标抓取。&lt;/p&gt;
@@ -4922,11 +4933,13 @@ FROM (
 &lt;h2&gt;常见的数据收集方法&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;常见的数据收集方法&#34;&gt;&lt;/span&gt;
     &lt;a href=&#34;#%e5%b8%b8%e8%a7%81%e7%9a%84%e6%95%b0%e6%8d%ae%e6%94%b6%e9%9b%86%e6%96%b9%e6%b3%95&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;VictoriaMetrics支持数据收集的 Push 和 Pull 模式。许多场景只使用其中一种模式，或同时使用两种模式。&lt;/p&gt;
 &lt;p&gt;对于数据收集来说，最常见的方法是同时使用这两种模式：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/jpeg/327391/1722440310630-727b8e88-eb5f-4c9a-9aa1-4488c2852155.jpeg&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;
+    &lt;img src=&#34;../pull-and-push.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;在这种方法中，使用了额外的组件 - vmagent。vmagent是一个轻量级代理程序，其主要目的是收集、过滤、重新标记和发送指标给VictoriaMetrics。它支持上述提到的所有Push和Pull协议。&lt;/p&gt;
 &lt;p&gt;关于VictoriaMetrics和vmagent的基本监控设置已在示例docker-compose清单中进行了描述。在这个示例中，vmagent会抓取一系列目标，并将收集到的数据转发给VictoriaMetrics。然后，VictoriaMetrics被作为Grafana上的一个Prometheus类型数据源，以查询收集到的数据。&lt;/p&gt;
 &lt;p&gt;VictoriaMetrics组件允许构建更高级的拓扑结构。例如，vmagents可以从不同数据中心推送指标到中央的VictoriaMetrics：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/png/327391/1722440310651-1913eb2b-9dc2-4e4d-a50c-29440bd9bebf.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;
+    &lt;img src=&#34;../pull-and-push-2.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;在这个例子中，VictoriaMetrics可以是单机版的VictoriaMetrics或者是集群版本VictoriaMetrics。vmagent还允许将相同的数据复制到多个目标。&lt;/p&gt;
 
       </description>

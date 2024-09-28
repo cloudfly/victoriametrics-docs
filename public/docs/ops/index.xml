@@ -44,7 +44,8 @@
   
 &lt;/div&gt;
 &lt;p&gt;效果如图所示：&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://cdn.nlark.com/yuque/0/2024/png/327391/1723474122778-1ed5a421-6b1d-457a-8654-9ef17012d4d4.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
+&lt;p&gt;
+    &lt;img src=&#34;../disk-usage.png&#34; alt=&#34;&#34; loading=&#34;lazy&#34; /&gt;&lt;/p&gt;
 &lt;p&gt;磁盘使用率上升是因为 merge 过程创建新的 part 来  merge 老的多个 parts。突然下降代表 merge 结束，删掉老的 parts。&lt;/p&gt;
 &lt;p&gt;整个 merge 过程，CPU 和 Memory 几乎没有什么影响。merge 的耗时数个小时，跟数据量大小有关。&lt;/p&gt;
 &lt;h2&gt;等待&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;等待&#34;&gt;&lt;/span&gt;
