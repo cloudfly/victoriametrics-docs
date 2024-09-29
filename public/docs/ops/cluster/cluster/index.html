@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="en"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon shortcut" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+<link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
+<link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+<link fetchpriority="low" href="/site.webmanifest" rel="manifest" />
+
+  <title>集群版本 – 中文手册(WIP)</title>
+  <meta name="description" content="架构概览 VictoriaMetrics 集群版本由以下几个服务组成：
+vmstorage - 存储原始数据，并返回在给定时间范围内针对给定 Label 筛选器查询的数据。 vminsert - 接受摄入的数据，并 根据对度量名称及其所有标签的一致散列，将数据分散到 vmstorage 节点中 vmselect - 通过从所有已配置的 vmstorage 节点获取所需数据来执行接收到的查询请求。 每项服务都可独立扩展，并可在最合适的硬件上运行。 vmstorage 节点之间互不相识，互不通信，也不共享任何数据。 这是一种共享无架构 。 它提高了集群的可用性，简化了集群维护和集群扩展。
+多租户 VictoriaMetrics集群支持多个隔离的租户（即命名空间）。租户通过accountID或accountID:projectID进行标识，这些标识符被置于请求URL中。详情请参阅这些文档。
+关于VictoriaMetrics中租户的一些事实：
+每个accountID和projectID均由一个任意的32位整数标识，范围为[0..2^32)。如果projectID缺失，则自动分配为0。预期其他关于租户的信息，如身份验证令牌、租户名称、限制、会计等，存储在一个独立的关系数据库中。该数据库必须由位于VictoriaMetrics集群前端的独立服务进行管理，例如vmauth或vmgateway。如果您需要此类服务的协助，请联系我们。
+当第一个数据点被写入给定的租户时，租户会被自动创建。
+所有租户的数据均匀分布在可用的vmstorage节点之间。这保证了当不同租户拥有不同数量的数据和不同的查询负载时，vmstorage节点之间的负载也是均匀的。
+数据库的性能和资源使用情况并不取决于租户的数量，而主要取决于所有租户中活跃时间序列的总数。如果一个时间序列在过去的一小时中至少接收了一个样本，或者在过去的一小时中被查询访问过，那么它就被认为是活跃的。
+VictoriaMetrics不支持在单一请求中查询多个租户。
+已注册租户的列表可以通过http://&lt;vmselect&gt;:8481/admin/tenants URL获取。请参阅这些文档。
+VictoriaMetrics通过指标公开了各种按租户划分的统计数据——请参阅这些文档。
+也可以看下通过 labels 实现多租户。
+通过 labels 实现多租户 vminsert可以从多个租户通过一个特殊的多租户端点http://vminsert:8480/insert/multitenant/&lt;suffix&gt;接收数据，其中可以替换为从此列表中获取数据的任何受支持的&lt;suffix&gt;。在这种情况下，AccountID 和ProjectID是从传入样本的可选 vm_account_id 和 vm_project_id 标签中获取的。如果 vm_account_id 或 vm_project_id 标签缺失或无效，则相应的AccountID 或ProjectID 将设置为 0。在将样本转发到vmstorage之前，会自动从样本中删除这些Label。例如，如果将以下样本写入 http://vminsert:8480/insert/multitenant/prometheus/api/v1/write：
+http_requests_total{path=&#34;/foo&#34;,vm_account_id=&#34;42&#34;} 12 http_requests_total{path=&#34;/bar&#34;,vm_account_id=&#34;7&#34;,vm_project_id=&#34;9&#34;} 34 然后http_requests_total｛path=“/foo”｝12将被存储在租户accountID=42，projectID=0中，而http_requests_total{path=“/bar”｝34将被存储到租户accountID=7，projectID=9中。" />
+
+  
+    <link rel="canonical" href="http://localhost:1313/docs/ops/cluster/cluster/" itemprop="url" />
+  
+
+  
+
+<meta property="og:title" content="集群版本" />
+<meta property="og:description" content="架构概览
+    VictoriaMetrics 集群版本由以下几个服务组成：
+
+vmstorage - 存储原始数据，并返回在给定时间范围内针对给定 Label 筛选器查询的数据。
+vminsert - 接受摄入的数据，并 根据对度量名称及其所有标签的一致散列，将数据分散到 vmstorage 节点中
+vmselect - 通过从所有已配置的 vmstorage 节点获取所需数据来执行接收到的查询请求。
+
+每项服务都可独立扩展，并可在最合适的硬件上运行。 vmstorage 节点之间互不相识，互不通信，也不共享任何数据。 这是一种共享无架构 。 它提高了集群的可用性，简化了集群维护和集群扩展。
+多租户
+    VictoriaMetrics集群支持多个隔离的租户（即命名空间）。租户通过accountID或accountID:projectID进行标识，这些标识符被置于请求URL中。详情请参阅这些文档。
+关于VictoriaMetrics中租户的一些事实：
+每个accountID和projectID均由一个任意的32位整数标识，范围为[0..2^32)。如果projectID缺失，则自动分配为0。预期其他关于租户的信息，如身份验证令牌、租户名称、限制、会计等，存储在一个独立的关系数据库中。该数据库必须由位于VictoriaMetrics集群前端的独立服务进行管理，例如vmauth或vmgateway。如果您需要此类服务的协助，请联系我们。
+当第一个数据点被写入给定的租户时，租户会被自动创建。
+所有租户的数据均匀分布在可用的vmstorage节点之间。这保证了当不同租户拥有不同数量的数据和不同的查询负载时，vmstorage节点之间的负载也是均匀的。
+数据库的性能和资源使用情况并不取决于租户的数量，而主要取决于所有租户中活跃时间序列的总数。如果一个时间序列在过去的一小时中至少接收了一个样本，或者在过去的一小时中被查询访问过，那么它就被认为是活跃的。
+VictoriaMetrics不支持在单一请求中查询多个租户。
+已注册租户的列表可以通过http://&lt;vmselect&gt;:8481/admin/tenants URL获取。请参阅这些文档。
+VictoriaMetrics通过指标公开了各种按租户划分的统计数据——请参阅这些文档。
+也可以看下通过 labels 实现多租户。
+通过 labels 实现多租户
+    vminsert可以从多个租户通过一个特殊的多租户端点http://vminsert:8480/insert/multitenant/&lt;suffix&gt;接收数据，其中可以替换为从此列表中获取数据的任何受支持的&lt;suffix&gt;。在这种情况下，AccountID 和ProjectID是从传入样本的可选 vm_account_id 和 vm_project_id 标签中获取的。如果 vm_account_id 或 vm_project_id 标签缺失或无效，则相应的AccountID 或ProjectID 将设置为 0。在将样本转发到vmstorage之前，会自动从样本中删除这些Label。例如，如果将以下样本写入 http://vminsert:8480/insert/multitenant/prometheus/api/v1/write：
+
+  
+
+http_requests_total{path=&#34;/foo&#34;,vm_account_id=&#34;42&#34;} 12
+http_requests_total{path=&#34;/bar&#34;,vm_account_id=&#34;7&#34;,vm_project_id=&#34;9&#34;} 34
+  
+    
+    
+  
+
+
+  
+
+然后http_requests_total｛path=“/foo”｝12将被存储在租户accountID=42，projectID=0中，而http_requests_total{path=“/bar”｝34将被存储到租户accountID=7，projectID=9中。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/docs/ops/cluster/cluster/" /><meta property="article:section" content="docs" />
+
+
+
+  
+  <meta itemprop="name" content="集群版本">
+  <meta itemprop="description" content="架构概览 VictoriaMetrics 集群版本由以下几个服务组成：
+vmstorage - 存储原始数据，并返回在给定时间范围内针对给定 Label 筛选器查询的数据。 vminsert - 接受摄入的数据，并 根据对度量名称及其所有标签的一致散列，将数据分散到 vmstorage 节点中 vmselect - 通过从所有已配置的 vmstorage 节点获取所需数据来执行接收到的查询请求。 每项服务都可独立扩展，并可在最合适的硬件上运行。 vmstorage 节点之间互不相识，互不通信，也不共享任何数据。 这是一种共享无架构 。 它提高了集群的可用性，简化了集群维护和集群扩展。
+多租户 VictoriaMetrics集群支持多个隔离的租户（即命名空间）。租户通过accountID或accountID:projectID进行标识，这些标识符被置于请求URL中。详情请参阅这些文档。
+关于VictoriaMetrics中租户的一些事实：
+每个accountID和projectID均由一个任意的32位整数标识，范围为[0..2^32)。如果projectID缺失，则自动分配为0。预期其他关于租户的信息，如身份验证令牌、租户名称、限制、会计等，存储在一个独立的关系数据库中。该数据库必须由位于VictoriaMetrics集群前端的独立服务进行管理，例如vmauth或vmgateway。如果您需要此类服务的协助，请联系我们。
+当第一个数据点被写入给定的租户时，租户会被自动创建。
+所有租户的数据均匀分布在可用的vmstorage节点之间。这保证了当不同租户拥有不同数量的数据和不同的查询负载时，vmstorage节点之间的负载也是均匀的。
+数据库的性能和资源使用情况并不取决于租户的数量，而主要取决于所有租户中活跃时间序列的总数。如果一个时间序列在过去的一小时中至少接收了一个样本，或者在过去的一小时中被查询访问过，那么它就被认为是活跃的。
+VictoriaMetrics不支持在单一请求中查询多个租户。
+已注册租户的列表可以通过http://&lt;vmselect&gt;:8481/admin/tenants URL获取。请参阅这些文档。
+VictoriaMetrics通过指标公开了各种按租户划分的统计数据——请参阅这些文档。
+也可以看下通过 labels 实现多租户。
+通过 labels 实现多租户 vminsert可以从多个租户通过一个特殊的多租户端点http://vminsert:8480/insert/multitenant/&lt;suffix&gt;接收数据，其中可以替换为从此列表中获取数据的任何受支持的&lt;suffix&gt;。在这种情况下，AccountID 和ProjectID是从传入样本的可选 vm_account_id 和 vm_project_id 标签中获取的。如果 vm_account_id 或 vm_project_id 标签缺失或无效，则相应的AccountID 或ProjectID 将设置为 0。在将样本转发到vmstorage之前，会自动从样本中删除这些Label。例如，如果将以下样本写入 http://vminsert:8480/insert/multitenant/prometheus/api/v1/write：
+http_requests_total{path=&#34;/foo&#34;,vm_account_id=&#34;42&#34;} 12 http_requests_total{path=&#34;/bar&#34;,vm_account_id=&#34;7&#34;,vm_project_id=&#34;9&#34;} 34 然后http_requests_total｛path=“/foo”｝12将被存储在租户accountID=42，projectID=0中，而http_requests_total{path=“/bar”｝34将被存储到租户accountID=7，projectID=9中。">
+  <meta itemprop="wordCount" content="1445">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="集群版本">
+  <meta name="twitter:description" content="架构概览 VictoriaMetrics 集群版本由以下几个服务组成：
+vmstorage - 存储原始数据，并返回在给定时间范围内针对给定 Label 筛选器查询的数据。 vminsert - 接受摄入的数据，并 根据对度量名称及其所有标签的一致散列，将数据分散到 vmstorage 节点中 vmselect - 通过从所有已配置的 vmstorage 节点获取所需数据来执行接收到的查询请求。 每项服务都可独立扩展，并可在最合适的硬件上运行。 vmstorage 节点之间互不相识，互不通信，也不共享任何数据。 这是一种共享无架构 。 它提高了集群的可用性，简化了集群维护和集群扩展。
+多租户 VictoriaMetrics集群支持多个隔离的租户（即命名空间）。租户通过accountID或accountID:projectID进行标识，这些标识符被置于请求URL中。详情请参阅这些文档。
+关于VictoriaMetrics中租户的一些事实：
+每个accountID和projectID均由一个任意的32位整数标识，范围为[0..2^32)。如果projectID缺失，则自动分配为0。预期其他关于租户的信息，如身份验证令牌、租户名称、限制、会计等，存储在一个独立的关系数据库中。该数据库必须由位于VictoriaMetrics集群前端的独立服务进行管理，例如vmauth或vmgateway。如果您需要此类服务的协助，请联系我们。
+当第一个数据点被写入给定的租户时，租户会被自动创建。
+所有租户的数据均匀分布在可用的vmstorage节点之间。这保证了当不同租户拥有不同数量的数据和不同的查询负载时，vmstorage节点之间的负载也是均匀的。
+数据库的性能和资源使用情况并不取决于租户的数量，而主要取决于所有租户中活跃时间序列的总数。如果一个时间序列在过去的一小时中至少接收了一个样本，或者在过去的一小时中被查询访问过，那么它就被认为是活跃的。
+VictoriaMetrics不支持在单一请求中查询多个租户。
+已注册租户的列表可以通过http://&lt;vmselect&gt;:8481/admin/tenants URL获取。请参阅这些文档。
+VictoriaMetrics通过指标公开了各种按租户划分的统计数据——请参阅这些文档。
+也可以看下通过 labels 实现多租户。
+通过 labels 实现多租户 vminsert可以从多个租户通过一个特殊的多租户端点http://vminsert:8480/insert/multitenant/&lt;suffix&gt;接收数据，其中可以替换为从此列表中获取数据的任何受支持的&lt;suffix&gt;。在这种情况下，AccountID 和ProjectID是从传入样本的可选 vm_account_id 和 vm_project_id 标签中获取的。如果 vm_account_id 或 vm_project_id 标签缺失或无效，则相应的AccountID 或ProjectID 将设置为 0。在将样本转发到vmstorage之前，会自动从样本中删除这些Label。例如，如果将以下样本写入 http://vminsert:8480/insert/multitenant/prometheus/api/v1/write：
+http_requests_total{path=&#34;/foo&#34;,vm_account_id=&#34;42&#34;} 12 http_requests_total{path=&#34;/bar&#34;,vm_account_id=&#34;7&#34;,vm_project_id=&#34;9&#34;} 34 然后http_requests_total｛path=“/foo”｝12将被存储在租户accountID=42，projectID=0中，而http_requests_total{path=“/bar”｝34将被存储到租户accountID=7，projectID=9中。">
+
+    <link href="/css/compiled/main.css" rel="stylesheet" />
+
+
+
+  <link href="/css/custom.css" rel="stylesheet" />
+
+
+
+
+
+  <script>
+     
+    const defaultTheme = 'system';
+
+    const setDarkTheme = () => {
+      document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
+    }
+    const setLightTheme = () => {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.style.colorScheme = "light";
+    }
+
+    if ("color-theme" in localStorage) {
+      localStorage.getItem("color-theme") === "dark" ? setDarkTheme() : setLightTheme();
+    } else {
+      defaultTheme === "dark" ? setDarkTheme() : setLightTheme();
+      if (defaultTheme === "system") {
+        window.matchMedia("(prefers-color-scheme: dark)").matches ? setDarkTheme() : setLightTheme();
+      }
+    }
+  </script>
+
+  
+</head>
+<body dir="ltr"><div class="nav-container hx-sticky hx-top-0 hx-z-20 hx-w-full hx-bg-transparent print:hx-hidden">
+  <div class="nav-container-blur hx-pointer-events-none hx-absolute hx-z-[-1] hx-h-full hx-w-full hx-bg-white dark:hx-bg-dark hx-shadow-[0_2px_4px_rgba(0,0,0,.02),0_1px_0_rgba(0,0,0,.06)] contrast-more:hx-shadow-[0_0_0_1px_#000] dark:hx-shadow-[0_-1px_0_rgba(255,255,255,.1)_inset] contrast-more:dark:hx-shadow-[0_0_0_1px_#fff]"></div>
+
+  <nav class="hx-mx-auto hx-flex hx-items-center hx-justify-end hx-gap-2 hx-h-16 hx-px-6 hx-max-w-[90rem]">
+    <a class="hx-flex hx-items-center hover:hx-opacity-75 ltr:hx-mr-auto rtl:hx-ml-auto" href="/">
+        <img class="hx-block dark:hx-hidden" src="/logo-victoriametrics.svg" alt="中文手册(WIP)" height="80" width="160" />
+        <img class="hx-hidden dark:hx-block" src="/logo-victoriametrics-dark.svg" alt="中文手册(WIP)" height="80" width="160" />
+        <span class="hx-mx-2 hx-font-extrabold hx-inline hx-select-none" title="中文手册(WIP)">中文手册(WIP)</span>
+    </a><a
+            title="手册"
+            href="/docs"
+            
+            class="hx-text-sm contrast-more:hx-text-gray-700 contrast-more:dark:hx-text-gray-100 hx-relative -hx-ml-2 hx-hidden hx-whitespace-nowrap hx-p-2 md:hx-inline-block hx-font-medium"
+          >
+            <span class="hx-text-center">手册</span>
+          </a><a
+            title="关于"
+            href="/about"
+            
+            class="hx-text-sm contrast-more:hx-text-gray-700 contrast-more:dark:hx-text-gray-100 hx-relative -hx-ml-2 hx-hidden hx-whitespace-nowrap hx-p-2 md:hx-inline-block hx-text-gray-600 hover:hx-text-gray-800 dark:hx-text-gray-400 dark:hover:hx-text-gray-200"
+          >
+            <span class="hx-text-center">关于</span>
+          </a><button type="button" aria-label="Menu" class="hamburger-menu -hx-mr-2 hx-rounded hx-p-2 active:hx-bg-gray-400/20 md:hx-hidden"><svg height=24 fill="none" viewBox="0 0 24 24" stroke="currentColor"><g><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8H20"></path></g><g><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16H20"></path></g></svg></button>
+  </nav>
+</div>
+
+  <div class='hx-mx-auto hx-flex hx-max-w-[90rem]'>
+    <div class="mobile-menu-overlay [transition:background-color_1.5s_ease] hx-fixed hx-inset-0 hx-z-10 hx-bg-black/80 dark:hx-bg-black/60 hx-hidden"></div>
+<aside class="sidebar-container hx-flex hx-flex-col print:hx-hidden md:hx-top-16 md:hx-shrink-0 md:hx-w-64 md:hx-self-start max-md:[transform:translate3d(0,-100%,0)] md:hx-sticky">
+  
+  <div class="hx-px-4 hx-pt-4 md:hx-hidden">
+    <div class="search-wrapper hx-relative md:hx-w-64">
+  <div class="hx-relative hx-flex hx-items-center hx-text-gray-900 contrast-more:hx-text-gray-800 dark:hx-text-gray-300 contrast-more:dark:hx-text-gray-300">
+    <input
+      placeholder="Search..."
+      class="search-input hx-block hx-w-full hx-appearance-none hx-rounded-lg hx-px-3 hx-py-2 hx-transition-colors hx-text-base hx-leading-tight md:hx-text-sm hx-bg-black/[.05] dark:hx-bg-gray-50/10 focus:hx-bg-white dark:focus:hx-bg-dark placeholder:hx-text-gray-500 dark:placeholder:hx-text-gray-400 contrast-more:hx-border contrast-more:hx-border-current"
+      type="search"
+      value=""
+      spellcheck="false"
+    />
+    <kbd
+      class="hx-absolute hx-my-1.5 hx-select-none ltr:hx-right-1.5 rtl:hx-left-1.5 hx-h-5 hx-rounded hx-bg-white hx-px-1.5 hx-font-mono hx-text-[10px] hx-font-medium hx-text-gray-500 hx-border dark:hx-border-gray-100/20 dark:hx-bg-dark/50 contrast-more:hx-border-current contrast-more:hx-text-current contrast-more:dark:hx-border-current hx-items-center hx-gap-1 hx-transition-opacity hx-pointer-events-none hx-hidden sm:hx-flex"
+    >
+      CTRL K
+    </kbd>
+  </div>
+
+  <div>
+    <ul
+      class="search-results hextra-scrollbar hx-hidden hx-border hx-border-gray-200 hx-bg-white hx-text-gray-100 dark:hx-border-neutral-800 dark:hx-bg-neutral-900 hx-absolute hx-top-full hx-z-20 hx-mt-2 hx-overflow-auto hx-overscroll-contain hx-rounded-xl hx-py-2.5 hx-shadow-xl hx-max-h-[min(calc(50vh-11rem-env(safe-area-inset-bottom)),400px)] md:hx-max-h-[min(calc(100vh-5rem-env(safe-area-inset-bottom)),400px)] hx-inset-x-0 ltr:md:hx-left-auto rtl:md:hx-right-auto contrast-more:hx-border contrast-more:hx-border-gray-900 contrast-more:dark:hx-border-gray-50 hx-w-screen hx-min-h-[100px] hx-max-w-[min(calc(100vw-2rem),calc(100%+20rem))]"
+      style="transition: max-height 0.2s ease 0s;"
+    ></ul>
+  </div>
+</div>
+
+  </div>
+  <div class="hextra-scrollbar hx-overflow-y-auto hx-overflow-x-hidden hx-p-4 hx-grow md:hx-h-[calc(100vh-var(--navbar-height)-var(--menu-height))]">
+    <ul class="hx-flex hx-flex-col hx-gap-1 md:hx-hidden">
+      
+      
+          <li class="open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/"
+    
+  >VictoriaMetrics 中文手册
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/concepts/"
+    
+  >核心概念
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/quickstart/"
+    
+  >快速开始
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/"
+    
+  >数据查询
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/"
+    
+  >MetricQL
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/basic/"
+    
+  >基本用法
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/"
+    
+  >函数
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/rollup/"
+    
+  >汇总（Rollup）
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/label/"
+    
+  >操作 Label
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/aggregation/"
+    
+  >聚合统计
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/transmit/"
+    
+  >数值转换
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql/"
+    
+  >PromQL 新手入门
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql-diff/"
+    
+  >对比PromQL
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/http/"
+    
+  >HTTP 查询接口
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/write/"
+    
+  >数据写入
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/write/api/"
+    
+  >写入 API
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/faq/"
+    
+  >FAQ
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/"
+    
+  >运维指南
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/single/"
+    
+  >单机版本
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/disk-space/"
+    
+  >如何处理磁盘空间不足
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      sidebar-active-item hx-bg-primary-100 hx-font-semibold hx-text-primary-800 contrast-more:hx-border contrast-more:hx-border-primary-500 dark:hx-bg-primary-400/10 dark:hx-text-primary-600 contrast-more:dark:hx-border-primary-500"
+    href="/docs/ops/cluster/cluster/"
+    
+  >集群版本
+    </a>
+  
+    <ul class='hx-flex hx-flex-col hx-gap-1 hx-relative before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] dark:before:hx-bg-neutral-800 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-pr-3 rtl:before:hx-right-0 ltr:hx-ml-3 rtl:hx-mr-3'><li>
+              <a
+                href="#%e6%9e%b6%e6%9e%84%e6%a6%82%e8%a7%88"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >架构概览</a>
+            </li>
+          <li>
+              <a
+                href="#%e5%a4%9a%e7%a7%9f%e6%88%b7"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >多租户</a>
+            </li>
+          <li>
+              <a
+                href="#%e9%80%9a%e8%bf%87-labels-%e5%ae%9e%e7%8e%b0%e5%a4%9a%e7%a7%9f%e6%88%b7"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >通过 labels 实现多租户</a>
+            </li>
+          <li>
+              <a
+                href="#%e4%ba%8c%e8%bf%9b%e5%88%b6"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >二进制</a>
+            </li>
+          <li>
+              <a
+                href="#%e6%ba%90%e7%a0%81%e6%9e%84%e5%bb%ba"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >源码构建</a>
+            </li>
+          <li>
+              <a
+                href="#%e8%bf%90%e7%bb%b4"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >运维</a>
+            </li>
+          <li>
+              <a
+                href="#%e9%83%a8%e7%bd%b2%e9%9b%86%e7%be%a4"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >部署集群</a>
+            </li>
+          <li>
+              <a
+                href="#vmstorage-%e8%87%aa%e5%8a%a8%e5%8f%91%e7%8e%b0"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >vmstorage 自动发现</a>
+            </li>
+          <li>
+              <a
+                href="#%e5%ae%89%e5%85%a8"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >安全</a>
+            </li>
+          <li>
+              <a
+                href="#%e7%9b%91%e6%8e%a7"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >监控</a>
+            </li>
+          <li>
+              <a
+                href="#%e5%9f%ba%e6%95%b0%e9%99%90%e5%88%b6"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >基数限制</a>
+            </li>
+          <li>
+              <a
+                href="#%e9%97%ae%e9%a2%98%e6%8e%92%e6%9f%a5"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >问题排查</a>
+            </li>
+          <li>
+              <a
+                href="#%e5%8f%aa%e8%af%bb%e6%a8%a1%e5%bc%8f"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >只读模式</a>
+            </li>
+          <li>
+              <a
+                href="#api%e6%8e%a5%e5%8f%a3"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >API接口</a>
+            </li>
+          <li>
+              <a
+                href="#%e9%9b%86%e7%be%a4%e6%89%a9%e7%bc%a9%e5%ae%b9"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >集群扩缩容</a>
+            </li>
+          <li>
+              <a
+                href="#%e5%8d%87%e7%ba%a7%e9%9b%86%e7%be%a4%e8%8a%82%e7%82%b9"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >升级集群节点</a>
+            </li>
+          <li>
+              <a
+                href="#%e9%9b%86%e7%be%a4%e5%8f%af%e7%94%a8%e6%80%a7"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >集群可用性</a>
+            </li>
+          <li>
+              <a
+                href="#%e5%ae%b9%e9%87%8f%e8%a7%84%e5%88%92"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >容量规划</a>
+            </li>
+          <li>
+              <a
+                href="#%e8%b5%84%e6%ba%90%e4%bd%bf%e7%94%a8%e9%99%90%e5%88%b6"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >资源使用限制</a>
+            </li>
+          <li>
+              <a
+                href="#%e9%ab%98%e5%8f%af%e7%94%a8"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >高可用</a>
+            </li>
+          <li>
+              <a
+                href="#%e5%a4%9a%e5%b1%82%e8%81%94%e9%82%a6%e9%83%a8%e7%bd%b2"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >多层联邦部署</a>
+            </li>
+          <li>
+              <a
+                href="#helm"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >Helm</a>
+            </li>
+          <li>
+              <a
+                href="#kubernetes-operator"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >Kubernetes operator</a>
+            </li>
+          <li>
+              <a
+                href="#%e5%89%af%e6%9c%ac%e5%92%8c%e6%95%b0%e6%8d%ae%e5%ae%89%e5%85%a8"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >副本和数据安全</a>
+            </li>
+          <li>
+              <a
+                href="#%e5%8e%bb%e9%87%8d%e6%9c%ba%e5%88%b6"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >去重机制</a>
+            </li>
+          <li>
+              <a
+                href="#%e5%a4%87%e4%bb%bd"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >备份</a>
+            </li>
+          <li>
+              <a
+                href="#%e4%bf%9d%e5%ad%98%e6%97%b6%e9%97%b4%e8%bf%87%e6%bb%a4%e5%99%a8"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >保存时间过滤器</a>
+            </li>
+          <li>
+              <a
+                href="#%e6%80%a7%e8%83%bd%e5%88%86%e6%9e%90"
+                class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
+              >性能分析</a>
+            </li>
+          </ul>
+  
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/node-crash/"
+    
+  >如何处理机器故障
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/write-history/"
+    
+  >如何补写历史数据
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/multi-disk/"
+    
+  >有效利用一机多盘
+    </a>
+              
+            </li></ul>
+      </div>
+            </li></ul>
+      </div></li>
+    </ul>
+
+    <ul class="hx-flex hx-flex-col hx-gap-1 max-md:hx-hidden">
+        
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/concepts/"
+    
+  >核心概念
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/quickstart/"
+    
+  >快速开始
+    </a></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/"
+    
+  >数据查询
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/"
+    
+  >MetricQL
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/basic/"
+    
+  >基本用法
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/"
+    
+  >函数
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/rollup/"
+    
+  >汇总（Rollup）
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/label/"
+    
+  >操作 Label
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/aggregation/"
+    
+  >聚合统计
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/functions/transmit/"
+    
+  >数值转换
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql/"
+    
+  >PromQL 新手入门
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/metricsql/promql-diff/"
+    
+  >对比PromQL
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/query/http/"
+    
+  >HTTP 查询接口
+    </a>
+              
+            </li></ul>
+      </div></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/write/"
+    
+  >数据写入
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/write/api/"
+    
+  >写入 API
+    </a>
+              
+            </li></ul>
+      </div></li>
+          <li class=""><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/faq/"
+    
+  >FAQ
+    </a></li>
+          <li class="open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/"
+    
+  >运维指南
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/single/"
+    
+  >单机版本
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/disk-space/"
+    
+  >如何处理磁盘空间不足
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col open"><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      sidebar-active-item hx-bg-primary-100 hx-font-semibold hx-text-primary-800 contrast-more:hx-border contrast-more:hx-border-primary-500 dark:hx-bg-primary-400/10 dark:hx-text-primary-600 contrast-more:dark:hx-border-primary-500"
+    href="/docs/ops/cluster/cluster/"
+    
+  >集群版本
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/node-crash/"
+    
+  >如何处理机器故障
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/write-history/"
+    
+  >如何补写历史数据
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/multi-disk/"
+    
+  >有效利用一机多盘
+    </a>
+              
+            </li></ul>
+      </div></li>
+        
+      </ul>
+    </div>
+  
+  
+    <div class="  hx-sticky hx-bottom-0 hx-bg-white dark:hx-bg-dark hx-mx-4 hx-py-4 hx-shadow-[0_-12px_16px_#fff] hx-flex hx-items-center hx-gap-2 dark:hx-border-neutral-800 dark:hx-shadow-[0_-12px_16px_#111] contrast-more:hx-border-neutral-400 contrast-more:hx-shadow-none contrast-more:dark:hx-shadow-none hx-border-t" data-toggle-animation="show"><div class="hx-flex hx-grow hx-flex-col"><button
+  title="Change theme"
+  data-theme="light"
+  class="theme-toggle hx-group hx-h-7 hx-rounded-md hx-px-2 hx-text-left hx-text-xs hx-font-medium hx-text-gray-600 hx-transition-colors dark:hx-text-gray-400 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50"
+  type="button"
+  aria-label="Change theme"
+>
+  <div class="hx-flex hx-items-center hx-gap-2 hx-capitalize"><svg height=12 class="group-data-[theme=light]:hx-hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg><span class="group-data-[theme=light]:hx-hidden">Light</span><svg height=12 class="group-data-[theme=dark]:hx-hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg><span class="group-data-[theme=dark]:hx-hidden">Dark</span></div>
+</button>
+</div></div></aside>
+    
+<nav class="hextra-toc hx-order-last hx-hidden hx-w-64 hx-shrink-0 xl:hx-block print:hx-hidden hx-px-4" aria-label="table of contents">
+    <div class="hextra-scrollbar hx-sticky hx-top-16 hx-overflow-y-auto hx-pr-4 hx-pt-6 hx-text-sm [hyphens:auto] hx-max-h-[calc(100vh-var(--navbar-height)-env(safe-area-inset-bottom))] ltr:hx--mr-4 rtl:hx--ml-4"><p class="hx-mb-4 hx-font-semibold hx-tracking-tight">On this page</p><ul>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e6%9e%b6%e6%9e%84%e6%a6%82%e8%a7%88">架构概览
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%a4%9a%e7%a7%9f%e6%88%b7">多租户
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e9%80%9a%e8%bf%87-labels-%e5%ae%9e%e7%8e%b0%e5%a4%9a%e7%a7%9f%e6%88%b7">通过 labels 实现多租户
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e4%ba%8c%e8%bf%9b%e5%88%b6">二进制
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e6%ba%90%e7%a0%81%e6%9e%84%e5%bb%ba">源码构建
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e7%94%9f%e4%ba%a7%e7%8e%af%e5%a2%83%e6%9e%84%e5%bb%ba">生产环境构建
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%bc%80%e5%8f%91%e7%8e%af%e5%a2%83%e6%9e%84%e5%bb%ba">开发环境构建
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e6%9e%84%e5%bb%ba-docker-%e9%95%9c%e5%83%8f">构建 docker 镜像
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e8%bf%90%e7%bb%b4">运维
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e9%83%a8%e7%bd%b2%e9%9b%86%e7%be%a4">部署集群
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e7%8e%af%e5%a2%83%e5%8f%98%e9%87%8f">环境变量
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#vmstorage-%e8%87%aa%e5%8a%a8%e5%8f%91%e7%8e%b0">vmstorage 自动发现
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%ae%89%e5%85%a8">安全
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e7%9b%91%e6%8e%a7">监控
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%9f%ba%e6%95%b0%e9%99%90%e5%88%b6">基数限制
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e9%97%ae%e9%a2%98%e6%8e%92%e6%9f%a5">问题排查
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%8f%aa%e8%af%bb%e6%a8%a1%e5%bc%8f">只读模式
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#api%e6%8e%a5%e5%8f%a3">API接口
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e9%9b%86%e7%be%a4%e6%89%a9%e7%bc%a9%e5%ae%b9">集群扩缩容
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%8d%87%e7%ba%a7%e9%9b%86%e7%be%a4%e8%8a%82%e7%82%b9">升级集群节点
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e6%97%a0%e5%81%9c%e6%9c%ba%e7%ad%96%e7%95%a5">无停机策略
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="ltr:hx-pl-4 rtl:hx-pr-4 hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e6%9c%80%e7%9f%ad%e5%81%9c%e6%9c%ba%e7%ad%96%e7%95%a5">最短停机策略
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e9%9b%86%e7%be%a4%e5%8f%af%e7%94%a8%e6%80%a7">集群可用性
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%ae%b9%e9%87%8f%e8%a7%84%e5%88%92">容量规划
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e8%b5%84%e6%ba%90%e4%bd%bf%e7%94%a8%e9%99%90%e5%88%b6">资源使用限制
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e9%ab%98%e5%8f%af%e7%94%a8">高可用
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%a4%9a%e5%b1%82%e8%81%94%e9%82%a6%e9%83%a8%e7%bd%b2">多层联邦部署
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#helm">Helm
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#kubernetes-operator">Kubernetes operator
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%89%af%e6%9c%ac%e5%92%8c%e6%95%b0%e6%8d%ae%e5%ae%89%e5%85%a8">副本和数据安全
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%8e%bb%e9%87%8d%e6%9c%ba%e5%88%b6">去重机制
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%a4%87%e4%bb%bd">备份
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e4%bf%9d%e5%ad%98%e6%97%b6%e9%97%b4%e8%bf%87%e6%bb%a4%e5%99%a8">保存时间过滤器
+        </a>
+      </li>
+      <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e6%80%a7%e8%83%bd%e5%88%86%e6%9e%90">性能分析
+        </a>
+      </li></ul>
+      <div class="hx-mt-8 hx-border-t hx-bg-white hx-pt-8 hx-shadow-[0_-12px_16px_white] dark:hx-bg-dark dark:hx-shadow-[0_-12px_16px_#111] hx-sticky hx-bottom-0 hx-flex hx-flex-col hx-items-start hx-gap-2 hx-pb-8 dark:hx-border-neutral-800 contrast-more:hx-border-t contrast-more:hx-border-neutral-400 contrast-more:hx-shadow-none contrast-more:dark:hx-border-neutral-400">
+        <button aria-hidden="true" id="backToTop" onClick="scrollUp();" class="hx-transition-all hx-duration-75 hx-opacity-0 hx-text-xs hx-font-medium hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-100 contrast-more:hx-text-gray-800 contrast-more:dark:hx-text-gray-50">
+          <span>Scroll to top</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="hx-inline ltr:hx-ml-1 rtl:hx-mr-1 hx-h-3.5 hx-w-3.5 hx-border hx-rounded-full hx-border-gray-500 hover:hx-border-gray-900 dark:hx-border-gray-400 dark:hover:hx-border-gray-100 contrast-more:hx-border-gray-800 contrast-more:dark:hx-border-gray-50">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+
+    <article class="hx-w-full hx-break-words hx-flex hx-min-h-[calc(100vh-var(--navbar-height))] hx-min-w-0 hx-justify-center hx-pb-8 hx-pr-[calc(env(safe-area-inset-right)-1.5rem)]">
+      <main class="hx-w-full hx-min-w-0 hx-max-w-6xl hx-px-6 hx-pt-4 md:hx-px-12">
+        
+  <div class="hx-mt-1.5 hx-flex hx-items-center hx-gap-1 hx-overflow-hidden hx-text-sm hx-text-gray-500 dark:hx-text-gray-400 contrast-more:hx-text-current">
+        <div class="hx-whitespace-nowrap hx-transition-colors hx-min-w-[24px] hx-overflow-hidden hx-text-ellipsis hover:hx-text-gray-900 dark:hover:hx-text-gray-100">
+          <a href="/docs/">VictoriaMetrics 中文手册</a>
+        </div><svg class="hx-w-3.5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <div class="hx-whitespace-nowrap hx-transition-colors hx-min-w-[24px] hx-overflow-hidden hx-text-ellipsis hover:hx-text-gray-900 dark:hover:hx-text-gray-100">
+          <a href="/docs/ops/">运维指南</a>
+        </div><svg class="hx-w-3.5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg><div class="hx-whitespace-nowrap hx-transition-colors hx-font-medium hx-text-gray-700 contrast-more:hx-font-bold contrast-more:hx-text-current dark:hx-text-gray-100 contrast-more:dark:hx-text-current">集群版本</div>
+  </div>
+
+        <div class="content">
+          <h1>集群版本</h1>
+          <h2>架构概览<span class="hx-absolute -hx-mt-20" id="架构概览"></span>
+    <a href="#%e6%9e%b6%e6%9e%84%e6%a6%82%e8%a7%88" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>VictoriaMetrics 集群版本由以下几个服务组成：</p>
+<ul>
+<li><code>vmstorage</code> - 存储原始数据，并返回在给定时间范围内针对给定 Label 筛选器查询的数据。</li>
+<li><code>vminsert</code> - 接受摄入的数据，并 根据对度量名称及其所有标签的一致散列，将数据分散到 <code>vmstorage</code> 节点中</li>
+<li><code>vmselect</code> - 通过从所有已配置的 <code>vmstorage</code> 节点获取所需数据来执行接收到的查询请求。</li>
+</ul>
+<p>每项服务都可独立扩展，并可在最合适的硬件上运行。 <code>vmstorage</code> 节点之间互不相识，互不通信，也不共享任何数据。 这是一种<a href="https://en.wikipedia.org/wiki/Shared-nothing_architecture" target="_blank" rel="noopener">共享无架构</a> 。 它提高了集群的可用性，简化了集群维护和集群扩展。</p>
+<h2>多租户<span class="hx-absolute -hx-mt-20" id="多租户"></span>
+    <a href="#%e5%a4%9a%e7%a7%9f%e6%88%b7" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>VictoriaMetrics集群支持多个隔离的租户（即命名空间）。租户通过accountID或accountID:projectID进行标识，这些标识符被置于请求URL中。详情请参阅<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#url-format" target="_blank" rel="noopener">这些文档</a>。</p>
+<p>关于VictoriaMetrics中租户的一些事实：</p>
+<p>每个accountID和projectID均由一个任意的32位整数标识，范围为<code>[0..2^32)</code>。如果projectID缺失，则自动分配为0。预期其他关于租户的信息，如身份验证令牌、租户名称、限制、会计等，存储在一个独立的关系数据库中。该数据库必须由位于VictoriaMetrics集群前端的独立服务进行管理，例如<a href="https://docs.victoriametrics.com/vmauth.html" target="_blank" rel="noopener">vmauth</a>或<a href="https://docs.victoriametrics.com/vmgateway.html" target="_blank" rel="noopener">vmgateway</a>。如果您需要此类服务的协助，请联系我们。</p>
+<p>当第一个数据点被写入给定的租户时，租户会被自动创建。</p>
+<p>所有租户的数据均匀分布在可用的<code>vmstorage</code>节点之间。这保证了当不同租户拥有不同数量的数据和不同的查询负载时，<code>vmstorage</code>节点之间的负载也是均匀的。</p>
+<p>数据库的性能和资源使用情况并不取决于租户的数量，而主要取决于所有租户中活跃时间序列的总数。如果一个时间序列在过去的一小时中至少接收了一个样本，或者在过去的一小时中被查询访问过，那么它就被认为是活跃的。</p>
+<p>VictoriaMetrics不支持在单一请求中查询多个租户。</p>
+<p>已注册租户的列表可以通过<code>http://&lt;vmselect&gt;:8481/admin/tenants</code> URL获取。请参阅<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#url-format" target="_blank" rel="noopener">这些文档</a>。</p>
+<p>VictoriaMetrics通过指标公开了各种按租户划分的统计数据——请参阅<a href="https://docs.victoriametrics.com/PerTenantStatistic.html" target="_blank" rel="noopener">这些文档</a>。</p>
+<p>也可以看下<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#multitenancy-via-labels" target="_blank" rel="noopener">通过 labels 实现多租户</a>。</p>
+<h2>通过 labels 实现多租户<span class="hx-absolute -hx-mt-20" id="通过-labels-实现多租户"></span>
+    <a href="#%e9%80%9a%e8%bf%87-labels-%e5%ae%9e%e7%8e%b0%e5%a4%9a%e7%a7%9f%e6%88%b7" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p><code>vminsert</code>可以从多个租户通过一个特殊的<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#multitenancy" target="_blank" rel="noopener">多租户</a>端点<code>http://vminsert:8480/insert/multitenant/&lt;suffix&gt;</code>接收数据，其中可以替换为从此列表中获取数据的任何受支持的<code>&lt;suffix&gt;</code>。在这种情况下，AccountID 和ProjectID是从传入样本的可选 <code>vm_account_id</code> 和 <code>vm_project_id</code> 标签中获取的。如果 vm_account_id 或 vm_project_id 标签缺失或无效，则相应的AccountID 或ProjectID 将设置为 0。在将样本转发到<code>vmstorage</code>之前，会自动从样本中删除这些Label。例如，如果将以下样本写入 <code>http://vminsert:8480/insert/multitenant/prometheus/api/v1/write</code>：</p>
+<div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+  
+
+<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-plain" data-lang="plain"><span style="display:flex;"><span>http_requests_total{path=&#34;/foo&#34;,vm_account_id=&#34;42&#34;} 12
+</span></span><span style="display:flex;"><span>http_requests_total{path=&#34;/bar&#34;,vm_account_id=&#34;7&#34;,vm_project_id=&#34;9&#34;} 34</span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+  <button
+    class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+    title="Copy code"
+  >
+    <div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4"></div>
+    <div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4"></div>
+  </button>
+</div>
+
+  
+</div>
+<p>然后<code>http_requests_total｛path=“/foo”｝12</code>将被存储在租户<code>accountID=42，projectID=0</code>中，而<code>http_requests_total{path=“/bar”｝34</code>将被存储到租户<code>accountID=7，projectID=9</code>中。</p>
+<p><code>vm_account_id</code>和<code>vm_project_id</code> labels 是在通过<code>-rebelConfig</code>命令行标志应用 <a href="https://docs.victoriametrics.com/relabeling.html" target="_blank" rel="noopener">relabeling</a> 集后提取的，因此可以在此阶段设置这些 label。</p>
+<p>安全提示：建议将对多租户端点的访问限制为仅限可信源，因为不可信源可能会通过向任意租户写入不需要的样本来破坏每个租户的数据。</p>
+<h2>二进制<span class="hx-absolute -hx-mt-20" id="二进制"></span>
+    <a href="#%e4%ba%8c%e8%bf%9b%e5%88%b6" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>集群版本的编译二进制文件可在<a href="https://github.com/VictoriaMetrics/VictoriaMetrics/releases" target="_blank" rel="noopener">发布页面</a>的 assets 部分中找到。另请参阅包含单词“集群”的档案。</p>
+<p>集群版本的 Docker 镜像可在此处找到：</p>
+<ul>
+<li><code>vminsert</code> - <a href="https://hub.docker.com/r/victoriametrics/vminsert/tags" target="_blank" rel="noopener">https://hub.docker.com/r/victoriametrics/vminsert/tags</a></li>
+<li><code>vmselect</code> - <a href="https://hub.docker.com/r/victoriametrics/vmselect/tags" target="_blank" rel="noopener">https://hub.docker.com/r/victoriametrics/vmselect/tags</a></li>
+<li><code>vmstorage</code> - <a href="https://hub.docker.com/r/victoriametrics/vmstorage/tags" target="_blank" rel="noopener">https://hub.docker.com/r/victoriametrics/vmstorage/tags</a></li>
+</ul>
+<h2>源码构建<span class="hx-absolute -hx-mt-20" id="源码构建"></span>
+    <a href="#%e6%ba%90%e7%a0%81%e6%9e%84%e5%bb%ba" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>集群版本的源代码可在<a href="https://github.com/VictoriaMetrics/VictoriaMetrics/tree/cluster" target="_blank" rel="noopener">cluster分支</a>中获取。</p>
+<h3>生产环境构建<span class="hx-absolute -hx-mt-20" id="生产环境构建"></span>
+    <a href="#%e7%94%9f%e4%ba%a7%e7%8e%af%e5%a2%83%e6%9e%84%e5%bb%ba" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p>无需在主机系统上安装 Go，因为二进制文件是在 <a href="https://hub.docker.com/_/golang" target="_blank" rel="noopener">Go 的官方 docker 容器</a>内构建的。这允许可重现的构建。因此，<a href="https://docs.docker.com/install/" target="_blank" rel="noopener">安装 docker</a> 并运行以下命令：</p>
+<div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+  
+
+<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-plain" data-lang="plain"><span style="display:flex;"><span>make vminsert-prod vmselect-prod vmstorage-prod</span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+  <button
+    class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+    title="Copy code"
+  >
+    <div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4"></div>
+    <div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4"></div>
+  </button>
+</div>
+
+  
+</div>
+<p>生产二进制文件内置于静态链接二进制文件中。它们被放入带有 <code>-prod</code> 后缀的 <code>bin</code> 文件夹中：</p>
+<div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+  
+
+<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-plain" data-lang="plain"><span style="display:flex;"><span>$ make vminsert-prod vmselect-prod vmstorage-prod
+</span></span><span style="display:flex;"><span>$ ls -1 bin
+</span></span><span style="display:flex;"><span>vminsert-prod
+</span></span><span style="display:flex;"><span>vmselect-prod
+</span></span><span style="display:flex;"><span>vmstorage-prod</span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+  <button
+    class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+    title="Copy code"
+  >
+    <div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4"></div>
+    <div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4"></div>
+  </button>
+</div>
+
+  
+</div>
+<h3>开发环境构建<span class="hx-absolute -hx-mt-20" id="开发环境构建"></span>
+    <a href="#%e5%bc%80%e5%8f%91%e7%8e%af%e5%a2%83%e6%9e%84%e5%bb%ba" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><ol>
+<li><a href="https://golang.org/doc/install" target="_blank" rel="noopener">安装Go</a>，最低支持版本是 Go1.18。</li>
+<li>从<a href="https://github.com/VictoriaMetrics/VictoriaMetrics" target="_blank" rel="noopener">仓库根目录</a>运行 <code>make</code>。它应该构建 <code>vmstorage</code>、<code>vmselect</code> 和 <code>vminsert</code> 二进制文件并将它们放入 bin 文件夹中。</li>
+</ol>
+<h3>构建 docker 镜像<span class="hx-absolute -hx-mt-20" id="构建-docker-镜像"></span>
+    <a href="#%e6%9e%84%e5%bb%ba-docker-%e9%95%9c%e5%83%8f" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p>执行 <code>make package</code>命令，会在本地构建下面几个 docker 镜像：</p>
+<ul>
+<li><code>victoriametrics/vminsert:&lt;PKG_TAG&gt;</code></li>
+<li><code>victoriametrics/vmselect:&lt;PKG_TAG&gt;</code></li>
+<li><code>victoriametrics/vmstorage:&lt;PKG_TAG&gt;</code></li>
+</ul>
+<p><code>&lt;PKG_TAG&gt;</code> 是根据<a href="https://github.com/VictoriaMetrics/VictoriaMetrics" target="_blank" rel="noopener">仓库中的源码</a>自动生产的 image tag。<code>&lt;PKG_TAG&gt;</code> 可以使用环境变量来指定，比如：<code>PKG_TAG=foobar make package</code>.</p>
+<p>默认情况下，为了提高可调试性，image 是在 <a href="https://hub.docker.com/_/scratch" target="_blank" rel="noopener">alpine image</a> 之上构建的。可以通过 &lt;ROOT_IMAGE&gt; 环境变量设置，在任何其他基础镜像之上构建镜像。例如，以下命令在<a href="https://hub.docker.com/_/scratch" target="_blank" rel="noopener">临时镜像</a>之上构建镜像：</p>
+<div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+  
+
+<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-plain" data-lang="plain"><span style="display:flex;"><span>ROOT_IMAGE=scratch make package</span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+  <button
+    class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+    title="Copy code"
+  >
+    <div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4"></div>
+    <div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4"></div>
+  </button>
+</div>
+
+  
+</div>
+<h2>运维<span class="hx-absolute -hx-mt-20" id="运维"></span>
+    <a href="#%e8%bf%90%e7%bb%b4" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><h2>部署集群<span class="hx-absolute -hx-mt-20" id="部署集群"></span>
+    <a href="#%e9%83%a8%e7%bd%b2%e9%9b%86%e7%be%a4" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>一个集群至少包含下面几项：</p>
+<ul>
+<li>一个 <code>vmstorage</code> 节点，需要指定 <code>-retentionPeriod</code> 和 <code>-storageDataPath</code> 参数</li>
+<li>一个 <code>vminsert</code> 节点，需要指定 <code>-storageNode=&lt;vmstorage_host&gt;</code></li>
+<li>一个 <code>vmselect</code> 节点，需要指定 <code>-storageNode=&lt;vmstorage_host&gt;</code></li>
+</ul>
+<p>建议每个服务至少运行两个实例，以实现高可用性。在这种情况下，当单个节点暂时不可用时，群集仍可继续工作，其余节点可处理增加的工作量。在底层硬件损坏、软件升级、迁移或其他维护任务期间，节点可能会暂时不可用。</p>
+<p>最好运行许多小型 vmstorage 节点而不是少数大型 vmstorage 节点，因为当某些 vmstorage 节点暂时不可用时，这可以减少剩余 vmstorage 节点上的工作负载增加。</p>
+<p>必须在 vminsert 和 vmselect 节点前放置一个 http 负载均衡器，例如 <a href="https://docs.victoriametrics.com/vmauth.html" target="_blank" rel="noopener">vmauth</a> 或 nginx。它必须根据 <a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#url-format" target="_blank" rel="noopener">url 格式</a>包含以下路由配置：</p>
+<ul>
+<li>带有 <code>/insert</code> 前缀的请求必须被路由到 vminsert 实例的 8480 端口数。</li>
+<li>带有 <code>/select</code> 前缀的请求必须被路由到 vmselect 实例的 8481 端口数。</li>
+</ul>
+<p>端口可以通过在相应节点上通过 <code>-httpListenAddr</code> 参数来设定。</p>
+<p>建议为集群配置上<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#monitoring" target="_blank" rel="noopener">监控</a>。</p>
+<p>下面的工具可以简化集群部署：</p>
+<ul>
+<li><a href="https://github.com/VictoriaMetrics/VictoriaMetrics/blob/master/deployment/docker/docker-compose-cluster.yml" target="_blank" rel="noopener">An example docker-compose config for VictoriaMetrics cluster</a></li>
+<li><a href="https://github.com/VictoriaMetrics/helm-charts" target="_blank" rel="noopener">Helm charts for VictoriaMetrics</a></li>
+<li><a href="https://github.com/VictoriaMetrics/operator" target="_blank" rel="noopener">Kubernetes operator for VictoriaMetrics</a></li>
+</ul>
+<p>可以在单个主机上手动设置一个玩具集群。在这种情况下，每个集群组件 - vminsert、vmselect 和 vmstorage - 必须使用 <code>-httpListenAddr</code> 命令行参数指定不同的端口。此参数指定用于接受用于<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#monitoring" target="_blank" rel="noopener">监控</a>和<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#profiling" target="_blank" rel="noopener">Profiling</a> http 请求的 http 地址。<code>vmstorage</code> 节点必须具有以下附加命令行参数的不同值，以防止资源使用冲突：</p>
+<ul>
+<li><code>-storageDataPath</code> - 每个 <code>vmstorage</code> 实例都不行有一个专用的数据存储路径。</li>
+<li><code>-vminsertAddr</code> - 每个 <code>vmstorage</code> 实例必须监听一个 tcp 地址，用来接受 vminsert 发送过来的数据。</li>
+<li><code>-vmselectAddr</code> - 每个 <code>vmstorage</code> 实例必须监听一个 tcp 地址，用来处理 vmselect 发送过来的查询请求。</li>
+</ul>
+<h3>环境变量<span class="hx-absolute -hx-mt-20" id="环境变量"></span>
+    <a href="#%e7%8e%af%e5%a2%83%e5%8f%98%e9%87%8f" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p>所有的 VictoriaMetrics 组件都可以在命令行参数中使用<code>%{ENV_VAR}</code>语法来引用环境变量。比如，如果 VictoriaMetrics 启动的时候存在环境变量<code>METRICS_AUTH_KEY=top-secret</code> ，那么<code>-metricsAuthKey=%{METRICS_AUTH_KEY}</code> 参数会自动转换成 <code>-metricsAuthKey=top-secret</code>。这个转换是 VictoriaMetrics 内部自己完成的。</p>
+<p>VictoriaMetrics 在启动的时候会递归式的对<code>%{ENV_VAR}</code> 进行环境变量引用转换。比如，当存在环境变量 <code>BAR=a%{BAZ}</code> 和 <code>BAZ=bc</code>时，<code>FOO=%{BAR}</code> 环境变量会被转换为 <code>FOO=abc</code> 。</p>
+<p>所有的 VictoriaMetrics 组件都支持通过上述的环境变量方式来设置参数，前提是：</p>
+<ul>
+<li>必须使用<code>-envflag.enable</code> 参数开启该特性。</li>
+<li>命令行参数中的 <code>.</code> 必须用下划线<code>_</code>替换 (比如 <code>-insert.maxQueueDuration &lt;duration&gt;</code> 对应的环境变量是 <code>insert_maxQueueDuration=&lt;duration&gt;</code>)。</li>
+<li>对于可重复的指定的参数，可用逗号<code>,</code>分隔符进行链接。 (比如 <code>-storageNode &lt;nodeA&gt; -storageNode &lt;nodeB&gt;</code> 对应的环境变量是 <code>storageNode=&lt;nodeA&gt;,&lt;nodeB&gt;</code>)。</li>
+<li>可以使用 <code>-envflag.prefix</code> 参数来指定环境变量前缀，例如使用了 <code>-envflag.prefix=VM_</code>参数，那么环境变量名就都必须以 <code>VM_</code> 开头。</li>
+</ul>
+<h2>vmstorage 自动发现<span class="hx-absolute -hx-mt-20" id="vmstorage-自动发现"></span>
+    <a href="#vmstorage-%e8%87%aa%e5%8a%a8%e5%8f%91%e7%8e%b0" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>只有企业版支持<code>vminsert </code>和<code>vmselect</code>对<code> vmstorage</code>实例自动服务发现，开源版的话需要进行二次开发。</p>
+<p>VictoriaMetrics 的代码质量很高，所以二次开发也比较简单。只需要参考<a href="https://github.com/VictoriaMetrics/VictoriaMetrics/blob/cluster/app/vminsert/netstorage/netstorage.go#L507" target="_blank" rel="noopener">netstorage.Init</a>实现即可，仅有 2 行代码。这里给出一个代码实现参考：</p>
+<div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+  
+
+<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-plain" data-lang="plain"><span style="display:flex;"><span>// ResetStorageNodes initializing new storageNodes by using new addrs, and replace the old global storageNodes
+</span></span><span style="display:flex;"><span>func ResetStorageNodes(addrs []string, hashSeed uint64) {
+</span></span><span style="display:flex;"><span>	if len(addrs) == 0 {
+</span></span><span style="display:flex;"><span>		return
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	prevSnb := getStorageNodesBucket()
+</span></span><span style="display:flex;"><span>	snb := initStorageNodes(addrs, hashSeed)
+</span></span><span style="display:flex;"><span>	setStorageNodesBucket(snb)
+</span></span><span style="display:flex;"><span>	if prevSnb != nil {
+</span></span><span style="display:flex;"><span>		go func() {
+</span></span><span style="display:flex;"><span>			logger.Infof(&#34;Storage nodes updated, stopping previous storage nodes&#34;)
+</span></span><span style="display:flex;"><span>			mustStopStorageNodes(prevSnb)
+</span></span><span style="display:flex;"><span>			logger.Infof(&#34;Previous storage nodes already stopped&#34;)
+</span></span><span style="display:flex;"><span>		}()
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+  <button
+    class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+    title="Copy code"
+  >
+    <div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4"></div>
+    <div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4"></div>
+  </button>
+</div>
+
+  
+</div>
+<p>自己实现发现实例列表的库，在库里面调用该<code>ResetStorageNodes</code>方法即可。</p>
+<h2>安全<span class="hx-absolute -hx-mt-20" id="安全"></span>
+    <a href="#%e5%ae%89%e5%85%a8" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>一般的安全建议：</p>
+<ul>
+<li>所有 VictoriaMetrics 集群组件都必须在受保护的私有网络中运行，并且不能被互联网等不受信任的网络直接访问。</li>
+<li>外部客户端必须通过身份验证代理（例如 <a href="https://docs.victoriametrics.com/vmauth.html" target="_blank" rel="noopener">vmauth</a> 或 <a href="https://docs.victoriametrics.com/vmgateway.html" target="_blank" rel="noopener">vmgateway</a>）访问 vminsert 和 vmselect。</li>
+<li>为了保护身份验证令牌不被窃听，身份验证代理必须仅通过 https 接受来自不受信任网络的身份验证令牌。</li>
+<li>建议对不同的<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#multitenancy" target="_blank" rel="noopener">租户</a>使用不同的身份验证令牌，以减少某些租户的身份验证令牌被泄露时造成的潜在损害。</li>
+<li>在 <code>vminsert</code> 和 <code>vmselect</code> 之前配置身份验证代理时，最好使用允许的 API 接口白名单，同时禁止访问其他接口。这可以最大限度地减少攻击面。</li>
+</ul>
+<p>也可以参考 <a href="https://docs.victoriametrics.com/#security" target="_blank" rel="noopener">security recommendation for single-node VictoriaMetrics</a> 和 <a href="https://victoriametrics.com/security/" target="_blank" rel="noopener">the general security page at VictoriaMetrics website</a>.</p>
+<h2>监控<span class="hx-absolute -hx-mt-20" id="监控"></span>
+    <a href="#%e7%9b%91%e6%8e%a7" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>所有集群组件均在 <code>-httpListenAddr</code> 命令行参数中设置的 TCP 端口上的 <code>/metrics</code> 页面上以 Prometheus 兼容格式公开各种指标。默认情况下，使用以下 TCP 端口：</p>
+<ul>
+<li><code>vminsert</code> - 8480</li>
+<li><code>vmselect</code> - 8481</li>
+<li><code>vmstorage</code> - 8482</li>
+</ul>
+<p>建议使用 <a href="https://docs.victoriametrics.com/vmagent.html" target="_blank" rel="noopener">vmagent</a> 或 Prometheus 以从所有集群组件中抓取 <code>/metrics</code> 页面，这样就可以使用 VictoriaMetrics 集群的<a href="https://grafana.com/grafana/dashboards/11176-victoriametrics-cluster/" target="_blank" rel="noopener">官方 Grafana 大盘</a>或 <a href="https://grafana.com/grafana/dashboards/11831" target="_blank" rel="noopener">VictoriaMetrics 集群大盘</a>来监控和分析它们。这些仪表板上的图表包含有用的提示 - 将鼠标悬停在每个图表左上角的 <code>i</code> 图标上即可阅读。</p>
+<p>建议通过<a href="https://github.com/VictoriaMetrics/VictoriaMetrics/blob/cluster/deployment/docker/alerts.yml" target="_blank" rel="noopener">此配置</a>在 <a href="https://docs.victoriametrics.com/vmalert.html" target="_blank" rel="noopener">vmalert</a> 或 Prometheus 中设置告警。更多详细信息请参阅文章 <a href="https://victoriametrics.com/blog/victoriametrics-monitoring/" target="_blank" rel="noopener">VictoriaMetrics 监控</a>。 基数限制。</p>
+<h2>基数限制<span class="hx-absolute -hx-mt-20" id="基数限制"></span>
+    <a href="#%e5%9f%ba%e6%95%b0%e9%99%90%e5%88%b6" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p><code>vmstorage</code> 实例可以通过下面的命令行来限制所有租户总共 series 的数量</p>
+<ul>
+<li><code>-storage.maxHourlySeries</code> 限制最近1小时的<a href="https://docs.victoriametrics.com/FAQ.html#what-is-an-active-time-series" target="_blank" rel="noopener">活跃时间序列</a>的数量。</li>
+<li><code>-storage.maxDailySeries</code> 限制最近一天的<a href="https://docs.victoriametrics.com/FAQ.html#what-is-an-active-time-series" target="_blank" rel="noopener">活跃时间序列</a>的数量。这个限制可以用于限制天级别的 <a href="https://docs.victoriametrics.com/FAQ.html#what-is-high-churn-rate" target="_blank" rel="noopener">time series churn rate</a>.</li>
+</ul>
+<p>请注意，这些限制是针对集群中的每个 vmstorage 实例的。因此，如果集群有 <code>N</code> 个 <code>vmstorage</code> 节点，则整个集群级限制将比每个 <code>vmstorage</code> 限制大 <code>N</code> 倍。</p>
+<p>关于更多的基数限制可以看<a href="https://docs.victoriametrics.com/#cardinality-limiter" target="_blank" rel="noopener">这些文档</a>。</p>
+<h2>问题排查<span class="hx-absolute -hx-mt-20" id="问题排查"></span>
+    <a href="#%e9%97%ae%e9%a2%98%e6%8e%92%e6%9f%a5" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>请看<a href="https://docs.victoriametrics.com/Troubleshooting.html" target="_blank" rel="noopener">问题排查文档</a>。</p>
+<h2>只读模式<span class="hx-absolute -hx-mt-20" id="只读模式"></span>
+    <a href="#%e5%8f%aa%e8%af%bb%e6%a8%a1%e5%bc%8f" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>当 <code>-storageDataPath</code> 指向的目录包含的可用空间少于 <code>-storage.minFreeDiskSpaceBytes</code> 时，vmstorage 节点会自动切换到只读模式。<code>vminsert</code> 节点停止向此类节点发送数据，并开始将数据重新路由到剩余的 vmstorage 节点。</p>
+<p>当 <code>vmstorage</code> 进入只读模式时，它会将 http://vmstorage:8482/metrics 上的 <code>vm_storage_is_read_only</code> 指标设置为 <code>1</code>。当 <code>vmstorage</code> 未处于只读模式时，该指标值为 <code>0</code>。</p>
+<h2>API接口<span class="hx-absolute -hx-mt-20" id="api接口"></span>
+    <a href="#api%e6%8e%a5%e5%8f%a3" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>集群版本和<a href="https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben" target="_blank" rel="noopener">单机版</a>的API接口主要区别是数据的读取和写入是由独立组件完成的，而且也有了租户的支持。集群版本也支持<code>/prometheus/api/v1</code>来接收 <code>jsonl</code>, <code>csv</code>, <code>native</code> 和 <code>prometheus</code>数据格式，而不仅仅是<code>prometheus</code>数据格式。可以在<a href="https://docs.victoriametrics.com/url-examples.html" target="_blank" rel="noopener">这里</a>查看VictoriaMetrics的API的使用范例。</p>
+<ul>
+<li>用于数据写入的 URLs 是：<code>http://&lt;vminsert&gt;:8480/insert/&lt;accountID&gt;/&lt;suffix&gt;</code>，其中：</li>
+<li><code>&lt;accountID&gt;</code> 是一个任意的32位数字，用来表示数据写入的空间（即租户）。也可以设置成<code>accountID:projectID</code>格式，其中 <code>projectID</code> 也是一个任意的32位数字。如果 <code>projectID</code> 没有指定,则默认是<code>0</code>。更多信息可以看<a href="https://www.victoriametrics.com.cn/victoriametrics/ji-qun-ban-ben#multitenancy" target="_blank" rel="noopener">多租户文档</a>。 这里的<code>&lt;accountID&gt;</code> 可以使用字符串 <code>multitenant</code> ， 比如 <code>http://&lt;vminsert&gt;:8480/insert/multitenant/&lt;suffix&gt;</code>，该 URL 接受到的数据会将数据的 <code>vm_account_id</code> 和 <code>vm_project_id</code> label 视为租户信息。更多信息请看<a href="https://www.victoriametrics.com.cn/victoriametrics/ji-qun-ban-ben#multitenancy-via-labels" target="_blank" rel="noopener">通过label实现多租户</a>。</li>
+<li><code>&lt;suffix&gt;</code> 可以是以下这些内容：
+<ul>
+<li><code>prometheus</code> 和 <code>prometheus/api/v1/write</code> - 用来写入 <a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write" target="_blank" rel="noopener">Prometheus Remote Write</a> 数据协议的接口。</li>
+<li><code>prometheus/api/v1/import</code> - 用来导入通过<code>vmselect</code>的 <code>api/v1/export</code> 接口导出来的数据（见下文）, 是 JSON line 的格式.</li>
+<li><code>prometheus/api/v1/import/native</code> - 用来导入通过vmselect的<code>api/v1/export/native</code> 接口导出的数据（见下文）。</li>
+<li><code>prometheus/api/v1/import/csv</code> - 用来导入 CSV 数据。详细信息见<a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-import-csv-data" target="_blank" rel="noopener">文档</a>。</li>
+<li><code>prometheus/api/v1/import/prometheus</code> - 用来导入 <a href="https://github.com/prometheus/docs/blob/master/content/docs/instrumenting/exposition_formats.md#text-based-format" target="_blank" rel="noopener">Prometheus text exposition</a> 或 <a href="https://github.com/OpenObservability/OpenMetrics/blob/master/specification/OpenMetrics.md" target="_blank" rel="noopener">OpenMetrics</a>格式的数据。该接口也支持 <a href="https://github.com/prometheus/pushgateway#url" target="_blank" rel="noopener">Pushgateway 协议</a>。 更多信息看<a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-import-data-in-prometheus-exposition-format" target="_blank" rel="noopener">这些文档</a>。</li>
+<li><code>datadog/api/v1/series</code> - 用来写入 <a href="https://docs.datadoghq.com/api/latest/metrics/#submit-metrics" target="_blank" rel="noopener">DataDog submit metrics</a>接口。 更多信息见<a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-send-data-from-datadog-agent" target="_blank" rel="noopener">这些文档</a>。</li>
+<li><code>influx/write</code> and <code>influx/api/v2/write</code> - 用来写入 <a href="https://docs.influxdata.com/influxdb/v1.7/write_protocols/line_protocol_tutorial/" target="_blank" rel="noopener">InfluxDB line protocol</a>的数据，更多信息见<a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-send-data-from-influxdb-compatible-agents-such-as-telegraf" target="_blank" rel="noopener">这些文档</a>。</li>
+<li><code>opentsdb/api/put</code> - 用来处理 <a href="http://opentsdb.net/docs/build/html/api_http/put.html" target="_blank" rel="noopener">OpenTSDB HTTP /api/put 请求</a>。这个接口默认是关闭的。他是通过一个独立的 TCP 地址暴露的，改地址可通过<code>-opentsdbHTTPListenAddr</code> 命令行参数指定。更多信息见<a href="https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#sending-opentsdb-data-via-http-apiput-requests" target="_blank" rel="noopener">这些文档</a>。</li>
+</ul>
+</li>
+<li><a href="https://prometheus.io/docs/prometheus/latest/querying/api/" target="_blank" rel="noopener">Prometheus 查询 API</a>: <code>http://&lt;vmselect&gt;:8481/select/&lt;accountID&gt;/prometheus/&lt;suffix&gt;</code>, 其中:
+<ul>
+<li><code>&lt;accountID&gt;</code> 是一个任意32位数字，用来标识查询的空间（即租户）。</li>
+<li><code>&lt;suffix&gt;</code> 可以是一下的内容：
+<ul>
+<li><code>api/v1/query</code> - 执行 <a href="https://docs.victoriametrics.com/keyConcepts.html#instant-query" target="_blank" rel="noopener">PromQL instant</a>.</li>
+<li><code>api/v1/query_range</code> - 执行 <a href="https://docs.victoriametrics.com/keyConcepts.html#range-query" target="_blank" rel="noopener">PromQL range 查询</a>。</li>
+<li><code>api/v1/series</code> - 执行 <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#finding-series-by-label-matchers" target="_blank" rel="noopener">series 查询</a>。</li>
+<li><code>api/v1/labels</code> - 返回 <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#getting-label-names" target="_blank" rel="noopener">label 名称列表</a>。</li>
+<li><code>api/v1/label/&lt;label_name&gt;/values</code> - 返回指定 <code>&lt;label_name&gt;</code> 的所有值，参考<a href="https://prometheus.io/docs/prometheus/latest/querying/api/#querying-label-values" target="_blank" rel="noopener">这个 API</a>.</li>
+<li><code>federate</code> - 返回 <a href="https://prometheus.io/docs/prometheus/latest/federation/" target="_blank" rel="noopener">federated metrics</a>.</li>
+<li><code>api/v1/export</code> - 导出 JSON line 格式的原始数据，更多信息看<a href="https://medium.com/@valyala/analyzing-prometheus-data-with-external-tools-5f3e5e147639" target="_blank" rel="noopener">这篇文章</a>。</li>
+<li><code>api/v1/export/native</code> - 导出原生二进制格式的原始数据，该数据可以通过另一个接口<code>api/v1/import/native</code>导入到 VictoriaMetrics (见上文).</li>
+<li><code>api/v1/export/csv</code> - 导出 CSV 格式原始数据。它可以使用另外一个接口 <code>api/v1/import/csv</code> 导入到 VictoriaMetrics（见上文）。</li>
+<li><code>api/v1/series/count</code> - 返回 series 的总数。</li>
+<li><code>api/v1/status/tsdb</code> - 返回时序数据的统计信息。更多详细信息见<a href="https://docs.victoriametrics.com/#tsdb-stats" target="_blank" rel="noopener">这些文档</a>。</li>
+<li><code>api/v1/status/active_queries</code> - 返回当前活跃的查询请求。逐一每个 <code>vmselect</code> 实例都有独立的活跃查询列表。</li>
+<li><code>api/v1/status/top_queries</code> - 返回执行频率最高以及查询耗时最长的查询列表。</li>
+<li><code>metric-relabel-debug</code> - 用于对 <a href="https://docs.victoriametrics.com/relabeling.html" target="_blank" rel="noopener">relabeling 规则</a> Debug。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="https://graphite-api.readthedocs.io/en/latest/api.html#the-metrics-api" target="_blank" rel="noopener">Graphite Metrics API</a>：<code>http://&lt;vmselect&gt;:8481/select/&lt;accountID&gt;/graphite/&lt;suffix&gt;</code>, 其中:
+<ul>
+<li><code>&lt;accountID&gt;</code></li>
+<li>是一个任意32位数字，用来标识查询的空间（即租户）。</li>
+<li><code>&lt;suffix&gt;</code> 可以是一下的内容：
+<ul>
+<li><code>render</code> - 实现 Graphite Render API. 看 <a href="https://graphite.readthedocs.io/en/stable/render_api.html" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>metrics/find</code> - 搜索 Graphite metrics. See <a href="https://graphite-api.readthedocs.io/en/latest/api.html#metrics-find" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>metrics/expand</code> - 扩展 Graphite metrics. See <a href="https://graphite-api.readthedocs.io/en/latest/api.html#metrics-expand" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>metrics/index.json</code> - returns 所有的 names. See <a href="https://graphite-api.readthedocs.io/en/latest/api.html#metrics-index-json" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags/tagSeries</code> - 注册 time series. See <a href="https://graphite.readthedocs.io/en/stable/tags.html#adding-series-to-the-tagdb" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags/tagMultiSeries</code> - 批量注册 time series. See <a href="https://graphite.readthedocs.io/en/stable/tags.html#adding-series-to-the-tagdb" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags</code> - 返回 tag 名称列表. See <a href="https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags/&lt;tag_name&gt;</code> - 返回指定 <code>&lt;tag_name&gt;</code>的值列表 See <a href="https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags/findSeries</code> - 返回匹配<code>expr</code>的 series，<a href="https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags/autoComplete/tags</code> - 返回匹配 <code>tagPrefix</code> 和/或 <code>expr</code>的tag名称列表。 See <a href="https://graphite.readthedocs.io/en/stable/tags.html#auto-complete-support" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags/autoComplete/values</code> - 返回匹配 <code>valuePrefix</code> 和/或 <code>expr</code> tag值列表 See <a href="https://graphite.readthedocs.io/en/stable/tags.html#auto-complete-support" target="_blank" rel="noopener">these docs</a>.</li>
+<li><code>tags/delSeries</code> - deletes series matching the given <code>path</code>. See <a href="https://graphite.readthedocs.io/en/stable/tags.html#removing-series-from-the-tagdb" target="_blank" rel="noopener">these docs</a>.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>基础的 Web UI: <code>http://&lt;vmselect&gt;:8481/select/&lt;accountID&gt;/vmui/</code>.</li>
+<li>统计所有租户的查询：<code>http://&lt;vmselect&gt;:8481/api/v1/status/top_queries</code>。它会列出请求最频繁，以及执行时间最长的查询列表。</li>
+<li>删除时间序列：<code>http://&lt;vmselect&gt;:8481/delete/&lt;accountID&gt;/prometheus/api/v1/admin/tsdb/delete_series?match[]=&lt;timeseries_selector_for_delete&gt;</code>。 请注意，<code>delete_series</code> 处理程序应仅在特殊情况下使用，例如删除意外提取的错误时间序列。它不应定期使用，因为它会带来额外的系统开销。</li>
+<li>列出在给定时间范围内已提取数据的租户： <code>http://&lt;vmselect&gt;:8481/admin/tenants?start=...&amp;end=...</code>。<code>start</code> 和 <code>end</code> 参数是可选的。默认返回 VictoriaMetrics 集群中至少包含一条数据的租户列表。</li>
+<li><a href="https://docs.victoriametrics.com/vmalert.html" target="_blank" rel="noopener">vmalerts</a> UI 界面： <code>http://&lt;vmselect&gt;:8481/select/&lt;accountID&gt;/prometheus/vmalert/</code>。这个 URL works only 只有在指定了 <code>-vmalert.proxyURL</code> 参数时才有效。关于 vmalert 的跟多内容<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#vmalert" target="_blank" rel="noopener">参考这里</a>。</li>
+<li><code>vmstorage</code> 在 8482 端口上提供了如下接口：
+<ul>
+<li><code>/internal/force_merge</code> - 强制启动 vmstorage 实例的<a href="https://docs.victoriametrics.com/#forced-merge" target="_blank" rel="noopener">数据合并压缩</a>。</li>
+<li><code>/snapshot/create</code> - 创建<a href="https://medium.com/@valyala/how-victoriametrics-makes-instant-snapshots-for-multi-terabyte-time-series-data-e1f3fb0e0282" target="_blank" rel="noopener">实例快照</a>，可用于后台备份。快照在<code>&lt;storageDataPath&gt;/snapshots</code> 文件夹中创建，其中<code>&lt;storageDataPath&gt;</code>是通过相应的命令行参数指定。</li>
+<li><code>/snapshot/list</code> - 列出可用的快照。</li>
+<li><code>/snapshot/delete?snapshot=&lt;id&gt;</code> - 删除给定的快照。</li>
+<li><code>/snapshot/delete_all</code> - 删除所有快照。</li>
+</ul>
+</li>
+</ul>
+<p>快照可以在每个 <code>vmstorage</code> 节点上独立创建。无需在 <code>vmstorage</code> 节点之间同步快照的创建。</p>
+<h2>集群扩缩容<span class="hx-absolute -hx-mt-20" id="集群扩缩容"></span>
+    <a href="#%e9%9b%86%e7%be%a4%e6%89%a9%e7%bc%a9%e5%ae%b9" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>集群的性能和容量有两种提升方式：</p>
+<ul>
+<li>为先有的实例节点增加计算资源（CPU，内存，磁盘IO，磁盘空间，网络带宽），即垂直扩容。</li>
+<li>为集群增加更多的实例节点，即水平扩容。</li>
+</ul>
+<p>一些扩容建议：</p>
+<ul>
+<li>向现有 <code>vmselect</code> 节点添加更多 CPU 和 RAM 可提高重度查询的性能，这些查询会处理大量时间序列和大量原始样本。请<a href="https://valyala.medium.com/how-to-optimize-promql-and-metricsql-queries-85a1b75bf986" target="_blank" rel="noopener">参阅本文</a>，了解如何检测和优化重度查询。</li>
+<li>添加更多 <code>vmstorage</code> 节点以增加集群可以处理的<a href="https://docs.victoriametrics.com/FAQ.html#what-is-an-active-time-series" target="_blank" rel="noopener">活动时间序列</a>的数量。这还会提高<a href="https://docs.victoriametrics.com/FAQ.html#what-is-high-churn-rate" target="_blank" rel="noopener">高流失率</a>时间序列的查询性能。集群稳定性也会随着 <code>vmstorage</code> 节点数量的增加而提高，因为当某些 vmstorage 节点不可用时，活动 <code>vmstorage</code> 节点需要处理的额外工作负载较少。</li>
+<li>向现有 <code>vmstorage</code> 节点添加更多 CPU 和 RAM 会增加集群可以处理的<a href="https://docs.victoriametrics.com/FAQ.html#what-is-an-active-time-series" target="_blank" rel="noopener">活动时间序列</a>的数量。与向现有 <code>vmstorage</code> 节点添加更多 CPU 和 RAM 相比，添加更多 <code>vmstorage</code> 节点是更好的选择，因为 <code>vmstorage</code> 节点数量越多，集群稳定性就越高，并且会提高<a href="https://docs.victoriametrics.com/FAQ.html#what-is-high-churn-rate" target="_blank" rel="noopener">高流失率</a>时间序列的查询性能。</li>
+<li>添加更多 <code>vminsert</code> 节点会增加最大可能的数据提取速度，因为提取的数据可能会在更多数量的 <code>vminsert</code> 节点之间分配。</li>
+<li>添加更多 <code>vmselect</code> 节点会增加最大可能的查询率，因为传入的并发请求可能会在更多 <code>vmselect</code> 节点之间分配。</li>
+</ul>
+<p>新增 <code>vmstorage</code> 节点的步骤：</p>
+<ol>
+<li>启动具有与集群中现有节点相同的 <code>-retentionPeriod</code> 的新 <code>vmstorage</code> 节点。</li>
+<li>平滑启动 vmselect 节点，并在<code>-storageNode</code> 参数中把 <code>&lt;new_vmstorage_host&gt;</code>加上。</li>
+<li>平滑启动 vminsert 节点，并在<code>-storageNode</code> 参数中把 <code>&lt;new_vmstorage_host&gt;</code>加上。</li>
+</ol>
+<h2>升级集群节点<span class="hx-absolute -hx-mt-20" id="升级集群节点"></span>
+    <a href="#%e5%8d%87%e7%ba%a7%e9%9b%86%e7%be%a4%e8%8a%82%e7%82%b9" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>所有节点类型 - <code>vminsert</code>、<code>vmselect</code> 和 <code>vmstorage</code> - 都可以通过启停进行更新。向相应进程发送 <code>SIGINT</code> 信号，等待其退出，然后使用新配置启动新版本。</p>
+<p>存在以下集群更新/升级方法：</p>
+<h3>无停机策略<span class="hx-absolute -hx-mt-20" id="无停机策略"></span>
+    <a href="#%e6%97%a0%e5%81%9c%e6%9c%ba%e7%ad%96%e7%95%a5" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><p>使用更新的配置/升级的二进制文件逐个重新启动集群中的每个节点。</p>
+<p>建议按以下顺序重新启动节点：</p>
+<ol>
+<li>重启 <code>vmstorage</code> nodes.</li>
+<li>重启 <code>vminsert</code> nodes.</li>
+<li>重启 <code>vmselect</code> nodes.</li>
+</ol>
+<p>如果满足以下条件，此策略允许在不停机的情况下升级集群：</p>
+<ul>
+<li>集群至少有两个及以上实例（每种类型都有 <code>vminsert</code>、<code>vmselect</code> 和 <code>vmstorage</code>），因此当单个节点在重启期间暂时不可用时，其它实例可以继续接受新数据并处理传入请求。有关详细信息，请参阅<a href="https://www.victoriametrics.com.cn/victoriametrics/ji-qun-ban-ben#cluster-availability" target="_blank" rel="noopener">集群可用性</a>文档。</li>
+<li>当任何类型的单个节点（<code>vminsert</code>、<code>vmselect</code> 或 <code>vmstorage</code>）在重启期间暂时不可用时，集群具有足够的计算资源（CPU、RAM、网络带宽、磁盘 IO）来处理当前工作负载。</li>
+<li>更新后的的二进制文件与集群中的其余组件兼容。请参阅 <a href="https://docs.victoriametrics.com/CHANGELOG.html" target="_blank" rel="noopener">CHANGELOG</a> 了解不同版本之间的兼容性说明。</li>
+</ul>
+<p>只要有一个条件不满足，则滚动重启可能会导致在升级期间集群不可用。在这种情况下，建议采用以下策略。</p>
+<h3>最短停机策略<span class="hx-absolute -hx-mt-20" id="最短停机策略"></span>
+    <a href="#%e6%9c%80%e7%9f%ad%e5%81%9c%e6%9c%ba%e7%ad%96%e7%95%a5" class="subheading-anchor" aria-label="Permalink for this section"></a></h3><ol>
+<li>并发停止所有的 <code>vminsert</code> 和 <code>vmselect</code> 实例。</li>
+<li>并发重启所有的<code>vmstorage</code> 实例。</li>
+<li>并发重启所有的<code>vminsert</code> 和 <code>vmselect</code> 实例。</li>
+</ol>
+<p>执行上述步骤时，集群无法进行数据提取和查询。通过在上述每个步骤中并行重启集群节点，可以最大限度地减少停机时间。与无停机策略相比，最短停机时间策略具有以下优势：</p>
+<ul>
+<li>当以前的版本与新版本不兼容时，它允许以最小的中断完成升级。</li>
+<li>当集群没有足够的计算资源（CPU、RAM、磁盘 IO、网络带宽）进行滚动升级时，它允许以最小的中断完成版本升级。</li>
+<li>对于具有大量节点的集群或具有大量 vmstorage 节点的集群，它允许最短升级的持续时间，因为它需要很长时间才能平滑重启。</li>
+</ul>
+<h2>集群可用性<span class="hx-absolute -hx-mt-20" id="集群可用性"></span>
+    <a href="#%e9%9b%86%e7%be%a4%e5%8f%af%e7%94%a8%e6%80%a7" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>VictoriaMetrics 集群架构优先考虑可用性而不是数据一致性。这意味着，如果集群的某些组件暂时不可用，集群仍可用于数据提取和数据查询。</p>
+<p>如果满足以下条件，VictoriaMetrics 集群将保持可用：</p>
+<ul>
+<li>HTTP 负载平衡器必须停止将请求路由到不可用的 vminsert 和 vmselect 节点（<a href="https://docs.victoriametrics.com/vmauth.html" target="_blank" rel="noopener">vmauth</a> 停止将请求路由到不可用的节点）。</li>
+<li>集群中必须至少有一个 vminsert 节点可用于处理数据提取工作负载。其余可用的的 vminsert 节点必须具有足够的计算能力（CPU、RAM、网络带宽）来处理当前的数据写入工作负载。如果其余可用的 vminsert 节点没有足够的资源来处理数据提取工作负载，则数据提取期间可能会出现任意延迟。有关更多详细信息，请参阅<a href="https://www.victoriametrics.com.cn/victoriametrics/ji-qun-ban-ben#capacity-planning" target="_blank" rel="noopener">容量规划</a>和<a href="https://www.victoriametrics.com.cn/victoriametrics/ji-qun-ban-ben#cluster-resizing-and-scalability" target="_blank" rel="noopener">集群扩缩容</a>文档。</li>
+<li>集群中必须至少有一个 vmselect 节点可用于处理查询工作负载。其余活动的 vmselect 节点必须具有足够的计算能力（CPU、RAM、网络带宽、磁盘 IO）来处理当前的查询工作负载。如果剩余的活动 vmselect 节点没有足够的资源来处理查询工作负载，则在查询处理期间可能会发生任意故障和延迟。有关更多详细信息，请参阅<a href="https://www.victoriametrics.com.cn/victoriametrics/ji-qun-ban-ben#capacity-planning" target="_blank" rel="noopener">容量规划</a>和<a href="https://www.victoriametrics.com.cn/victoriametrics/ji-qun-ban-ben#cluster-resizing-and-scalability" target="_blank" rel="noopener">集群扩缩容</a>文档。</li>
+<li>集群中必须至少有一个 vmstorage 节点可用，以接受新提取的数据和处理传入的查询。剩余的活动 vmstorage 节点必须具有足够的计算能力（CPU、RAM、网络带宽、磁盘 IO、可用磁盘空间）来处理当前工作负载。如果剩余的活动 vmstorage 节点没有足够的资源来处理查询工作负载，则在数据提取和查询处理期间可能会发生任意故障和延迟。有关更多详细信息，请参阅<a href="https://www.victoriametrics.com.cn/victoriametrics/ji-qun-ban-ben#capacity-planning" target="_blank" rel="noopener">容量规划</a>和<a href="https://www.victoriametrics.com.cn/victoriametrics/ji-qun-ban-ben#cluster-resizing-and-scalability" target="_blank" rel="noopener">集群扩缩容</a>文档。</li>
+</ul>
+<p>当某些 vmstorage 节点不可用时，集群的工作方式如下：</p>
+<ul>
+<li>vminsert 将新写入的数据从不可用的 vmstorage 节点重新路由到剩余的健康 vmstorage 节点。如果健康的 vmstorage 节点具有足够的 CPU、RAM、磁盘 IO 和网络带宽来处理新增加的数据量，就可确保新写入的数据得以正确保存。vminsert 会在健康的 vmstorage 节点之间均匀分布额外的数据，以便均匀分布这些节点上增加的负载。</li>
+<li>只要有一个 vmstorage 节点可用，vmselect 将继续提供查询。它会将其余健康 vmstorage 节点提供的查询的响应标记为部分响应，因为此类响应可能会丢失存储在暂时不可用的 vmstorage 节点上的历史数据。每个部分 JSON 响应都包含<code>“isPartial”：true</code> 选项。如果您更喜欢一致性而不是可用性，请使用 <code>-search.denyPartialResponse</code> 命令行参数运行 vmselect 节点。在这种情况下，只要有一个 vmstorage 节点不可用，vmselect 将返回错误。另一个选项是在vmselect的查询请求中加上<code>deny_partial_response=1</code> 参数。</li>
+</ul>
+<p>vmselect 还接受 <code>-replicationFactor=N</code> 命令行参数。此参数表示 vmselect 在查询期间如果少于 <code>-replicationFactor</code> 个 vmstorage 节点不可用则返回完整响应，因为它假定剩余的 vmstorage 节点包含完整数据。有关详细信息，请参阅<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#replication-and-data-safety" target="_blank" rel="noopener">这些文档</a>。</p>
+<p>vmselect 不会为返回原始数据点的 API 处理程序提供部分响应 - <code>/api/v1/export*</code><a href="https://docs.victoriametrics.com/#how-to-export-time-series" target="_blank" rel="noopener">接口</a>，因为用户通常希望这些数据始终是完整的。</p>
+<p>数据副本可用于提高存储耐用性。有关详细信息，请参阅<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#replication-and-data-safety" target="_blank" rel="noopener">这些文档</a>。</p>
+<h2>容量规划<span class="hx-absolute -hx-mt-20" id="容量规划"></span>
+    <a href="#%e5%ae%b9%e9%87%8f%e8%a7%84%e5%88%92" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>根据我们的<a href="https://docs.victoriametrics.com/CaseStudies.html" target="_blank" rel="noopener">案例研究</a>，与竞争解决方案（Prometheus、Thanos、Cortex、TimescaleDB、InfluxDB、QuestDB、M3DB）相比，VictoriaMetrics 在生产工作负载上使用的 CPU、RAM 和存储空间更少。</p>
+<p>每种节点类型（<code>vminsert</code>、<code>vmselect</code> 和 <code>vmstorage</code>）都可以在最合适的硬件上运行。集群容量随可用资源线性扩展。每种节点类型所需的 CPU 和 RAM 数量高度依赖于工作负载 - <a href="https://docs.victoriametrics.com/FAQ.html#what-is-an-active-time-series" target="_blank" rel="noopener">活动时间序列</a>的数量、<a href="https://docs.victoriametrics.com/FAQ.html#what-is-high-churn-rate" target="_blank" rel="noopener">序列流失率</a>、查询类型、查询 qps 等。建议为您的生产工作负载设置一个测试 VictoriaMetrics 集群，并迭代扩展每个节点的资源和每个节点类型的节点数量，直到集群稳定下来。建议为<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#monitoring" target="_blank" rel="noopener">集群设置监控</a>。它有助于确定集群设置中的瓶颈。还建议遵循<a href="https://docs.victoriametrics.com/#troubleshooting" target="_blank" rel="noopener">故障排除</a>文档。</p>
+<p>给定保留期所需的存储空间（保留期通过 vmstorage 上的 <code>-retentionPeriod</code> 命令行标志设置）可以根据测试运行中的磁盘空间使用情况推断出来。例如，如果在生产工作负载上进行一天的测试运行后存储空间使用量为 10GB，那么在 <code>-retentionPeriod=100d</code>（100 天保留期）的情况下，至少需要 <code>10GB*100=1TB</code> 的磁盘空间。可以使用 VictoriaMetrics 集群的<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#monitoring" target="_blank" rel="noopener">官方 Grafana 大盘</a>监控存储空间使用情况。</p>
+<p>建议保留以下数量的备用资源：</p>
+<ul>
+<li>所有节点类型均有 50% 的可用 RAM，用于降低工作负载暂时激增期间出现 OOM（内存不足）崩溃和速度减速的概率。</li>
+<li>所有节点类型均有 50% 的备用 CPU，以降低工作负载临时激增期间出现速度变慢的可能性。</li>
+<li>vmstorage 节点的 <code>-storageDataPath</code> 命令行参数指向的目录中至少有 20% 的可用存储空间。另请参阅 vmstorage 的 <code>-storage.minFreeDiskSpaceBytes</code> 命令行<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#list-of-command-line-flags-for-vmstorage" target="_blank" rel="noopener">参数描述</a>。</li>
+</ul>
+<p>VictoriaMetrics 集群的一些容量规划技巧：</p>
+<ul>
+<li><a href="https://www.victoriametrics.com.cn/victoriametrics/ji-qun-ban-ben#replication-and-data-safety" target="_blank" rel="noopener">多副本</a>可将集群所需的资源量增加多达 <code>N</code> 倍，其中 <code>N</code> 是副本数。这是因为 <code>vminsert</code> 将每个摄取样本的 N 个副本存储在不同的 <code>vmstorage</code> 节点上。查询期间，<code>vmselect</code> 会对这些副本进行重复数据删除。数据持久性最具成本和性能的解决方案是依赖高可用磁盘（例如 <a href="https://cloud.google.com/compute/docs/disks#pdspecs" target="_blank" rel="noopener">Google Compute 持久磁盘</a>），而不是使用 <a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#replication-and-data-safety" target="_blank" rel="noopener">VictoriaMetrics 级别的复制机制</a>。</li>
+<li>建议构建一个由众多小型 vmstorage 节点组成的集群，而非少数大型 vmstorage 节点。这样，在进行维护操作（如升级、配置更改或迁移）时，若部分 vmstorage 节点临时离线，集群更有可能保持高可用性和稳定性。举例来说，若一个集群拥有10个vmstorage节点，其中一个节点临时不可用，其余9个节点的负载将增加约11%（即1/9）。而如果集群仅由3个vmstorage节点构成，单个节点离线时，其余两个节点的负载将激增50%（即1/2）。在这种情况下，剩余节点可能无法承受额外的工作负载，导致集群过载，进而影响可用性和稳定性。</li>
+<li>增加每个vmstorage节点的RAM和CPU资源，或者添加新的vmstorage节点，可以提高集群对<a href="https://docs.victoriametrics.com/FAQ.html#what-is-an-active-time-series" target="_blank" rel="noopener">活跃时间序列</a>的处理能力。</li>
+<li>提高每个vmselect节点的CPU资源可以降低查询延迟，因为每个传入查询都由单个vmselect节点处理。vmselect节点的可用CPU核心数越多，其处理查询中涉及的时间序列的性能就越好。</li>
+<li>如果集群需要高速处理传入查询，可以通过添加更多vmselect节点来提高其处理能力，这样传入查询就可以分散到更多的vmselect节点上。</li>
+<li>默认情况下，vminsert会压缩发送给vmstorage的数据，以减少网络带宽使用。压缩过程会消耗vminsert节点额外的CPU资源。如果vminsert节点的CPU资源有限，可以通过在vminsert节点上传递<code>-rpc.disableCompression</code>命令行标志来禁用压缩。</li>
+<li>默认情况下，vmstorage在查询期间会压缩发送给vmselect的数据，以减少网络带宽使用。压缩过程会消耗vmstorage节点额外的CPU资源。如果vmstorage节点的CPU资源有限，可以通过在vmstorage节点上传递<code>-rpc.disableCompression</code>命令行参数来禁用压缩。</li>
+</ul>
+<p>也可以参阅<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#resource-usage-limits" target="_blank" rel="noopener">资源使用限制文档</a>。</p>
+<h2>资源使用限制<span class="hx-absolute -hx-mt-20" id="资源使用限制"></span>
+    <a href="#%e8%b5%84%e6%ba%90%e4%bd%bf%e7%94%a8%e9%99%90%e5%88%b6" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>默认情况下，VictoriaMetrics 的集群组件会根据典型工作负载的最佳资源使用情况进行调整。某些工作负载可能需要细粒度的资源使用限制。在这种情况下，以下命令行参数可能会有用：</p>
+<ul>
+<li><code>-memory.allowedPercent</code> 和 <code>-memory.allowedBytes</code> 限制所有的 VictoriaMetrics 集群组件里的各种内部 cache 会使用的内存用量 —— <code>vminsert</code>, <code>vmselect</code> 和 <code>vmstorage</code>。请注意，VictoriaMetrics 组件可能会占用更多内存，因为这些参数并不限制其他地方消耗的内存，比如可能是查询请求消耗的。</li>
+<li><code>-search.maxMemoryPerQuery</code> 限制 vmselect 实例执行一次查询请求所使用的内存总量。申请超限的内存会被拒绝。查询大量时间序列的重查询，可能会超查询内存限制一点点。并发查询的内存总限制差不多等于<code>-search.maxMemoryPerQuery</code> 和 <code>-search.maxConcurrentRequests</code> 的乘机。</li>
+<li><code>vmselect</code>组件的<code>-search.maxUniqueTimeseries</code> 参数限制了单词查询能够查询并计算多少个独立时间序列。<code>vmselect</code> 会将该限制参数传递给 <code>vmstorage</code> 组件，<code>vmstorage</code> 在内存中记录每个查询请求检索到的时间序列的元信息，并消耗一定的 CPU 来处理检索到的时间序列。这意味着在 <code>vmstorage</code> 中，单个查询可使用的最大内存使用量和 CPU 使用量与 <code>-search.maxUniqueTimeseries</code> 成比例。</li>
+<li><code>vmselect</code>的<code>-search.maxQueryDuration</code> 参数限制了一个查询的执行时间。如果一个查询耗时超出了指定的限制，就会被取消执行。这可以使<code>vmselect</code> 和 <code>vmstorage</code> 遇到非预期的重查询时，避免 CPU 和 内存的重度消耗。</li>
+<li><code>vmselect</code>和<code>vmstorage</code>的<code>-search.maxConcurrentRequests</code> 参数限制单个<code>vmselect</code>和<code>vmstorage</code>实例可以同时执行多少个查询。更大的并发数通常意味着需要消耗更多的内存。比如，如果一个查询在执行期间需要额外消耗 100MiB 的内存，那么100个并行的查询就需要<code>100 * 100 MiB = 10 GiB</code>的额外内存。所以最好限制一下请求并发数，这样会把超出并发限制的请求挂起排队。<code>vmselect</code>和<code>vmstorage</code>同时提供了<code>-search.maxQueueDuration</code>命令行参数来限制请求排队的最长时间。同时也看下<code>vmselect</code>的<code>-search.maxMemoryPerQuery</code>参数。</li>
+<li><code>vmselect</code>和<code>vmstorage</code>的<code>-search.maxQueueDuration</code> 限制查询因超出并发数限制而挂起等待的最长时间。上面提到了<code>-search.maxConcurrentRequests</code>参数指定了允许的最大并发数量。</li>
+<li><code>vmselect</code>的<code>-search.maxSamplesPerSeries</code> 限制了对于一个时间序列能够处理的最大原始样本值的数量。在执行查询时，<code>vmselect</code>会顺序第处理每个检索到的时间序列中的原始样本值。它将每个时间序列的指定时间范围内的原始样本解压到内存，然后对齐执行<a href="https://docs.victoriametrics.com/MetricsQL.html#rollup-functions" target="_blank" rel="noopener">rollup函数</a>。<code>-search.maxSamplesPerSeries</code> .可以限制内存用量，以免vmselect处理的<code>start-end</code>时间范围内每个时间序列都包含上一条原始样本数据。</li>
+<li><code>vmselect</code>的<code>-search.maxSamplesPerQuery</code>限制一个查询最大处理的原始样本数。可以限制 <code>vmselect</code>遇到重查询时的CPU用量。</li>
+<li><code>-search.maxPointsPerTimeseries</code>限制了<a href="https://docs.victoriametrics.com/keyConcepts.html#range-query" target="_blank" rel="noopener">范围查询(query range)</a>中每个时间序列最终返回的最多数据点数。</li>
+<li><code>-search.maxPointsSubqueryPerTimeseries</code> 限制了每个<a href="https://docs.victoriametrics.com/MetricsQL.html#subqueries" target="_blank" rel="noopener">子查询</a>执行时所产生的最大数据点数。</li>
+<li><code>-search.maxSeriesPerAggrFunc</code> 限制一次查询由<a href="https://docs.victoriametrics.com/MetricsQL.html#aggregate-functions" target="_blank" rel="noopener">MetricsQL聚合</a><a href="https://docs.victoriametrics.com/MetricsQL.html#aggregate-functions" target="_blank" rel="noopener">函数</a>所产生的最大时间序列数量。</li>
+<li><code>vmselect</code>的<code>-search.maxSeries</code>参数限制<code>/api/v1/series</code>接口最多返回的series数量。这个接口主要用于 Grafana 自动补全 Metric 名称，Label 名称 和 Label 值。如果数据库中因为<a href="https://docs.victoriametrics.com/FAQ.html#what-is-high-churn-rate" target="_blank" rel="noopener">高基数</a>存储了大量的时间序列，那么这个接口会消耗<code>vmstorage</code>和<code>vmselect</code>的大量CPU。所以在这种情况下需要使用<code>-search.maxSeries</code>来限制下CPU和内存的过度消耗。</li>
+<li><code>-search.maxTagKeys</code> at <code>vmstorage</code> limits the number of items, which may be returned from <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#getting-label-names" target="_blank" rel="noopener">/api/v1/labels</a>. This endpoint is used mostly by Grafana for auto-completion of label names. Queries to this endpoint may take big amounts of CPU time and memory at <code>vmstorage</code> and <code>vmselect</code> when the database contains big number of unique time series because of <a href="https://docs.victoriametrics.com/FAQ.html#what-is-high-churn-rate" target="_blank" rel="noopener">high churn rate</a>. In this case it might be useful to set the <code>-search.maxTagKeys</code> to quite low value in order to limit CPU and memory usage.</li>
+<li><code>vmstorage</code>的<code>-search.maxTagKeys</code>限制<a href="https://prometheus.io/docs/prometheus/latest/querying/api/#getting-label-names" target="_blank" rel="noopener">/api/v1/labels</a>接口返回的label总数量。这个接口主要用于 Grafana 自动补全 Label 名称。如果数据库中因为<a href="https://docs.victoriametrics.com/FAQ.html#what-is-high-churn-rate" target="_blank" rel="noopener">高基数</a>存储了大量的时间序列，那么这个接口会消耗<code>vmstorage</code>和<code>vmselect</code>的大量CPU。所以在这种情况下需要使用<code>-search.maxTagKeys</code>来限制下CPU和内存的过度消耗。</li>
+<li><code>vmstorage</code>的<code>-search.maxTagKeys</code>限制<a href="https://prometheus.io/docs/prometheus/latest/querying/api/#querying-label-values" target="_blank" rel="noopener">/api/v1/label/…/values</a>接口返回的label值总数量。这个接口主要用于 Grafana 自动补全 Label 值。如果数据库中因为<a href="https://docs.victoriametrics.com/FAQ.html#what-is-high-churn-rate" target="_blank" rel="noopener">高基数</a>存储了大量的时间序列，那么这个接口会消耗<code>vmstorage</code>和<code>vmselect</code>的大量CPU。所以在这种情况下需要使用<code>-search.maxTagValues</code>来限制下CPU和内存的过度消耗。</li>
+<li><code>vmstorage</code>的<code>-storage.maxDailySeries</code>可以用于限制每天最多创建多少个新时间序列。见<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#cardinality-limiter" target="_blank" rel="noopener">限制文档</a>。</li>
+<li>vmstorage的<code>-storage.maxHourlySeries</code>可以用于限制活跃时间序列的数量。见<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#cardinality-limiter" target="_blank" rel="noopener">限制文档</a>。</li>
+</ul>
+<p>也可以参考<a href="https://www.victoriametrics.com.cn/victoriametrics/ji-qun-ban-ben#capacity-planning" target="_blank" rel="noopener">容量规划文档</a>和<a href="https://docs.victoriametrics.com/vmagent.html#cardinality-limiter" target="_blank" rel="noopener">vmagent的基数显示器</a>。</p>
+<h2>高可用<span class="hx-absolute -hx-mt-20" id="高可用"></span>
+    <a href="#%e9%ab%98%e5%8f%af%e7%94%a8" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>如果数据库在部分组件暂时不可用时仍能接收新数据并处理传入查询，则被认为是高可用的。VictoriaMetrics集群符合这一定义，请参阅<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#cluster-availability" target="_blank" rel="noopener">集群可用性文档</a>。</p>
+<p>建议在具有高带宽、低延迟和低错误率的同一子网络中运行单个集群的所有组件，这可以提高集群的性能和可用性。不建议将单个集群的组件分布在多个可用区（AZ）中，因为跨AZ网络通常带宽较低、延迟较高、错误率也较高，相比之下，单个AZ内的网络表现更好。</p>
+<p>如果你需要跨多个AZ的设置，建议在每个AZ中运行独立的集群，并在这些集群前设置<a href="https://docs.victoriametrics.com/vmagent.html" target="_blank" rel="noopener">vmagent</a>，以便它能将传入数据复制到所有集群中，详情请参阅<a href="https://docs.victoriametrics.com/vmagent.html#multitenancy" target="_blank" rel="noopener">相关文档</a>。此外，可以配置额外的vmselect节点，以便根据<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#multi-level-cluster-setup" target="_blank" rel="noopener">这些文档</a>从多个集群中读取数据。</p>
+<h2>多层联邦部署<span class="hx-absolute -hx-mt-20" id="多层联邦部署"></span>
+    <a href="#%e5%a4%9a%e5%b1%82%e8%81%94%e9%82%a6%e9%83%a8%e7%bd%b2" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>当vmselect节点运行时带有<code>-clusternativeListenAddr</code>命令行标志，它们可以被其他vmselect节点查询。例如，如果vmselect以<code>-clusternativeListenAddr=:8401</code>启动，那么它可以在TCP端口8401上接受来自其他vmselect节点的查询，就像vmstorage节点一样。这允许vmselect节点进行链式连接，并构建多层集群拓扑。例如，顶层vmselect节点可以查询不同可用区（AZ）中的第二层vmselect节点，而第二层vmselect节点可以查询本地AZ中的vmstorage节点。</p>
+<p>当vminsert节点运行时带有<code>-clusternativeListenAddr</code>命令行标志，它们可以接受来自其他vminsert节点的数据。例如，如果vminsert以<code>-clusternativeListenAddr=:8400</code>启动，那么它可以在TCP端口8400上接受来自其他vminsert节点的数据，就像vmstorage节点一样。这允许vminsert节点进行链式连接，并构建多层集群拓扑。例如，顶层vminsert节点可以将数据复制到位于不同可用区（AZ）的第二层vminsert节点中，而第二层vminsert节点可以将数据分散到本地AZ中的vmstorage节点。</p>
+<p>由于同步复制和数据分片，vminsert节点的多层集群设置存在以下缺点：</p>
+<ul>
+<li>数据写入速度受限于连接到AZ的最慢链路。</li>
+<li>当某些可用区（AZ）暂时不可用时，顶层的<code>vminsert</code>节点会将传入数据重新路由到剩余的AZ中。这会导致在暂时不可用的AZ中出现数据缺口。</li>
+</ul>
+<p>当<a href="https://docs.victoriametrics.com/vmagent.html" target="_blank" rel="noopener">vmagent</a>以<a href="https://docs.victoriametrics.com/vmagent.html#multitenancy" target="_blank" rel="noopener">多租户模式</a>运行时，这些问题得到了解决。当特定AZ暂时不可用时，vmagent会缓冲必须发送到该AZ的数据。缓冲区存储在磁盘上。一旦AZ变得可用，缓冲的数据就会被发送到AZ。</p>
+<h2>Helm<span class="hx-absolute -hx-mt-20" id="helm"></span>
+    <a href="#helm" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>Helm图表简化了在Kubernetes中管理VictoriaMetrics集群版本的过程。它可在<a href="https://github.com/VictoriaMetrics/helm-charts" target="_blank" rel="noopener">helm-charts</a>仓库中获得。</p>
+<h2>Kubernetes operator<span class="hx-absolute -hx-mt-20" id="kubernetes-operator"></span>
+    <a href="#kubernetes-operator" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p><a href="https://github.com/VictoriaMetrics/operator" target="_blank" rel="noopener">K8s operator</a> 简化了在Kubernetes中管理VictoriaMetrics组件的过程。</p>
+<h2>副本和数据安全<span class="hx-absolute -hx-mt-20" id="副本和数据安全"></span>
+    <a href="#%e5%89%af%e6%9c%ac%e5%92%8c%e6%95%b0%e6%8d%ae%e5%ae%89%e5%85%a8" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>默认情况下，VictoriaMetrics将复制工作卸载到由-storageDataPath指定的底层存储上，如<a href="https://cloud.google.com/compute/docs/disks#pdspecs" target="_blank" rel="noopener">Google计算引擎的持久磁盘</a>，这保证了数据的持久性。如果出于某种原因无法使用复制的持久磁盘，VictoriaMetrics支持应用级别的复制。</p>
+<p>通过向vminsert传递<code>-replicationFactor=N</code>命令行标志可以启用复制，这指示vminsert在N个不同的vmstorage节点上存储每个摄入样本的N份副本。这保证了即使有最多N-1个vmstorage节点不可用，所有存储的数据仍然可用于查询。</p>
+<p>向vmselect传递<code>-replicationFactor=N</code>命令行标志指示它不在查询期间如果少于<code>-replicationFactor</code>个vmstorage节点不可用时将响应标记为部分响应。详情请参阅<a href="https://www.victoriametrics.com.cn/victoriametrics/ji-qun-ban-ben#high-availability" target="_blank" rel="noopener">集群可用性文档</a>。</p>
+<p>为了在<code>N-1</code>个存储节点不可用时保持对新摄入数据的给定复制因子，集群必须包含至少<code>2*N-1</code>个<code>vmstorage</code>节点，其中N是复制因子。</p>
+<p>VictoriaMetrics以毫秒精度存储时间戳，因此在启用复制时必须向vmselect节点传递<code>-dedup.minScrapeInterval=1ms</code>命令行参数，这样它们在查询期间可以从不同的vmstorage节点上去重复制的样本。如果从配置相同的<a href="https://www.victoriametrics.com.cn/victoriametrics/xi-tong-zu-jian/vmagent" target="_blank" rel="noopener">vmagent</a>实例或Prometheus实例向VictoriaMetrics推送了重复数据，则根据<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#deduplication" target="_blank" rel="noopener">去重文档</a>，<code>-dedup.minScrapeInterval</code>必须设置为抓取配置中的<code>scrape_interval</code>。</p>
+<p>注意，<a href="https://medium.com/@valyala/speeding-up-backups-for-big-time-series-databases-533c1a927883" target="_blank" rel="noopener">复制不能防止灾难</a>，因此建议定期进行备份。详情请参阅<a href="https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#backups" target="_blank" rel="noopener">这些文档</a>。</p>
+<p>注意，复制会增加资源使用——CPU、RAM、磁盘空间、网络带宽——最多可达<code>-replicationFactor=N</code>倍，因为vminsert将N份摄入数据存储到不同的vmstorage节点上，并且vmselect在查询期间需要去重从vmstorage节点获得的复制数据。因此，将复制工作卸载到由<code>-storageDataPath</code>指定的底层复制的持久存储上，如<a href="https://cloud.google.com/compute/docs/disks/#pdspecs" target="_blank" rel="noopener">Google计算引擎的持久磁盘</a>，这可以防止数据丢失和数据损坏，更加成本效益。它还提供持续的高性能，并且可以在不停机的情况下<a href="https://cloud.google.com/compute/docs/disks/add-persistent-disk" target="_blank" rel="noopener">调整大小</a>。基于HDD的持久磁盘应该足以满足大多数用例。建议在Kubernetes中使用耐用的复制持久卷。</p>
+<h2>去重机制<span class="hx-absolute -hx-mt-20" id="去重机制"></span>
+    <a href="#%e5%8e%bb%e9%87%8d%e6%9c%ba%e5%88%b6" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>VictoriaMetrics的集群版本支持数据去重，与单节点版本的方式相同。详情请参阅<a href="https://docs.victoriametrics.com/#deduplication" target="_blank" rel="noopener">这些文档</a>。唯一的区别是，由于以下方面，相同的-dedup.minScrapeInterval命令行标志值必须同时传递给vmselect和vmstorage节点：</p>
+<p>默认情况下，vminsert尝试将单个时间序列的所有样本路由到单个vmstorage节点。但在某些条件下，单个时间序列的样本可能会分布在多个vmstorage节点上：</p>
+<ul>
+<li>当添加/移除vmstorage节点时。此时，部分时间序列的新样本将被路由到其他vmstorage节点；</li>
+<li>当vmstorage节点暂时不可用（例如，在它们重启期间）。此时，新样本将被重新路由到剩余的可用vmstorage节点；</li>
+<li>当vmstorage节点没有足够的能力处理传入的数据流时。此时，vminsert将新样本重新路由到其他vmstorage节点。</li>
+</ul>
+<h2>备份<span class="hx-absolute -hx-mt-20" id="备份"></span>
+    <a href="#%e5%a4%87%e4%bb%bd" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>建议定期从<a href="https://medium.com/@valyala/how-victoriametrics-makes-instant-snapshots-for-multi-terabyte-time-series-data-e1f3fb0e0282" target="_blank" rel="noopener">即时快照</a>进行备份，以防止用户错误，如意外删除数据。</p>
+<p>创建备份时，必须对每个vmstorage节点执行以下步骤：</p>
+<ul>
+<li>通过导航到/snapshot/create HTTP处理器创建即时快照。它将创建快照并返回其名称。</li>
+<li>使用<a href="https://www.victoriametrics.com.cn/victoriametrics/xi-tong-zu-jian/vmbackup" target="_blank" rel="noopener">vmbackup</a>从<code>&lt;storageDataPath&gt;/snapshots/&lt;snapshot_name&gt;</code>文件夹归档创建的快照。归档过程不会干扰vmstorage的工作，因此可以在任何合适的时间进行。</li>
+<li>通过<code>/snapshot/delete?snapshot=&lt;snapshot_name&gt;</code>或<code>/snapshot/delete_all</code>删除未使用的快照，以释放占用的存储空间。</li>
+</ul>
+<p>无需在所有vmstorage节点之间同步备份。</p>
+<p>从备份中恢复数据：</p>
+<ol>
+<li><code>kill -INT</code>命令关停 <code>vmstorage</code>。</li>
+<li>使用 <a href="https://docs.victoriametrics.com/vmrestore.html" target="_blank" rel="noopener">vmrestore</a> 将备份数据恢复到 <code>-storageDataPath</code> 指定的目录。</li>
+<li>启动 <code>vmstorage</code> 节点.</li>
+</ol>
+<h2>保存时间过滤器<span class="hx-absolute -hx-mt-20" id="保存时间过滤器"></span>
+    <a href="#%e4%bf%9d%e5%ad%98%e6%97%b6%e9%97%b4%e8%bf%87%e6%bb%a4%e5%99%a8" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>VictoriaMetrics 企业版支持通过 label filter 来配置多种数据保留时间，通过 vmstorage 的命令行参数 <code>-retentionFilter</code> 来指定。</p>
+<p>例如，以下配置将 accountID 从 42 开始的租户的保留期设置为 1 天，然后将任何租户的标签 env=&ldquo;dev&rdquo; 或 env=&ldquo;prod&rdquo; 的时间序列的保留期设置为 3 天，而其余租户的保留期为 4 周：</p>
+<div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+  
+
+<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-plain" data-lang="plain"><span style="display:flex;"><span>-retentionFilter=&#39;{vm_account_id=~&#34;42.*&#34;}:1d&#39; -retentionFilter=&#39;{env=~&#34;dev|staging&#34;}:3d&#39; -retentionPeriod=4w&#39;</span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+  <button
+    class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+    title="Copy code"
+  >
+    <div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4"></div>
+    <div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4"></div>
+  </button>
+</div>
+
+  
+</div>
+<p>更多关于保存时间过滤器的详细内容，可以阅读<a href="https://docs.victoriametrics.com/#retention-filters" target="_blank" rel="noopener">这些文档</a>。</p>
+<h2>性能分析<span class="hx-absolute -hx-mt-20" id="性能分析"></span>
+    <a href="#%e6%80%a7%e8%83%bd%e5%88%86%e6%9e%90" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>All the cluster components provide the following handlers for <a href="https://blog.golang.org/profiling-go-programs" target="_blank" rel="noopener">profiling</a>:</p>
+<ul>
+<li><code>http://vminsert:8480/debug/pprof/heap</code> 内存剖析和<code>http://vminsert:8480/debug/pprof/profile</code> CPU 剖析</li>
+<li><code>http://vmselect:8481/debug/pprof/heap</code> 内存剖析和<code>http://vmselect:8481/debug/pprof/profile</code> CPU 剖析</li>
+<li><code>http://vmstorage:8482/debug/pprof/heap</code> 内存剖析和<code>http://vmstorage:8482/debug/pprof/profile</code> CPU 剖析</li>
+</ul>
+<p>从vmstorage收集CPU剖析示例命令（使用 <code>vmstorage</code> 的 hostname 替换掉 <code>0.0.0.0）</code>：</p>
+<div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+  
+
+<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-plain" data-lang="plain"><span style="display:flex;"><span>Copycurl http://0.0.0.0:8482/debug/pprof/profile &gt; cpu.pprof</span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+  <button
+    class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+    title="Copy code"
+  >
+    <div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4"></div>
+    <div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4"></div>
+  </button>
+</div>
+
+  
+</div>
+<p>从 vminsert 收集内存剖析实例命令（使用 <code>vminsert</code> 的 hostname 替换掉 <code>0.0.0.0）</code>：</p>
+<div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+  
+
+<div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-plain" data-lang="plain"><span style="display:flex;"><span>Copycurl http://0.0.0.0:8480/debug/pprof/heap &gt; mem.pprof</span></span></code></pre></div></div><div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+  <button
+    class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+    title="Copy code"
+  >
+    <div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4"></div>
+    <div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4"></div>
+  </button>
+</div>
+
+  
+</div>
+<p>从安全角度来看，共享收集的剖析是安全的，因为它们不包含敏感信息。</p>
+
+        </div>
+        <div class="hx-mt-16"></div>
+        <div class="hx-mb-8 hx-flex hx-items-center hx-border-t hx-pt-8 dark:hx-border-neutral-800 contrast-more:hx-border-neutral-400 dark:contrast-more:hx-border-neutral-400 print:hx-hidden"><a
+        href="/docs/ops/disk-space/"
+        title="如何处理磁盘空间不足"
+        class="hx-flex hx-max-w-[50%] hx-items-center hx-gap-1 hx-py-4 hx-text-base hx-font-medium hx-text-gray-600 hx-transition-colors [word-break:break-word] hover:hx-text-primary-600 dark:hx-text-gray-300 md:hx-text-lg ltr:hx-pr-4 rtl:hx-pl-4"
+      ><svg class="hx-inline hx-h-5 hx-shrink-0 ltr:hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>如何处理磁盘空间不足</a><a
+        href="/docs/ops/node-crash/"
+        title="如何处理机器故障"
+        class="hx-flex hx-max-w-[50%] hx-items-center hx-gap-1 hx-py-4 hx-text-base hx-font-medium hx-text-gray-600 hx-transition-colors [word-break:break-word] hover:hx-text-primary-600 dark:hx-text-gray-300 md:hx-text-lg ltr:hx-ml-auto ltr:hx-pl-4 ltr:hx-text-right rtl:hx-mr-auto rtl:hx-pr-4 rtl:hx-text-left"
+      >如何处理机器故障<svg class="hx-inline hx-h-5 hx-shrink-0 rtl:-hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></a></div>
+        
+      </main>
+    </article>
+  </div>
+
+      <footer class="hextra-footer hx-bg-gray-100 hx-pb-[env(safe-area-inset-bottom)] dark:hx-bg-neutral-900 print:hx-bg-transparent"><div
+    class="hx-max-w-screen-xl hx-mx-auto hx-flex hx-justify-center hx-py-12 hx-pl-[max(env(safe-area-inset-left),1.5rem)] hx-pr-[max(env(safe-area-inset-right),1.5rem)] hx-text-gray-600 dark:hx-text-gray-400 md:hx-justify-start"
+  >
+    <div class="hx-flex hx-w-full hx-flex-col hx-items-center sm:hx-items-start"><div class="hx-mt-6 hx-text-xs">© 2024 Hextra Project.</div>
+    </div>
+  </div>
+</footer>
+    
+    <script defer src="/js/main.js" integrity=""></script>
+
+
+<script defer src="/lib/flexsearch/flexsearch.bundle.min.0425860527cc9968f9f049421c7a56b39327d475e2e3a8f550416be3a9134327.js" integrity="sha256-BCWGBSfMmWj58ElCHHpWs5Mn1HXi46j1UEFr46kTQyc="></script>
+    <script defer src="/en.search.js" integrity=""></script>
+
+
+  </body>
+</html>

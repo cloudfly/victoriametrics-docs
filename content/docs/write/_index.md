@@ -6,7 +6,7 @@ weight: 6
 
 VictoriaMetrics 支持当今监控应用的 2 种主流写入模式：Push 和 Pull。
 
-## Push 模型
+## Push 模型 {#push}
 客户端定期以推送模式将收集到的指标数据发送给服务端：
 
 ![](push-model.png)
@@ -48,7 +48,7 @@ Push 模型的缺点：
 + 很难判断是应用程序崩溃还是由于其他原因停止发送指标数据。 
 + 如果应用程序以太短间隔推送指标数据，可能会使监控系统负载过重。
 
-## Pull 模型
+## Pull 模型 {#pull}
 Pull 模型是由Prometheus推广的一种方法，其中监控系统决定何时以及从哪里拉取指标：
 
 ![](pull-model.png)

@@ -1,6 +1,6 @@
 ---
 title: 单机版本
-weight: 3
+weight: 1
 ---
 
 ## 安装部署

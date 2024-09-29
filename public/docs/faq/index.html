@@ -36,7 +36,7 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
   
 
 <meta property="og:title" content="FAQ" />
-<meta property="og:description" content="什么是活跃时间序列?
+<meta property="og:description" content="什么是活跃时间序列? 
     时间序列通过其名称和一组标签来唯一标识。例如，temperature{city=&quot;NY&quot;,country=&quot;US&quot;} 和 temperature{city=&quot;SF&quot;,country=&quot;US&quot;} 是两个不同的序列，因为它们在城市标签上有所区别。如果一个时间序列在最近一小时内至少接收到一个新样本，则被视为活跃。
 高流失率是指什么？
     如果旧的时间序列以高频率被新的时间序列不断替换，那么这种状态被称为高流失率。高流失率会带来以下负面影响：
@@ -182,7 +182,37 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
             class="hx-text-sm contrast-more:hx-text-gray-700 contrast-more:dark:hx-text-gray-100 hx-relative -hx-ml-2 hx-hidden hx-whitespace-nowrap hx-p-2 md:hx-inline-block hx-text-gray-600 hover:hx-text-gray-800 dark:hx-text-gray-400 dark:hover:hx-text-gray-200"
           >
             <span class="hx-text-center">关于</span>
-          </a><button type="button" aria-label="Menu" class="hamburger-menu -hx-mr-2 hx-rounded hx-p-2 active:hx-bg-gray-400/20 md:hx-hidden"><svg height=24 fill="none" viewBox="0 0 24 24" stroke="currentColor"><g><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8H20"></path></g><g><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16H20"></path></g></svg></button>
+          </a><a
+            title="官方文档"
+            href="https://docs.victoriametrics.com/"
+            target="_blank" rel="noreferer"
+            class="hx-text-sm contrast-more:hx-text-gray-700 contrast-more:dark:hx-text-gray-100 hx-relative -hx-ml-2 hx-hidden hx-whitespace-nowrap hx-p-2 md:hx-inline-block hx-text-gray-600 hover:hx-text-gray-800 dark:hx-text-gray-400 dark:hover:hx-text-gray-200"
+          >
+            <span class="hx-text-center">官方文档</span>
+          </a><div class="search-wrapper hx-relative md:hx-w-64">
+  <div class="hx-relative hx-flex hx-items-center hx-text-gray-900 contrast-more:hx-text-gray-800 dark:hx-text-gray-300 contrast-more:dark:hx-text-gray-300">
+    <input
+      placeholder="Search..."
+      class="search-input hx-block hx-w-full hx-appearance-none hx-rounded-lg hx-px-3 hx-py-2 hx-transition-colors hx-text-base hx-leading-tight md:hx-text-sm hx-bg-black/[.05] dark:hx-bg-gray-50/10 focus:hx-bg-white dark:focus:hx-bg-dark placeholder:hx-text-gray-500 dark:placeholder:hx-text-gray-400 contrast-more:hx-border contrast-more:hx-border-current"
+      type="search"
+      value=""
+      spellcheck="false"
+    />
+    <kbd
+      class="hx-absolute hx-my-1.5 hx-select-none ltr:hx-right-1.5 rtl:hx-left-1.5 hx-h-5 hx-rounded hx-bg-white hx-px-1.5 hx-font-mono hx-text-[10px] hx-font-medium hx-text-gray-500 hx-border dark:hx-border-gray-100/20 dark:hx-bg-dark/50 contrast-more:hx-border-current contrast-more:hx-text-current contrast-more:dark:hx-border-current hx-items-center hx-gap-1 hx-transition-opacity hx-pointer-events-none hx-hidden sm:hx-flex"
+    >
+      CTRL K
+    </kbd>
+  </div>
+
+  <div>
+    <ul
+      class="search-results hextra-scrollbar hx-hidden hx-border hx-border-gray-200 hx-bg-white hx-text-gray-100 dark:hx-border-neutral-800 dark:hx-bg-neutral-900 hx-absolute hx-top-full hx-z-20 hx-mt-2 hx-overflow-auto hx-overscroll-contain hx-rounded-xl hx-py-2.5 hx-shadow-xl hx-max-h-[min(calc(50vh-11rem-env(safe-area-inset-bottom)),400px)] md:hx-max-h-[min(calc(100vh-5rem-env(safe-area-inset-bottom)),400px)] hx-inset-x-0 ltr:md:hx-left-auto rtl:md:hx-right-auto contrast-more:hx-border contrast-more:hx-border-gray-900 contrast-more:dark:hx-border-gray-50 hx-w-screen hx-min-h-[100px] hx-max-w-[min(calc(100vw-2rem),calc(100%+20rem))]"
+      style="transition: max-height 0.2s ease 0s;"
+    ></ul>
+  </div>
+</div>
+<button type="button" aria-label="Menu" class="hamburger-menu -hx-mr-2 hx-rounded hx-p-2 active:hx-bg-gray-400/20 md:hx-hidden"><svg height=24 fill="none" viewBox="0 0 24 24" stroke="currentColor"><g><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8H20"></path></g><g><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16H20"></path></g></svg></button>
   </nav>
 </div>
 
@@ -247,22 +277,6 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
             </li><li class="hx-flex hx-flex-col "><a
     class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
       hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
-    href="/docs/single/"
-    
-  >单机版本
-    </a>
-              
-            </li><li class="hx-flex hx-flex-col "><a
-    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
-      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
-    href="/docs/cluster/"
-    
-  >集群版本
-    </a>
-              
-            </li><li class="hx-flex hx-flex-col "><a
-    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
-      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
     href="/docs/query/"
     
   >数据查询
@@ -363,8 +377,19 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
     href="/docs/write/"
     
   >数据写入
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/write/api/"
+    
+  >写入 API
     </a>
               
+            </li></ul>
+      </div>
             </li><li class="hx-flex hx-flex-col open"><a
     class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
       sidebar-active-item hx-bg-primary-100 hx-font-semibold hx-text-primary-800 contrast-more:hx-border contrast-more:hx-border-primary-500 dark:hx-bg-primary-400/10 dark:hx-text-primary-600 contrast-more:dark:hx-border-primary-500"
@@ -375,37 +400,37 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
   
     <ul class='hx-flex hx-flex-col hx-gap-1 hx-relative before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] dark:before:hx-bg-neutral-800 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-pr-3 rtl:before:hx-right-0 ltr:hx-ml-3 rtl:hx-mr-3'><li>
               <a
-                href="#%e4%bb%80%e4%b9%88%e6%98%af%e6%b4%bb%e8%b7%83%e6%97%b6%e9%97%b4%e5%ba%8f%e5%88%97"
+                href="#what-is-active-timeseries"
                 class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
-              >什么是活跃时间序列?</a>
+              >什么是活跃时间序列? </a>
             </li>
           <li>
               <a
-                href="#%e9%ab%98%e6%b5%81%e5%a4%b1%e7%8e%87%e6%98%af%e6%8c%87%e4%bb%80%e4%b9%88"
+                href="#what-is-high-churn-rate"
                 class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
               >高流失率是指什么？</a>
             </li>
           <li>
               <a
-                href="#%e4%bb%80%e4%b9%88%e6%98%af%e9%ab%98%e5%9f%ba%e6%95%b0"
+                href="#what-is-high-cardinality"
                 class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
               >什么是高基数</a>
             </li>
           <li>
               <a
-                href="#%e4%bb%80%e4%b9%88%e6%98%af%e6%85%a2%e5%86%99%e5%85%a5"
+                href="#what-is-slow-insert"
                 class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
               >什么是慢写入</a>
             </li>
           <li>
               <a
-                href="#%e5%a6%82%e4%bd%95%e9%99%90%e5%88%b6-victoriametrics-%e7%bb%84%e4%bb%b6%e7%9a%84%e5%86%85%e5%ad%98"
+                href="#how-to-limit-memory-usage"
                 class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
               >如何限制 VictoriaMetrics 组件的内存</a>
             </li>
           <li>
               <a
-                href="#%e5%a6%82%e4%bd%95%e5%88%a0%e9%99%a4%e6%95%b0%e6%8d%ae"
+                href="#how-to-delete-data"
                 class="hx-flex hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [word-break:break-word] hx-cursor-pointer [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] contrast-more:hx-border hx-gap-2 before:hx-opacity-25 before:hx-content-['#'] hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:hx-text-gray-900 contrast-more:dark:hx-text-gray-50 contrast-more:hx-border-transparent contrast-more:hover:hx-border-gray-900 contrast-more:dark:hover:hx-border-gray-50"
               >如何删除数据</a>
             </li>
@@ -424,6 +449,49 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
         <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
     class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
       hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/single/"
+    
+  >单机版本
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/cluster/"
+    
+  >集群版本
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/cluster/cluster-resize/"
+    
+  >如何对集群版进行扩缩容
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/cluster/node-crash/"
+    
+  >如何处理机器故障
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/cluster/multi-disk/"
+    
+  >有效利用一机多盘
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
     href="/docs/ops/disk-space/"
     
   >如何处理磁盘空间不足
@@ -432,33 +500,9 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
             </li><li class="hx-flex hx-flex-col "><a
     class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
       hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
-    href="/docs/ops/cluster-resize/"
-    
-  >如何对集群版进行扩缩容
-    </a>
-              
-            </li><li class="hx-flex hx-flex-col "><a
-    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
-      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
-    href="/docs/ops/node-crash/"
-    
-  >如何处理机器故障
-    </a>
-              
-            </li><li class="hx-flex hx-flex-col "><a
-    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
-      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
     href="/docs/ops/write-history/"
     
   >如何补写历史数据
-    </a>
-              
-            </li><li class="hx-flex hx-flex-col "><a
-    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
-      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
-    href="/docs/ops/multi-disk/"
-    
-  >有效利用一机多盘
     </a>
               
             </li></ul>
@@ -486,20 +530,6 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
           <li class=""><a
     class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
       hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
-    href="/docs/single/"
-    
-  >单机版本
-    </a></li>
-          <li class=""><a
-    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
-      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
-    href="/docs/cluster/"
-    
-  >集群版本
-    </a></li>
-          <li class=""><a
-    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
-      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
     href="/docs/query/"
     
   >数据查询
@@ -599,7 +629,18 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
     href="/docs/write/"
     
   >数据写入
-    </a></li>
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a><div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/write/api/"
+    
+  >写入 API
+    </a>
+              
+            </li></ul>
+      </div></li>
           <li class="open"><a
     class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
       sidebar-active-item hx-bg-primary-100 hx-font-semibold hx-text-primary-800 contrast-more:hx-border contrast-more:hx-border-primary-500 dark:hx-bg-primary-400/10 dark:hx-text-primary-600 contrast-more:dark:hx-border-primary-500"
@@ -618,6 +659,49 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
         <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
     class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
       hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/single/"
+    
+  >单机版本
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/cluster/"
+    
+  >集群版本
+        <span class="hextra-sidebar-collapsible-button"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hx-h-[18px] hx-min-w-[18px] hx-rounded-sm hx-p-0.5 hover:hx-bg-gray-800/5 dark:hover:hx-bg-gray-100/5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" class="hx-origin-center hx-transition-transform rtl:-hx-rotate-180"></path></svg></span>
+    </a>
+              <div class="ltr:hx-pr-0 hx-overflow-hidden">
+        <ul class='hx-relative hx-flex hx-flex-col hx-gap-1 before:hx-absolute before:hx-inset-y-1 before:hx-w-px before:hx-bg-gray-200 before:hx-content-[""] ltr:hx-ml-3 ltr:hx-pl-3 ltr:before:hx-left-0 rtl:hx-mr-3 rtl:hx-pr-3 rtl:before:hx-right-0 dark:before:hx-bg-neutral-800'><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/cluster/cluster-resize/"
+    
+  >如何对集群版进行扩缩容
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/cluster/node-crash/"
+    
+  >如何处理机器故障
+    </a>
+              
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
+    href="/docs/ops/cluster/multi-disk/"
+    
+  >有效利用一机多盘
+    </a>
+              
+            </li></ul>
+      </div>
+            </li><li class="hx-flex hx-flex-col "><a
+    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
+      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
     href="/docs/ops/disk-space/"
     
   >如何处理磁盘空间不足
@@ -626,33 +710,9 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
             </li><li class="hx-flex hx-flex-col "><a
     class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
       hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
-    href="/docs/ops/cluster-resize/"
-    
-  >如何对集群版进行扩缩容
-    </a>
-              
-            </li><li class="hx-flex hx-flex-col "><a
-    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
-      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
-    href="/docs/ops/node-crash/"
-    
-  >如何处理机器故障
-    </a>
-              
-            </li><li class="hx-flex hx-flex-col "><a
-    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
-      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
     href="/docs/ops/write-history/"
     
   >如何补写历史数据
-    </a>
-              
-            </li><li class="hx-flex hx-flex-col "><a
-    class="hx-flex hx-items-center hx-justify-between hx-gap-2 hx-cursor-pointer hx-rounded hx-px-2 hx-py-1.5 hx-text-sm hx-transition-colors [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] [word-break:break-word]
-      hx-text-gray-500 hover:hx-bg-gray-100 hover:hx-text-gray-900 contrast-more:hx-border contrast-more:hx-border-transparent contrast-more:hx-text-gray-900 contrast-more:hover:hx-border-gray-900 dark:hx-text-neutral-400 dark:hover:hx-bg-primary-100/5 dark:hover:hx-text-gray-50 contrast-more:dark:hx-text-gray-50 contrast-more:dark:hover:hx-border-gray-50"
-    href="/docs/ops/multi-disk/"
-    
-  >有效利用一机多盘
     </a>
               
             </li></ul>
@@ -676,27 +736,27 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
 <nav class="hextra-toc hx-order-last hx-hidden hx-w-64 hx-shrink-0 xl:hx-block print:hx-hidden hx-px-4" aria-label="table of contents">
     <div class="hextra-scrollbar hx-sticky hx-top-16 hx-overflow-y-auto hx-pr-4 hx-pt-6 hx-text-sm [hyphens:auto] hx-max-h-[calc(100vh-var(--navbar-height)-env(safe-area-inset-bottom))] ltr:hx--mr-4 rtl:hx--ml-4"><p class="hx-mb-4 hx-font-semibold hx-tracking-tight">On this page</p><ul>
       <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
-        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e4%bb%80%e4%b9%88%e6%98%af%e6%b4%bb%e8%b7%83%e6%97%b6%e9%97%b4%e5%ba%8f%e5%88%97">什么是活跃时间序列?
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#what-is-active-timeseries">什么是活跃时间序列? 
         </a>
       </li>
       <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
-        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e9%ab%98%e6%b5%81%e5%a4%b1%e7%8e%87%e6%98%af%e6%8c%87%e4%bb%80%e4%b9%88">高流失率是指什么？
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#what-is-high-churn-rate">高流失率是指什么？
         </a>
       </li>
       <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
-        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e4%bb%80%e4%b9%88%e6%98%af%e9%ab%98%e5%9f%ba%e6%95%b0">什么是高基数
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#what-is-high-cardinality">什么是高基数
         </a>
       </li>
       <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
-        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e4%bb%80%e4%b9%88%e6%98%af%e6%85%a2%e5%86%99%e5%85%a5">什么是慢写入
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#what-is-slow-insert">什么是慢写入
         </a>
       </li>
       <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
-        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%a6%82%e4%bd%95%e9%99%90%e5%88%b6-victoriametrics-%e7%bb%84%e4%bb%b6%e7%9a%84%e5%86%85%e5%ad%98">如何限制 VictoriaMetrics 组件的内存
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#how-to-limit-memory-usage">如何限制 VictoriaMetrics 组件的内存
         </a>
       </li>
       <li class="hx-my-2 hx-scroll-my-6 hx-scroll-py-6">
-        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#%e5%a6%82%e4%bd%95%e5%88%a0%e9%99%a4%e6%95%b0%e6%8d%ae">如何删除数据
+        <a class="hx-font-semibold hx-inline-block hx-text-gray-500 hover:hx-text-gray-900 dark:hx-text-gray-400 dark:hover:hx-text-gray-300 contrast-more:hx-text-gray-900 contrast-more:hx-underline contrast-more:dark:hx-text-gray-50 hx-w-full hx-break-words" href="#how-to-delete-data">如何删除数据
         </a>
       </li></ul>
       <div class="hx-mt-8 hx-border-t hx-bg-white hx-pt-8 hx-shadow-[0_-12px_16px_white] dark:hx-bg-dark dark:hx-shadow-[0_-12px_16px_#111] hx-sticky hx-bottom-0 hx-flex hx-flex-col hx-items-start hx-gap-2 hx-pb-8 dark:hx-border-neutral-800 contrast-more:hx-border-t contrast-more:hx-border-neutral-400 contrast-more:hx-shadow-none contrast-more:dark:hx-border-neutral-400">
@@ -722,10 +782,10 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
 
         <div class="content">
           <h1>FAQ</h1>
-          <h2>什么是活跃时间序列?<span class="hx-absolute -hx-mt-20" id="什么是活跃时间序列"></span>
-    <a href="#%e4%bb%80%e4%b9%88%e6%98%af%e6%b4%bb%e8%b7%83%e6%97%b6%e9%97%b4%e5%ba%8f%e5%88%97" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>时间序列通过其名称和一组标签来唯一标识。例如，<code>temperature{city=&quot;NY&quot;,country=&quot;US&quot;}</code> 和 <code>temperature{city=&quot;SF&quot;,country=&quot;US&quot;}</code> 是两个不同的序列，因为它们在城市标签上有所区别。如果一个时间序列在最近一小时内至少接收到一个新样本，则被视为活跃。</p>
-<h2>高流失率是指什么？<span class="hx-absolute -hx-mt-20" id="高流失率是指什么"></span>
-    <a href="#%e9%ab%98%e6%b5%81%e5%a4%b1%e7%8e%87%e6%98%af%e6%8c%87%e4%bb%80%e4%b9%88" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>如果旧的时间序列以高频率被新的时间序列不断替换，那么这种状态被称为高流失率。高流失率会带来以下负面影响：</p>
+          <h2>什么是活跃时间序列? <span class="hx-absolute -hx-mt-20" id="what-is-active-timeseries"></span>
+    <a href="#what-is-active-timeseries" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>时间序列通过其名称和一组标签来唯一标识。例如，<code>temperature{city=&quot;NY&quot;,country=&quot;US&quot;}</code> 和 <code>temperature{city=&quot;SF&quot;,country=&quot;US&quot;}</code> 是两个不同的序列，因为它们在城市标签上有所区别。如果一个时间序列在最近一小时内至少接收到一个新样本，则被视为活跃。</p>
+<h2>高流失率是指什么？<span class="hx-absolute -hx-mt-20" id="what-is-high-churn-rate"></span>
+    <a href="#what-is-high-churn-rate" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>如果旧的时间序列以高频率被新的时间序列不断替换，那么这种状态被称为高流失率。高流失率会带来以下负面影响：</p>
 <ol>
 <li>
 <p>数据库中存储的时间序列总数增加。</p>
@@ -753,12 +813,12 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
 </li>
 </ol>
 <p>解决高流失率问题需要识别和消除具有频繁更改值的标签。Cardinality explorer可以帮助确定这些标签。</p>
-<h2>什么是高基数<span class="hx-absolute -hx-mt-20" id="什么是高基数"></span>
-    <a href="#%e4%bb%80%e4%b9%88%e6%98%af%e9%ab%98%e5%9f%ba%e6%95%b0" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>高基数通常意味着<a href="https://www.victoriametrics.com.cn/victoriametrics/faq#what-is-an-active-time-series" target="_blank" rel="noopener">活跃时间序列</a>的数量很多。高基数可能导致内存使用量增加和/或慢速插入的比例较高。高基数的来源通常是具有大量唯一值的标签，这些标签占了被摄取时间序列的很大比例。解决方案是通过基数探索器来识别和移除高基数的来源。</p>
-<h2>什么是慢写入<span class="hx-absolute -hx-mt-20" id="什么是慢写入"></span>
-    <a href="#%e4%bb%80%e4%b9%88%e6%98%af%e6%85%a2%e5%86%99%e5%85%a5" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>VictoriaMetrics在内存中维护了一个缓存，用于将<a href="https://www.victoriametrics.com.cn/victoriametrics/faq#what-is-an-active-time-series" target="_blank" rel="noopener">活跃时间序列</a>映射为内部系列ID。缓存的大小取决于主机系统中可用的VictoriaMetrics内存。如果所有活跃时间序列的信息无法适应缓存，则VictoriaMetrics需要在每个进入样本时从磁盘上读取和解压缩不在缓存中的时间序列信息。这个操作比缓存查找要慢得多，因此这种插入被称为<code>慢写入</code>。官方仪表板上出现大量慢写入表示当前活跃时间序列数量存在内存不足问题。这种情况通常会导致数据摄取严重减慢，并显著增加磁盘IO和CPU使用率。解决方法是增加更多内存或减少活跃时间序列的数量。Cardinality Explorer可以帮助定位高数量活跃时间序列的来源。</p>
-<h2>如何限制 VictoriaMetrics 组件的内存<span class="hx-absolute -hx-mt-20" id="如何限制-victoriametrics-组件的内存"></span>
-    <a href="#%e5%a6%82%e4%bd%95%e9%99%90%e5%88%b6-victoriametrics-%e7%bb%84%e4%bb%b6%e7%9a%84%e5%86%85%e5%ad%98" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>所有的VictoriaMetrics组件都提供了命令行参数来控制内部缓冲区和缓存的大小：<code>-memory.allowedPercent</code> 和 <code>-memory.allowedBytes</code>（在任何一个VictoriaMetrics组件中使用<code>-help </code>查看这些参数的描述）。这些限制不考虑可能需要用于处理传入查询的额外内存。硬限制只能通过操作系统通过<a href="https://en.wikipedia.org/wiki/Cgroups" target="_blank" rel="noopener">cgroups</a>、<a href="https://docs.docker.com/config/containers/resource_constraints" target="_blank" rel="noopener">Docker</a>或<a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers" target="_blank" rel="noopener">Kubernetes</a>来强制执行。</p>
+<h2>什么是高基数<span class="hx-absolute -hx-mt-20" id="what-is-high-cardinality"></span>
+    <a href="#what-is-high-cardinality" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>高基数通常意味着<a href="https://www.victoriametrics.com.cn/victoriametrics/faq#what-is-an-active-time-series" target="_blank" rel="noopener">活跃时间序列</a>的数量很多。高基数可能导致内存使用量增加和/或慢速插入的比例较高。高基数的来源通常是具有大量唯一值的标签，这些标签占了被摄取时间序列的很大比例。解决方案是通过基数探索器来识别和移除高基数的来源。</p>
+<h2>什么是慢写入<span class="hx-absolute -hx-mt-20" id="what-is-slow-insert"></span>
+    <a href="#what-is-slow-insert" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>VictoriaMetrics在内存中维护了一个缓存，用于将<a href="https://www.victoriametrics.com.cn/victoriametrics/faq#what-is-an-active-time-series" target="_blank" rel="noopener">活跃时间序列</a>映射为内部系列ID。缓存的大小取决于主机系统中可用的VictoriaMetrics内存。如果所有活跃时间序列的信息无法适应缓存，则VictoriaMetrics需要在每个进入样本时从磁盘上读取和解压缩不在缓存中的时间序列信息。这个操作比缓存查找要慢得多，因此这种插入被称为<code>慢写入</code>。官方仪表板上出现大量慢写入表示当前活跃时间序列数量存在内存不足问题。这种情况通常会导致数据摄取严重减慢，并显著增加磁盘IO和CPU使用率。解决方法是增加更多内存或减少活跃时间序列的数量。Cardinality Explorer可以帮助定位高数量活跃时间序列的来源。</p>
+<h2>如何限制 VictoriaMetrics 组件的内存<span class="hx-absolute -hx-mt-20" id="how-to-limit-memory-usage"></span>
+    <a href="#how-to-limit-memory-usage" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>所有的VictoriaMetrics组件都提供了命令行参数来控制内部缓冲区和缓存的大小：<code>-memory.allowedPercent</code> 和 <code>-memory.allowedBytes</code>（在任何一个VictoriaMetrics组件中使用<code>-help </code>查看这些参数的描述）。这些限制不考虑可能需要用于处理传入查询的额外内存。硬限制只能通过操作系统通过<a href="https://en.wikipedia.org/wiki/Cgroups" target="_blank" rel="noopener">cgroups</a>、<a href="https://docs.docker.com/config/containers/resource_constraints" target="_blank" rel="noopener">Docker</a>或<a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers" target="_blank" rel="noopener">Kubernetes</a>来强制执行。</p>
 <p>根据以下文档，可以调整VictoriaMetrics组件的内存使用情况：</p>
 <ul>
 <li><a href="https://docs.victoriametrics.com/#resource-usage-limits" target="_blank" rel="noopener">Resource usage limits for single-node VictoriaMetrics</a></li>
@@ -766,16 +826,16 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
 <li><a href="https://docs.victoriametrics.com/vmagent.html#troubleshooting" target="_blank" rel="noopener">Troubleshooting for vmagent</a></li>
 <li><a href="https://docs.victoriametrics.com/#troubleshooting" target="_blank" rel="noopener">Troubleshooting for single-node VictoriaMetrics</a></li>
 </ul>
-<h2>如何删除数据<span class="hx-absolute -hx-mt-20" id="如何删除数据"></span>
-    <a href="#%e5%a6%82%e4%bd%95%e5%88%a0%e9%99%a4%e6%95%b0%e6%8d%ae" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>请阅读 <a href="https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben#ru-he-shan-chu-timeseries" target="_blank" rel="noopener">如何删除 Timeseries</a>。</p>
+<h2>如何删除数据<span class="hx-absolute -hx-mt-20" id="how-to-delete-data"></span>
+    <a href="#how-to-delete-data" class="subheading-anchor" aria-label="Permalink for this section"></a></h2><p>请阅读 <a href="https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben#ru-he-shan-chu-timeseries" target="_blank" rel="noopener">如何删除 Timeseries</a>。</p>
 
         </div>
         <div class="hx-mt-16"></div>
         <div class="hx-mb-8 hx-flex hx-items-center hx-border-t hx-pt-8 dark:hx-border-neutral-800 contrast-more:hx-border-neutral-400 dark:contrast-more:hx-border-neutral-400 print:hx-hidden"><a
-        href="/docs/write/"
-        title="数据写入"
+        href="/docs/quickstart/"
+        title="快速开始"
         class="hx-flex hx-max-w-[50%] hx-items-center hx-gap-1 hx-py-4 hx-text-base hx-font-medium hx-text-gray-600 hx-transition-colors [word-break:break-word] hover:hx-text-primary-600 dark:hx-text-gray-300 md:hx-text-lg ltr:hx-pr-4 rtl:hx-pl-4"
-      ><svg class="hx-inline hx-h-5 hx-shrink-0 ltr:hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>数据写入</a></div>
+      ><svg class="hx-inline hx-h-5 hx-shrink-0 ltr:hx-rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>快速开始</a></div>
         
       </main>
     </article>
@@ -784,7 +844,7 @@ Resource usage limits for single-node VictoriaMetrics Resource usage limits for 
       <footer class="hextra-footer hx-bg-gray-100 hx-pb-[env(safe-area-inset-bottom)] dark:hx-bg-neutral-900 print:hx-bg-transparent"><div
     class="hx-max-w-screen-xl hx-mx-auto hx-flex hx-justify-center hx-py-12 hx-pl-[max(env(safe-area-inset-left),1.5rem)] hx-pr-[max(env(safe-area-inset-right),1.5rem)] hx-text-gray-600 dark:hx-text-gray-400 md:hx-justify-start"
   >
-    <div class="hx-flex hx-w-full hx-flex-col hx-items-center sm:hx-items-start"><div class="hx-mt-6 hx-text-xs">© 2024 Cloudfly,陈云飞</div>
+    <div class="hx-flex hx-w-full hx-flex-col hx-items-center sm:hx-items-start"><div class="hx-mt-6 hx-text-xs">© 2024 Hextra Project.</div>
     </div>
   </div>
 </footer>

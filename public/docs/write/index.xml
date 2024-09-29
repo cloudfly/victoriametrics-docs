@@ -1,0 +1,31 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>中文手册(WIP) – 数据写入</title>
+    <link>http://localhost:1313/docs/write/</link>
+    <description>Recent content in 数据写入 on 中文手册(WIP)</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    
+	  <atom:link href="http://localhost:1313/docs/write/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>写入 API</title>
+      <link>http://localhost:1313/docs/write/api/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/docs/write/api/</guid>
+      <description>
+        
+        
+        
+      </description>
+    </item>
+    
+  </channel>
+</rss>

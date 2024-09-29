@@ -14,6 +14,13 @@ menu:
   - name: 关于
     pageRef: /about
     weight: 2
+  - name: 官方文档
+    url: "https://docs.victoriametrics.com/"
+    weight: 3
+  - name: Search
+    weight: 4
+    params:
+      type: search
 
 params:
   navbar:
@@ -28,12 +35,11 @@ params:
   search:
     enable: true
     type: flexsearch
-    flexsearch:
-      # index page by: content | summary | heading | title
-      index: content
+
   page:
     # full (100%), wide (90rem), normal (1280px)
     width: wide
+
   comments:
     enable: false
     type: giscus

@@ -5,31 +5,31 @@ weight: 1
 
 本文主要阐述一些词汇概念的基本定义，如果你对这些基本概念或词汇没有基本的了解，对本书中的大部分内容的理解上都会有一些困难。
 
-有一些专业英文词汇是不翻译的，比如 Metric、Labels、TimeSeries 等，因为这些专业属于很频繁，强行寻找一个对应的中文词汇反而会增加理解成本。
-
 ## 什么是 Metric（度量指标）
-> 不翻译
->
 
 简单来说，`metric`是对事物的数值测量或观察。
 
-Metric 最常见的用途包括：
+Metric 最常见的用途包括：  
 
 + 检查系统在特定时间段内的行为；
 + 将行为变化与其他测量结果相关联；
 + 观察或预测趋势；
 + 如果度量标准超过阈值，则触发事件（告警）。
 
+在其他的 tsdb 中，也有使用 **measurement** 这个单词的，其表达的核心内容是一样的。
+
 ## Metric 结构
+
+### `__name__` (指标名)
+
 让我们从一个例子开始。为了追踪我们的应用程序处理了多少请求，我们将定义一个名为`requests_total`的指标。
 
 在这里你可以更具体一些，比如说`requests_success_total`（仅针对成功的请求）或者`request_errors_total`（针对失败的请求）。
 
-选择一个指标名称非常重要，它应该能够清楚地向每个看到它的人传达正确信息：实际测量到了什么内容；就像编程中的变量名一样。在其他的 tsdb 中，也有使用 **measurement** 这个单词的，其表达的核心内容是一样的。
+选择一个指标名称非常重要，它应该能够清楚地向每个看到它的人传达正确信息：实际测量到了什么内容；就像编程中的变量名一样。
+我们建议遵循[Prometheus的指标命名规范](https://prometheus.io/docs/practices/naming/)。对于 VictoriaMetrics 来说，没有严格的限制，所以任何指标名称和 Label 名称都是可以接受的。但是遵循这个约定有助于保持名称有意义、描述性强，并且清晰易懂给其他人。遵循这个约定是一个好习惯。
 
 ### Labels（标签）
-> 不翻译
->
 
 每个指标都可以包含额外的元信息，以 Label 对的形式呈现：
 
@@ -47,24 +47,29 @@ requests_total{path="/", code="200"}
 {__name__="requests_total", path="/", code="200"}
 ```
 
-Labels可以自动附加到通过vmagent或Prometheus采集的 [timeseries](#zZt47) 上。VictoriaMetrics支持对查询API强制执行 Label 过滤器以实现数据的软隔离。然而，真正的数据隔离可以通过[多租户](#S6Dpt)实现。
+Labels可以自动附加到通过vmagent或Prometheus采集的 [timeseries](#timeseries) 上。VictoriaMetrics支持对查询API强制执行 Label 过滤器以实现数据的软隔离。然而，真正的数据隔离可以通过[多租户](#tenant)实现。
 
-### Timeseries（时间序列）
-> 不翻译
->
+#### 最佳实践
+
+每个 Metric 都可以包含任意数量的`key="value"`标签。良好的实践是保持这个数量可控。否则，处理包含大量Label的数据将会很困难。默认情况下，VictoriaMetrics将每个Metric的Label数限制为`30`，并丢弃其他标签。如果需要，可以通过`-maxLabelsPerTimeseries`命令行参数来更改此限制（但不建议这样做）。
+
+每个Label的值都可以包含任意字符串值。良好的实践是使用简短而有意义的标签值来描述指标属性，而不是讲述它们的故事。例如，`environment="prod"`是可以接受的正常Label，但`log_message="long log message with a lot of details..."`就不是可接受的。默认情况下，VictoriaMetrics将标签值大小限制为`16kB`。可以通过`-maxLabelValueLen`命令行参数来更改此限制（同样强烈不建议这样做）。
+
+控制唯一标签值的数量非常重要，因为每个唯一标签值都会导致一个新 [timeseries](#timeseries) 产生。尽量避免使用易变性较高的标签值（如会话ID或查询ID），以避免过多资源使用和数据库减速问题发生。
+
+
+### Timeseries（时间序列） {#timeseries}
 
 一个指标名称和其 Label 的组合定义了一个 timeseries。例如，`requests_total{path="/", code="200"}` 和` requests_total{path="/", code="403"}` 是两个不同的 timeseries，因为它们在`code`标签上有不同的值。
 
-唯一时间序列的数量对数据库资源用量产生影响。详细信息请参阅[什么是活跃时间序列](https://www.yuque.com/icloudfly/xs51ky/dh8a9omrcvlana4n#what-is-an-active-time-series)以及[什么是高流失率](https://www.yuque.com/icloudfly/xs51ky/dh8a9omrcvlana4n#gao-liu-shilshi-zhi-shen-me)。
+唯一时间序列的数量对数据库资源用量产生影响。详细信息请参阅[什么是活跃时间序列]({{< relref "faq.md#what-is-active-timeseries" >}})以及[什么是高流失率]({{< relref "faq.md#what-is-high-churn-rate" >}})。
 
-### Cardinality（基数）
-唯一时间序列的数量被称为基数。过多的唯一时间序列被称为[高基数](https://www.yuque.com/icloudfly/xs51ky/dh8a9omrcvlana4n#shen-me-shi-gao-ji-shu)。高基数可能导致在VictoriaMetrics中增加资源使用量。请参阅[这篇文档](https://www.yuque.com/icloudfly/xs51ky/dh8a9omrcvlana4n#shen-me-shi-gao-ji-shu)以获取更多详细信息。
+### Cardinality（基数） {#cardinality}
+唯一时间序列的数量被称为基数。过多的唯一时间序列被称为[高基数]({{< relref "faq.md#what-is-high-cardinality" >}})。高基数可能导致在VictoriaMetrics中增加资源使用量。请参阅[这篇文档]({{< relref "faq.md#what-is-high-cardinality" >}})以获取更多详细信息。
 
-### Raw samples（原始样本）
-> 不翻译
->
+### Raw samples（原始样本） {#samples}
 
-每个唯一的时间序列可以由任意数量的`（value，timestamp）`数据点（也称为`原始样本`）组成，它们按照`timestamp`排序。`value`是[双精度浮点数](https://en.wikipedia.org/wiki/Double-precision_floating-point_format)。`timestamp`是具有毫秒精度的 [Unix 时间戳](https://en.wikipedia.org/wiki/Unix_time)。
+每个唯一的时间序列可以由任意数量的`(value，timestamp)`数据点（也称为`原始样本`）组成，它们按照`timestamp`排序。`value`是[双精度浮点数](https://en.wikipedia.org/wiki/Double-precision_floating-point_format)。`timestamp`是具有毫秒精度的 [Unix 时间戳](https://en.wikipedia.org/wiki/Unix_time)。
 
 以下是一个[Prometheus文本格式](https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md#text-based-format)的单个原始样本的示例：
 
@@ -76,8 +81,8 @@ requests_total{path="/", code="200"} 123 4567890
 + `123` 是一个样本值。 
 + `4567890` 是可选的样本时间戳。如果缺失，则数据被存储到VictoriaMetrics中时使用数据库的当前时间戳。
 
-### Timeseries resolution（时间序列粒度）
-分辨率是 [timeseries](#zZt47) 的 [samples](#WZ9Ad) 之间的最小间隔。考虑以下示例：
+### Timeseries resolution（时间序列粒度） {#resolution}
+分辨率是 [timeseries](#timeseries) 的 [samples](#samples) 之间的最小间隔。考虑以下示例：
 
 ```scheme
 ----------------------------------------------------------------------
@@ -91,11 +96,11 @@ requests_total{path="/", code="200"} 123 4567890
 
 这里有一个代表请求总数的 timeseries`{path="/health", code="200"}`，每30秒更新一次值。这意味着它的分辨率也是30秒。
 
-在 [Pull 模式](https://www.yuque.com/icloudfly/xs51ky/nnloeg2kxdz0a1ek#pull-mo-xing)中，分辨率等于抓取间隔，并由监控系统（服务器）控制。对于 [Push 模式](https://www.yuque.com/icloudfly/xs51ky/nnloeg2kxdz0a1ek#push-mo-xing)，分辨率是样本时间戳之间的间隔，并由客户端（指标收集器）控制。
+在 [Pull 模式]({{< relref "write#pull" >}})中，分辨率等于抓取间隔，并由监控系统（服务器）控制。对于 [Push 模式]({{< relref "write#push" >}})，分辨率是样本时间戳之间的间隔，并由客户端（指标收集器）控制。
 
-尽量保持时间序列的分辨率一致，因为某些 [MetricsQL](https://www.yuque.com/icloudfly/xs51ky/hxr2527r9vai0bzm) 函数可能期望如此，以免计算出『奇怪』的结果。
+尽量保持时间序列的分辨率一致，因为某些[MetricsQL]({{< relref "query/metricsql" >}}) 函数可能期望如此，以免计算出『奇怪』的结果。
 
-## Metric 类型
+## Metric 类型 {#metrics}
 在 VictoriaMetrics 内部，并 metric type 的概念。此概念存在是为了帮助用户理解度量是如何测量的。有四种常见的度量类型。
 
 ### Counter（计数器）
@@ -107,7 +112,7 @@ requests_total{path="/", code="200"} 123 4567890
 
 `vm_http_requests_total` 是一个典型的 Counter 示例。上面图表的解释是，时间序列 `vm_http_requests_total{instance="localhost:8428", job="victoriametrics", path="api/v1/query_range"}` 在下午1点38分到1点39分之间迅速变化，然后在1点41分之前没有任何变化。
 
-`Counter`用于测量事件数量，例如请求、错误、日志、消息等。与计数器一起使用最常见的 [MetricsQL](https://www.yuque.com/icloudfly/xs51ky/hxr2527r9vai0bzm) 函数有：
+`Counter`用于测量事件数量，例如请求、错误、日志、消息等。与计数器一起使用最常见的 [MetricsQL]({{< relref "query/metricsql" >}}) 函数有：
 
 + `rate` - 计算指标每秒平均变化速度。例如，`rate(requests_total)` 显示平均每秒服务多少个请求；
 + `increase` - 计算给定时间段内指标的增长情况，时间段由方括号中指定。例如，`increase(requests_total[1h])` 显示过去一小时内服务的请求数量。
@@ -129,7 +134,7 @@ Gauge 用于测量可以上下变化的值：
 + 存储某个过程的状态。例如，如果配置重新加载成功，则可以将 gauge `config_reloaded_successful` 设置为 `1`；如果配置重新加载失败，则设置为 `0`；
 + 存储事件发生时的时间戳。例如，`config_last_reload_success_timestamp_seconds` 可以存储最后一次成功配置重新加载的时间戳。
 
-与 gauges 最常用的 [MetricsQL](https://www.yuque.com/icloudfly/xs51ky/hxr2527r9vai0bzm) 函数是聚合函数和滚动函数。
+与 gauges 最常用的 [MetricsQL]({{< relref "query/metricsql" >}}) 函数是聚合函数和滚动函数。
 
 ### Histogram（直方图）
 Histogram是一组具有不同`vmrange`或`le`标签的 Counter 指标。 `vmrange`或`le`标签定义了特定`bucket`（桶）的测量边界。当观察到的测量值命中特定的`bucket`时，相应的`Counter`会递增。
@@ -234,26 +239,3 @@ Summary 的可视化非常直观：
 + 无法针对在任意时间范围内收集到的测量值计算分位数。通常，Summary 分位数是在固定时间范围内（如最近5分钟）计算出来的。
 
 Summary 通常用于跟踪延迟、元素大小（例如批处理大小）等预定义百分比。
-
-## 使用 Metric 对应用进行观测
-正如在[Metric类型](#s1YHu)部分的开头所说，Metric类型定义了它是如何被测量的。VictoriaMetrics TSDB并不认识Metric类型。它只看到Metric的名称、Label、Value和 Timestamp。这些 Metric 是什么，它们衡量什么以及如何衡量 - 这一切都取决于发出这些指标的应用程序。
-
-为了使用与VictoriaMetrics兼容的Metric来监控您的应用程序，我们建议使用 [github.com/VictoriaMetrics/metrics](https://github.com/VictoriaMetrics/metrics) 包。
-
-VictoriaMetrics还与[Prometheus客户端库兼容](https://prometheus.io/docs/instrumenting/clientlibs/)。
-
-### 命名
-我们建议遵循[Prometheus的指标命名规范](https://prometheus.io/docs/practices/naming/)。对于 VictoriaMetrics 来说，没有严格的限制，所以任何指标名称和 Label 名称都是可以接受的。但是遵循这个约定有助于保持名称有意义、描述性强，并且清晰易懂给其他人。遵循这个约定是一个好习惯。
-
-### Label
-每个 Metric 都可以包含任意数量的`key="value"`标签。良好的实践是保持这个数量可控。否则，处理包含大量Label的数据将会很困难。默认情况下，VictoriaMetrics将每个Metric的Label数限制为`30`，并丢弃其他标签。如果需要，可以通过`-maxLabelsPerTimeseries`命令行参数来更改此限制（但不建议这样做）。
-
-每个Label的值都可以包含任意字符串值。良好的实践是使用简短而有意义的标签值来描述指标属性，而不是讲述它们的故事。例如，`environment="prod"`是可以接受的正常Label，但`log_message="long log message with a lot of details..."`就不是可接受的。默认情况下，VictoriaMetrics将标签值大小限制为`16kB`。可以通过`-maxLabelValueLen`命令行参数来更改此限制（同样强烈不建议这样做）。
-
-控制唯一标签值的数量非常重要，因为每个唯一标签值都会导致一个新 [timeseries](#zZt47) 产生。尽量避免使用易变性较高的标签值（如会话ID或查询ID），以避免过多资源使用和数据库减速问题发生。
-
-## 多租户
-[VictoriaMetrics的集群版本](https://www.yuque.com/icloudfly/xs51ky/viy5b75mqwwrdic1)支持数据隔离的多租户功能。
-
-对于[单机版本的VictoriaMetrics](https://www.yuque.com/icloudfly/xs51ky/nusk0evr8ycpcu1t)，可以通过在[写入URL路径](https://www.victoriametrics.com.cn/victoriametrics/he-xin-gai-nian#shu-ju-xie-ru)上添加 Label 并在[查询URL路径](https://www.victoriametrics.com.cn/victoriametrics/he-xin-gai-nian#shu-ju-cha-xun)上强制进行 [Label 过滤](https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben#prometheus-querying-api-enhancements)来模拟多租户。
-

@@ -4,9 +4,11 @@
   <url>
     <loc>http://localhost:1313/docs/query/metricsql/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/query/metricsql/basic/</loc>
+    <loc>http://localhost:1313/docs/write/api/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/ops/disk-space/</loc>
+    <loc>http://localhost:1313/docs/ops/single/</loc>
+  </url><url>
+    <loc>http://localhost:1313/docs/query/metricsql/basic/</loc>
   </url><url>
     <loc>http://localhost:1313/docs/concepts/</loc>
   </url><url>
@@ -14,17 +16,19 @@
   </url><url>
     <loc>http://localhost:1313/docs/query/metricsql/functions/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/ops/cluster-resize/</loc>
+    <loc>http://localhost:1313/docs/ops/cluster/cluster-resize/</loc>
   </url><url>
     <loc>http://localhost:1313/docs/quickstart/</loc>
   </url><url>
     <loc>http://localhost:1313/docs/query/metricsql/functions/label/</loc>
   </url><url>
+    <loc>http://localhost:1313/docs/ops/cluster/</loc>
+  </url><url>
     <loc>http://localhost:1313/docs/query/metricsql/promql/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/single/</loc>
+    <loc>http://localhost:1313/docs/ops/cluster/node-crash/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/ops/node-crash/</loc>
+    <loc>http://localhost:1313/docs/ops/disk-space/</loc>
   </url><url>
     <loc>http://localhost:1313/docs/query/metricsql/promql-diff/</loc>
   </url><url>
@@ -34,13 +38,11 @@
   </url><url>
     <loc>http://localhost:1313/docs/query/metricsql/functions/transmit/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/cluster/</loc>
-  </url><url>
     <loc>http://localhost:1313/docs/query/http/</loc>
   </url><url>
     <loc>http://localhost:1313/docs/query/</loc>
   </url><url>
-    <loc>http://localhost:1313/docs/ops/multi-disk/</loc>
+    <loc>http://localhost:1313/docs/ops/cluster/multi-disk/</loc>
   </url><url>
     <loc>http://localhost:1313/docs/write/</loc>
   </url><url>
