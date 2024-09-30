@@ -1,6 +1,6 @@
 ---
 title: FAQ
-weight: 11
+weight: 100
 ---
 
 ## 什么是活跃时间序列?  {id="what-is-active-timeseries"}

@@ -99,7 +99,7 @@ vmstorage-prod
 ROOT_IMAGE=scratch make package
 ```
 
-## 运维
+## 运维 {#operation}
 ## 部署集群
 一个集群至少包含下面几项：
 
@@ -346,7 +346,7 @@ vmselect 不会为返回原始数据点的 API 处理程序提供部分响应 - 
 
 数据副本可用于提高存储耐用性。有关详细信息，请参阅[这些文档](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#replication-and-data-safety)。
 
-## 容量规划
+## 容量规划 {#capacity}
 根据我们的[案例研究](https://docs.victoriametrics.com/CaseStudies.html)，与竞争解决方案（Prometheus、Thanos、Cortex、TimescaleDB、InfluxDB、QuestDB、M3DB）相比，VictoriaMetrics 在生产工作负载上使用的 CPU、RAM 和存储空间更少。 
 
 每种节点类型（`vminsert`、`vmselect` 和 `vmstorage`）都可以在最合适的硬件上运行。集群容量随可用资源线性扩展。每种节点类型所需的 CPU 和 RAM 数量高度依赖于工作负载 - [活动时间序列](https://docs.victoriametrics.com/FAQ.html#what-is-an-active-time-series)的数量、[序列流失率](https://docs.victoriametrics.com/FAQ.html#what-is-high-churn-rate)、查询类型、查询 qps 等。建议为您的生产工作负载设置一个测试 VictoriaMetrics 集群，并迭代扩展每个节点的资源和每个节点类型的节点数量，直到集群稳定下来。建议为[集群设置监控](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#monitoring)。它有助于确定集群设置中的瓶颈。还建议遵循[故障排除](https://docs.victoriametrics.com/#troubleshooting)文档。 

@@ -16,7 +16,7 @@ weight: 1
 + [安装单机版的 Ansible Role（社区）](https://github.com/dreamteam-gg/ansible-victoriametrics-role)
 + [Snap package](https://snapcraft.io/victoriametrics)
 
-### 运行
+### 运行 {#execute}
 下面的几个运行参数是最常用的：
 
 + `-storageDataPath`：VictoriaMetrics 把所有的数据都保存在这个目录。默认的路径是当前工作目录中的`victoria-metrics-data` 子目录。
@@ -136,7 +136,7 @@ ROOT_IMAGE=scratch make package-victoria-metrics
 ### Systemd Service
 参考[这里](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/43)将 VictoriaMetrics 设置为一个系统 Service。 一个 [snap 包](https://snapcraft.io/victoriametrics) 可在 Ubuntu 上直接使用。
 
-### 容量规划
+### 容量规划 {#capacity}
 VictoriaMetrics在我们的[案例研究](https://docs.victoriametrics.com/CaseStudies.html)中表明，与竞争解决方案（Prometheus、Thanos、Cortex、TimescaleDB、InfluxDB、QuestDB和M3DB）相比，在生产工作负载上使用更少的CPU、RAM和存储空间。
 
 VictoriaMetrics的容量与可用资源呈线性扩展。所需的CPU和RAM数量高度依赖于工作负载 - [活跃时间序列](https://docs.victoriametrics.com/FAQ.html#what-is-an-active-time-series)的数量、指标[流失率](https://docs.victoriametrics.com/FAQ.html#what-is-high-churn-rate)、查询类型、查询每秒请求数等等。建议根据[故障排除](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#troubleshooting)文档，为您的生产工作负载设置一个测试VictoriaMetrics，并迭代地调整CPU和RAM资源，直到其稳定运行。根据我们的[案例研究](https://docs.victoriametrics.com/CaseStudies.html)，单节点VictoriaMetrics可以完美地处理以下生产工作负载：
@@ -239,7 +239,7 @@ kill -HUP `pidof prometheus`
 
 另一种选择是从Prometheus HA对同时向一对启用了去重功能的VictoriaMetrics实例写入数据。有关详细信息，请参阅[此部分](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#deduplication)。
 
-### 监控
+### 监控 {#metrics}
 VictoriaMetrics在`/metrics`页面以Prometheus公开格式导出内部指标。这些指标可以通过[vmagent](https://docs.victoriametrics.com/vmagent.html)或Prometheus进行抓取。另外，当`-selfScrapeInterval`命令行标志设置为大于0的持续时间时，单节点的VictoriaMetrics可以自动抓取指标。例如，`-selfScrapeInterval=10s`将启用每10秒一次的自动抓取`/metrics`页面。
 
 官方提供了适用于[单节点](https://grafana.com/grafana/dashboards/10229-victoriametrics/)和[集群](https://grafana.com/grafana/dashboards/11176-victoriametrics-cluster/) VictoriaMetrics 的 Grafana 仪表板。还可以查看由社区创建的适用于[集群 VictoriaMetrics 的替代仪表板](https://grafana.com/grafana/dashboards/11831)。
@@ -284,7 +284,7 @@ VictoriaMetrics `/api/v1/status/top_queries` 页面展示执行时间最长的�
 mkfs.ext4 ... -O 64bit,huge_file,extent -T huge
 ```
 
-## 数据运维
+## 数据运维 {#operation}
 ### 如何运用 snapshots
 VictoriaMetrics可以为存储在`-storageDataPath`目录下的所有数据创建[即时快照](https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben#how-to-work-with-snapshots)。请访问`http://:8428/snapshot/create`以创建即时快照。该页面将返回以下JSON响应：
 
@@ -649,7 +649,7 @@ VictoriaMetrics通过[任何支持的摄取方法](https://docs.victoriametrics.
 ### 数据更新
 VictoriaMetrics不支持将已存在的样本值更新为新值。它会将所有被摄取的数据点存储在具有相同时间戳的同一时间序列中。虽然可以通过[删除旧时间序列](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-delete-time-series)并[写入新时间序列](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#backfilling)来替换旧时间序列，但这种方法只适用于一次性更新。由于与数据删除相关的非零开销，不应频繁使用此方法进行更新。
 
-### 备份
+### 备份 {#backup}
 VictoriaMetrics 支持使用 [vmbackup](https://docs.victoriametrics.com/vmbackup.html) and [vmrestore](https://docs.victoriametrics.com/vmrestore.html) 工具执行备份和恢复。
 
 ### 去重特性
@@ -706,7 +706,7 @@ VictoriaMetrics在合并部分时，如果它们的摘要大小超过了可用�
 ### 多租户
 单节点的VictoriaMetrics不支持多租户。请使用[集群版本](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#multitenancy)。
 
-### 多副本
+### 多副本 {#replication}
 单节点的VictoriaMetrics不支持应用级别的复制。请使用集群版本代替。详细信息请参阅[这些文档](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#replication-and-data-safety)。 
 
 存储级别的复制可以转移到持久性存储，如[Google Cloud磁盘](https://cloud.google.com/compute/docs/disks#pdspecs)。 
@@ -718,7 +718,7 @@ VictoriaMetrics在合并部分时，如果它们的摘要大小超过了可用�
 
 首先尝试使用单节点的VictoriaMetrics，如果您仍然需要针对大型Prometheus部署进行横向扩展的长期远程存储，则可以切换到[集群版本](https://github.com/VictoriaMetrics/VictoriaMetrics/tree/cluster)。
 
-### 基数限制
+### 基数限制 {#cadinality-limit}
 默认情况下，VictoriaMetrics不限制存储的时间序列数量。可以通过设置以下命令行标志来强制执行限制：
 
 + `-storage.maxHourlySeries` - 限制了在最后一个小时内可以添加的时间序列数量。对于限制[活动时间序列](https://docs.victoriametrics.com/FAQ.html#what-is-an-active-time-series)的数量非常有用。
@@ -831,7 +831,7 @@ curl http://localhost:8428/api/v1/query_range -d 'query=2*rand()' -d 'start=-1h'
 + 对于 query 追踪 - 只需要选中 `Trace query` 复选框，然后重新跑一下查询语句就可以得到执行 Trace。
 + 对于探索自定义追踪 - 进入 `Trace analyzer` 页面，然后上传或粘贴 trace 的 JSON 数据信息。
 
-### 安全
+### 安全 {#security}
 一般安全建议：
 
 + 所有的VictoriaMetrics组件必须在受保护的私有网络中运行，不能直接从不可信任的网络（如互联网）访问。例外情况是[vmauth](https://docs.victoriametrics.com/vmauth.html)和[vmgateway](https://docs.victoriametrics.com/vmgateway.html)。
