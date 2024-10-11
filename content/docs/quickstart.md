@@ -226,43 +226,50 @@ curl "http://localhost:8428/api/v1/query_range?query=measurement_field1&step=1m&
 
 更多数据查询详情，请[参考这里]({{< relref "query" >}})。
 
-## 告警
-我们不可能一直盯着监控图表来跟踪所有变化，这就是我们需要告警的原因。[vmalert]({{< relref "components/vmalert" >}}) 可以基于 PromQL 或 MetricsQL 查询语句创建一系列条件，当条件触发时候会发送自动发送通知。
-
-## 发布到生产
-
-如果要在生产环境真正使用 VictoriaMetrics，我们有以下一些建议。
+## 扩展阅读
 
 ### 监控 {#monitoring}
-每个 VictoriaMetrics 组件都会暴露自己的指标，其中包含有关性能和健康状态的各种详细信息。组件的文档中都有一板块专门介绍监控，其中解释了组件的监控指标的含义，以及如何去监控。[比如这里]({{< relref "ops/single.md#metrics" >}})。
+
+每个 VictoriaMetrics 组件都会在`/metrics`接口上暴露自己的 Prometheus 格式指标，其中包含有关性能和健康状态的各种详细信息。这些指标可以通过`vmagent`或`Prometheus`进行抓取。
+
+对于单机版，当`-selfScrapeInterval`命令行参数设置为大于`0`时，它会自动抓取自己的`/metrics`并存储。例如，`-selfScrapeInterval=10s`将标识每10秒一次的自动抓取`/metrics`数据并存储。 更多内容[参见这里]({{< relref "ops/single.md#metrics" >}})。
+
 
 VictoriaMetrics 团队为核心组件准备了一系列的 [Grafana Dashboard](https://grafana.com/orgs/victoriametrics/dashboards)。每个 Dashboard 中都包含很多有用的信息和提示。建议使用安装这些 Dashboard 并保持更新。
 
-针对[单机版]({{< relref "ops/single.md" >}})和[集群版]({{< relref "ops/cluster" >}})的VM，还有一系列的告警规则来帮助我们定义和通知系统问题。
-
-有一个经验是：使用额外的一套独立的监控系统，去监控生产环境的VictoriaMetrics。而不是让它自己监控自己。
+{{< callout type="info" >}}
+  有一个经验是：使用另外一套独立的监控系统，去监控生产环境的 VictoriaMetrics。而不是让它自己监控自己。
+{{< /callout >}}
 
 更多详细内容请参考[这篇文章](https://victoriametrics.com/blog/victoriametrics-monitoring)。
 
-### 容量规划
+
+### 告警
+我们不可能一直盯着监控图表来跟踪所有变化，这就是我们需要告警的原因。[vmalert]({{< relref "components/vmalert" >}}) 可以基于 PromQL 或 MetricsQL 查询语句创建一系列条件，当条件触发时候会发送自动发送通知。
+
+### 发布到生产
+
+如果要在生产环境真正使用 VictoriaMetrics，我们有以下一些建议。
+
+#### 容量规划
 请阅读[集群版]({{< relref "ops/cluster#capacity" >}})和[单机版]({{< relref "ops/single.md#capacity" >}})文档中的容量规划部分。
 
 容量规划需要依赖于[监控](#monitoring)，所以你应该首先配置下监控。搞清楚资源使用情况以及VictoriaMetrics的性能的前提是，需要知道[活跃时序系列]({{< relref "faq.md#what-is-active-timeseries" >}})，[高流失率]({{< relref "faq.md#what-is-high-churn-rate" >}})，[基数]({{< relref "faq.md#what-is-high-cadinality" >}})，[慢写入]({{< relref "faq.md#what-is-slow-insert" >}})这些基础技术概念，他们都会在 [Grafana Dashboard](https://grafana.com/orgs/victoriametrics/dashboards) 中呈现。
 
-### 数据安全
+#### 数据安全
 建议阅读下面几篇内容：
 
 + [多副本和数据可靠性]({{< relref "ops/single.md#replication" >}})
 + [Why replication doesn't save from disaster?](https://valyala.medium.com/speeding-up-backups-for-big-time-series-databases-533c1a927883)
 + [数据备份]({{< relref "ops/single.md#backup" >}})
 
-### 配置限制
+#### 配置限制
 为了避免资源使用过度或性能下降，必须设置限制：
 
 + [资源使用限制]({{< relref "faq.md#how-to-limit-memory-usage" >}})
 + [基数限制]({{< relref "ops/single.md#cadinality-limit" >}})
 
-### 安全建议
+#### 安全建议
 + [单机版安全建议]({{< relref "ops/single.md#security" >}})
 + [集群版安全建议]({{< relref "ops/cluster#security" >}})
 

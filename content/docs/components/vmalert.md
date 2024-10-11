@@ -1,4 +1,4 @@
 ---
-title: "VMAlert"
+title: "vmalert"
 weight: 2
 ---

@@ -1,6 +1,6 @@
 ---
 title: 集群版本
-weight: 2
+weight: 10
 ---
 
 ## 架构概览

@@ -1,6 +1,6 @@
 ---
 title: 单机版本
-weight: 1
+weight: 5
 ---
 
 ## 安装部署
@@ -905,7 +905,7 @@ curl http://0.0.0.0:8428/debug/pprof/profile > cpu.pprof
 
 更多参见[故障排查文档](https://docs.victoriametrics.com/Troubleshooting.html)。
 
-## 运行参数
+## 运行参数 {#flags}
 使用`-help`参数来查看支持的所有运行参数列表和参数功能描述。
 
 ```bash

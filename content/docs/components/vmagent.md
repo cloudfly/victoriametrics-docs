@@ -1,4 +1,4 @@
 ---
-title: "VMAgent"
+title: "vmagent"
 weight: 1
 ---

@@ -47,7 +47,7 @@ requests_total{path="/", code="200"}
 {__name__="requests_total", path="/", code="200"}
 ```
 
-Labels可以自动附加到通过vmagent或Prometheus采集的 [timeseries](#timeseries) 上。VictoriaMetrics支持对查询API强制执行 Label 过滤器以实现数据的软隔离。然而，真正的数据隔离可以通过[多租户](#tenant)实现。
+Labels可以自动附加到通过vmagent或Prometheus采集的 [timeseries](#timeseries) 上，即 vmagent 和 Prometheus 都具备向采集的指标中注入特定 Label 的能力。
 
 #### 最佳实践
 

@@ -1,10 +1,10 @@
 ---
-title: HTTP 查询接口
+title: 查询 API
 weight: 5
 ---
 
 ## 单机版
-### Prometheus 查询接口
+### Prometheus 查询接口 {#single-prometheus}
 VictoriaMetrics 支持下面这些 [Prometheus 查询 API](https://prometheus.io/docs/prometheus/latest/querying/api/):
 
 + [/api/v1/query](https://docs.victoriametrics.com/keyConcepts.html#instant-query)
