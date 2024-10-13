@@ -3,7 +3,7 @@ title: 基本用法
 weight: 1
 ---
 
-## 过滤器
+## 过滤器 {#filter}
 在[数据查询](https://www.yuque.com/icloudfly/xs51ky/onpelg16wg77xin6)部分我们已经用 MetricsQL 获取了指标 `foo_bar` 的数据。只需在查询中写入指标名称，就能轻松完成：
 
 ```sql
@@ -46,7 +46,7 @@ requests_total{code=~"200", path="/home"}
 
 上面的查询语句会返回 2 个 Metric 的 Timeseries：`requests_error_total` 和`requests_success_total`.
 
-### 利用 or 使用多个过滤器
+### 利用 or 使用多个过滤器 {#or-filter}
 [MetricsQL](https://docs.victoriametrics.com/MetricsQL.html) 支持查询至少满足多个过滤器中的一个方式来获取 Timeseries。这些过滤器必须在花括号内使用 `or` 分割。 比如，下面的查询代表查询 Label 满足 `{job="app1",env="prod"}` 或 `{job="app2",env="dev"}` 的 Timeseries：
 
 ```plsql

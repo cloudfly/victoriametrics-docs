@@ -28,32 +28,35 @@ MetricsQL 除了实现了 PromQL 的所有功能，还额外增加了下面的�
 MetricsQL 特性列表:
 
 + Graphite-compatible filters can be passed via `{__graphite__="foo.*.bar"}` syntax. See [these docs](https://docs.victoriametrics.com/#selecting-graphite-metrics). VictoriaMetrics also can be used as Graphite datasource in Grafana. See [these docs](https://docs.victoriametrics.com/#graphite-api-usage) for details. See also [label_graphite_group](https://docs.victoriametrics.com/MetricsQL.html#label_graphite_group) function, which can be used for extracting the given groups from Graphite metric name.
-+ Lookbehind window in square brackets may be omitted. VictoriaMetrics automatically selects the lookbehind window depending on the current step used for building the graph (e.g. `step` query arg passed to [/api/v1/query_range](https://docs.victoriametrics.com/keyConcepts.html#range-query)). For instance, the following query is valid in VictoriaMetrics: `rate(node_network_receive_bytes_total)`. It is equivalent to `rate(node_network_receive_bytes_total[$__interval])` when used in Grafana.
-+ [Series selectors](https://docs.victoriametrics.com/keyConcepts.html#filtering) accept multiple `or` filters. For example, `{env="prod",job="a" or env="dev",job="b"}` selects series with either `{env="prod",job="a"}` or `{env="dev",job="b"}` labels. See [these docs](https://docs.victoriametrics.com/keyConcepts.html#filtering-by-multiple-or-filters) for details.
-+ [Aggregate functions](https://docs.victoriametrics.com/MetricsQL.html#aggregate-functions) accept arbitrary number of args. For example, `avg(q1, q2, q3)` would return the average values for every point across time series returned by `q1`, `q2` and `q3`.
-+ [@ modifier](https://prometheus.io/docs/prometheus/latest/querying/basics/#modifier) can be put anywhere in the query. For example, `sum(foo) @ end()` calculates `sum(foo)` at the `end` timestamp of the selected time range `[start ... end]`.
-+ Arbitrary subexpression can be used as [@ modifier](https://prometheus.io/docs/prometheus/latest/querying/basics/#modifier). For example, `foo @ (end() - 1h)` calculates `foo` at the `end - 1 hour` timestamp on the selected time range `[start ... end]`.
-+ [offset](https://prometheus.io/docs/prometheus/latest/querying/basics/#offset-modifier), lookbehind window in square brackets and `step` value for [subquery](https://docs.victoriametrics.com/MetricsQL.html#subqueries) may refer to the current step aka `$__interval` value from Grafana with `[Ni]` syntax. For instance, `rate(metric[10i] offset 5i)` would return per-second rate over a range covering 10 previous steps with the offset of 5 steps.
-+ [offset](https://prometheus.io/docs/prometheus/latest/querying/basics/#offset-modifier) may be put anywhere in the query. For instance, `sum(foo) offset 24h`.
-+ Lookbehind window in square brackets and [offset](https://prometheus.io/docs/prometheus/latest/querying/basics/#offset-modifier) may be fractional. For instance, `rate(node_network_receive_bytes_total[1.5m] offset 0.5d)`.
-+ The duration suffix is optional. The duration is in seconds if the suffix is missing. For example, `rate(m[300] offset 1800)` is equivalent to `rate(m[5m]) offset 30m`.
-+ The duration can be placed anywhere in the query. For example, `sum_over_time(m[1h]) / 1h` is equivalent to `sum_over_time(m[1h]) / 3600`.
-+ Numeric values can have `K`, `Ki`, `M`, `Mi`, `G`, `Gi`, `T` and `Ti` suffixes. For example, `8K` is equivalent to `8000`, while `1.2Mi` is equivalent to `1.2*1024*1024`.
-+ Trailing commas on all the lists are allowed - label filters, function args and with expressions. For instance, the following queries are valid: `m{foo="bar",}`, `f(a, b,)`, `WITH (x=y,) x`. This simplifies maintenance of multi-line queries.
-+ Metric names and label names may contain any unicode letter. For example `температура{город="Киев"}` is a value MetricsQL expression.
-+ Metric names and labels names may contain escaped chars. For example, `foo\-bar{baz\=aa="b"}` is valid expression. It returns time series with name `foo-bar` containing label `baz=aa` with value `b`. Additionally, the following escape sequences are supported:
-    - `\xXX`, where `XX` is hexadecimal representation of the escaped ascii char.
-    - `\uXXXX`, where `XXXX` is a hexadecimal representation of the escaped unicode char.
-+ Aggregate functions support optional `limit N` suffix in order to limit the number of output series. For example, `sum(x) by (y) limit 3` limits the number of output time series after the aggregation to 3. All the other time series are dropped.
-+ [histogram_quantile](https://docs.victoriametrics.com/MetricsQL.html#histogram_quantile) accepts optional third arg - `boundsLabel`. In this case it returns `lower` and `upper` bounds for the estimated percentile. See [this issue for details](https://github.com/prometheus/prometheus/issues/5706).
-+ `default` binary operator. `q1 default q2` fills gaps in `q1` with the corresponding values from `q2`.
-+ `if` binary operator. `q1 if q2` removes values from `q1` for missing values from `q2`.
-+ `ifnot` binary operator. `q1 ifnot q2` removes values from `q1` for existing values from `q2`.
-+ `WITH` templates. This feature simplifies writing and managing complex queries. Go to [WITH templates playground](https://play.victoriametrics.com/select/accounting/1/6a716b0f-38bc-4856-90ce-448fd713e3fe/expand-with-exprs) and try it.
-+ String literals may be concatenated. This is useful with `WITH` templates: `WITH (commonPrefix="long_metric_prefix_") {__name__=commonPrefix+"suffix1"} / {__name__=commonPrefix+"suffix2"}`.
-+ `keep_metric_names` modifier can be applied to all the [rollup functions](https://docs.victoriametrics.com/MetricsQL.html#rollup-functions) and [transform functions](https://docs.victoriametrics.com/MetricsQL.html#transform-functions). This modifier prevents from dropping metric names in function results. See [these docs](https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names).
+- 支持兼容 Graphite 过滤器的写法，比如`{__graphite__="foo.*.bar"}`。VictoriaMetrics 支持使用`__graphite__`伪 Label 从 VictoriaMetrics 中使用兼容 Graphite 的过滤器查询时序数据。比如，`{__graphite__="foo.*.bar"}`等同于`{__name__=~"foo[.][^.]*[.]bar"}`，但它的性能更高并且很容易使用。更多内容请阅读 [Graphite 模糊匹配](https://graphite.readthedocs.io/en/latest/render_api.html#paths-and-wildcards)。因此可在 Grafana 中 VictoriaMetrics 可以作为 Graphite 数据源。
+- [`label_graphite_group`]()可用于从 Graphite 指标名中解析出分组。
+- `__graphite__`伪标签支持正则过滤，比如`(value1|...|valueN)`。他们会被转换成在 Graphite 中使用的`{value1,...,valueN}`语法。这允许在 Grafana 模板变量中使用多值传递给`__graphite__`。例如，Grafana 将 `{__graphite__=~"foo.($bar).baz"}`扩展成了`{__graphite__=~"foo.(x|y).baz"}`，如果`$bar`模板变量中包含`x`和`y`两个值。在这个例子中，语句会被在执行前自动被转换成`{__graphite__=~"foo.{x,y}.baz"}`。
+- 中括号`[]`中的回溯窗口可以被省略。VictoriaMetrics 会基于当前的步长自动设置回溯窗口（比如传递到[/api/v1/query_range]({{< relref "../../quickstart.md#range-query" >}})中的`step`参数)。例如，`rate(node_network_receive_bytes_total)`在 VictoriaMetrics 中是合法的，在使用 Grafana 时，它等同于`rate(node_network_receive_bytes_total[$__interval])`。
++ [Series 选择器]({{< relref "./basic.md#filter" >}}) 接收多个`or`过滤器。比如，`{env="prod",job="a" or env="dev",job="b"}`使用`{env="prod",job="a"}`或`{env="dev",job="b"}`过滤 Series. 更多详情看[这些文档]({{< relref "./basic.md#or-filter" >}})。
++ [聚合函数]({{< relref "./functions/aggregation.md" >}}) 接收多个参数。例如，`avg(q1, q2, q3)`会将`q1`,`q2`和`q3`返回的所有 Timeseries 数据点计算平均值。
++ [@ 修改器]({{< relref "./basic.md#modifier" >}}) 可以放在语句中的任何地方。例如，`sum(foo) @ end()` 在`[start ... end]`查询的数据中，`end`时间点上的数据计算`sum(foo)`。
++ 任意子表达式可以应用在 [@ modifier]({{< relref "./basic.md#modifier" >}}) 上，比如，`foo @ (end() - 1h)`在`[start ... end]`查询的数据中，`end -1 hour`时间点上的数据计算`sum(foo)`。
++ [offset]({{< relref "./basic.md#offset-modifier" >}})， 中括号`[]`中的回溯窗口和[子查询](#subquery)里的`step`值会引用当前的步长，该步长会通过 Grafana 的`$__interaval`和`[Ni]`语法传递。例如，`rate(metric[10i] offset 5i)`会返回前10个步长时间内每秒增长量，时间偏移5个步长。
++ [offset]({{< relref "./basic.md#offset-modifier" >}}) 可以放在语句的任何地方。比如`sum(foo) offset 24h`。
++ 中括号`[]`内的回溯窗口和 [offset]({{< relref "./basic.md#offset-modifier" >}}) 可以是小数。比如，`rate(node_network_receive_bytes_total[1.5m] offset 0.5d)`。
++ 时间段表达式后缀是可以省略的，默认单位是秒，比如，`rate(m[300] offset 1800)` 等同于 `rate(m[5m]) offset 30m`。
++ 时间段可以在语句的任何地方使用。比如，`sum_over_time(m[1h]) / 1h` 等同于 `sum_over_time(m[1h]) / 3600`。
++ 数字类型值可以使用 `K`, `Ki`, `M`, `Mi`, `G`, `Gi`, `T` 和 `Ti` 后缀。例如，`8K` 等同于 `8000`, `1.2Mi` 等同于 `1.2*1024*1024`.
++ 所有的列表中最后的的逗号`,`字符是可接受的 - Label 过滤器，函数参数，以及 `WITH` 模板表达式。例如，这些从查询都是允许的：`m{foo="bar",}`, `f(a, b,)`, `WITH (x=y,) x`。这回简化查询语句的自动生成。
++ Metric 名和 Label 名允许使用 unicode 字符。例如`температура{город="Киев"}`也是合法的。
++ Metric 名和 Label 名允许包含转义字符。比如`foo\-bar{baz\=aa="b"}`是合法的表达式。 它返回的 Timeseries 指标名为`foot-bar`，包含一个 Label，其名是`baz=aa`，值为`b`，此外，下面的转义也是支持的：
+    - `\xXX`, 这里`XX`代表 ascii 码表示的字符。
+    - `\uXXXX`, 这里`XXXX`是用 unicode 编码表示的字符。
++ 聚合函数支持使用`limit N`后缀， 其目的是限制输出的 series 数量。例如，`sum(x) by (y) limit 3` 限制返回聚合后的 3 条 timeseris，其他的 timeseries 会被丢弃。
++ [histogram_quantile]({{< relref "./functions/transmit.md#histogram_quantile" >}}) 接受第3个参数`boundsLabel`。 这个场景它会返回`lower`和`upper`估计百分位数的界限。具体详情看[这个 issue](https://github.com/prometheus/prometheus/issues/5706).
++ `default` 二元运算. `q1 default q2` 使用`q2`的数据补充`q1`中缺失的部分数据。
++ `if` 二元运算. `q1 if q2` 删掉`q1`中的数据如果数据点在`q2`中不存在。
++ `ifnot` 二元运算. `q1 ifnot q2` 删掉`q1`中的数据，如果数据点在`q2`的结果中存在。
++ `WITH` 模板, 该功能简化编写和维护复杂的查询语句。可以到[WITH templates playground](https://play.victoriametrics.com/select/accounting/1/6a716b0f-38bc-4856-90ce-448fd713e3fe/expand-with-exprs)里试一下.
++ 字符串文本是可以链接的，这在 WITH 模板里很有用，比如：`WITH (commonPrefix="long_metric_prefix_") {__name__=commonPrefix+"suffix1"} / {__name__=commonPrefix+"suffix2"}`.
++ `keep_metric_names`修改器可以应用于[rollup 函数]({{< relref "./functions/rollup.md" >}})和[转换函数transform functions]({{< relref "./functions/transmit.md" >}})。该修改器避免 Metric 名称从结果集中删掉。
 
-## keep_metric_nameGet from mysqls
+## keep_metric_name {#keep_metric_name}
 
 默认情况下，Metric 名称会在应用函数计算后的结果数据中去掉，因为计算后的结果数据改变了原始指标名所代表的含义。这导致当一个函数被应用于多个名称不同的 Timeseries 时，可能会出现`duplicate time series`错误，使用 `keep_metric_names` 可以修复这个错误。
 
@@ -81,9 +84,10 @@ Total: 385 / 529 (72.78%) passed, 0 unsupported
 基于上述测试结果，VictoriaMetrics 有 149 个失败用例，和 Prometheus 的兼容性有`72.59%`。让我们来进一步分析下失败的查询用例。
 
 ### Keeping metric name
-According to PromQL, functions that transform a metric's data should [drop the metric name from the result](https://github.com/prometheus/prometheus/issues/380), since the meaning of the initial metric has changed. However, this approach has some drawbacks. For example, the `max_over_time` function calculates the max value of the series without changing its physical meaning. Therefore, MetricsQL [keeps the metric name for such functions](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/674). It also enables queries over multiple metric names: `max_over_time({__name__=~"process_(resident|virtual)_memory_bytes"}[1h])`. While in PromQL such query fails with `vector cannot contain metrics with the same labelset` error.
 
-Hence, test suit functions like `*_over_time`, `ceil` , `floor` , `round` , `clamp_*` , `holt_winters` , `predict_linear` in VictoriaMetrics do intentionally contain the metric name in the results:
+根据 PromQL 的约定， 函数在转换完 metric 数据后，应该[从结果集中丢弃掉 Metric 名称](https://github.com/prometheus/prometheus/issues/380)，因为 Metric 的初试含义已经变了。但是，这种方式有很多弊病。例如，`max_over_time` 函数计算的是 series 里的最大值，但并没有改变它的物理含义。因此, MetricsQL [针对这些函数保留了 metric 名称](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/674)。它也可以用来查询多个 Metric 名称 ，比如：`max_over_time({__name__=~"process_(resident|virtual)_memory_bytes"}[1h])`，这在 PromQL 里会报错 `vector cannot contain metrics with the same labelset`。
+
+因此，测试类型的函数，如`*_over_time`, `ceil` , `floor` , `round` , `clamp_*` , `holt_winters` , `predict_linear` 在 VictoriaMetrics 里都会在结果中故意保留 metric 名称:
 
 
 ```plain
@@ -92,9 +96,9 @@ QUERY: avg_over_time(demo_memory_usage_bytes[1s])
 +     Metric: s`demo_memory_usage_bytes{instance="demo.promlabs.com:10002", job="demo", type="buffers"}`,
 ```
 
-There were 92 (~17% of 529 tests total) such queries in the test suite which failed because the metric name is present in the response from VictoriaMetrics, while the values in the response are identical. VictoriaMetrics isn't going to change this behavior as their users find this is more logical and [rely on it](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/1384).
+有`92/529(~17%)`个查询测试用例因为在结果中保留 metric 名字而被认为没有对 PromQL 进行兼容。
 
-### Better rate()
+### 更优的 rate()
 凡是涉及对回溯窗口样本值首尾样本值进行计算的 rollup 函数，比如 `rate`、`delta`、`increase` 等函数；其MetricsQL 和 PromQL 都存在统一的计算差异。因此 VictoriaMetrics 使用 `xxx_prometheus` 的命名提供了兼容 Prometheus 统计方式的 rollup 函数，如 `rate_prometheus`、`delta_prometheus`、`increase_prometheus` 等。而默认则使用 MetricsQL 的统计方式。
 
 以 increase 函数为例，MetricsQL 的计算方式更加精准，如下图所示。
@@ -109,23 +113,22 @@ There were 92 (~17% of 529 tests total) such queries in the test suite which fai
 
 此外，Prometheus 的这种统计方式还有另外一个问题。就是如果`$_interval`大小的时间窗口内只有一个样本值，那么`rate`和`increase`这种汇总函数的结果为空。
 
-MetricsQL doesn't apply extrapolation when calculating `rate` and `increase`. This solves the issue of fractional `increase()` results over integer counters:
+MetricsQL 在计算`rate`和`increase`时不会应用额外扩展。这解决了整数之间计算得到的小数问题： 
 
 ![](promql-diff-demo-3.png)
 
-increase() query over time series generated by integer counter results in decimal values for Prometheus due to extrapolation.
+`increase()`查询在 Prometheus 里会将整数计算扩展而产生小数结果。
 
-It is [quite important](https://www.robustperception.io/what-range-should-i-use-with-rate) to choose the correct lookbehind window for `rate` and `increase` in Prometheus. Otherwise, incorrect or no data may be returned. [Grafana](https://grafana.com/) even introduced a special variable [$__rate_interval](https://grafana.com/blog/2020/09/28/new-in-grafana-7.2-__rate_interval-for-prometheus-rate-queries-that-just-work/) to address this issue, but it may cause more problems than it solves:
+在 Prometheus 为`rate`和`increase`选择一个重要的回溯窗口[非常重要](https://www.robustperception.io/what-range-should-i-use-with-rate)。否则，返回结果可能错误或甚至没有数据。[Grafana](https://grafana.com/) 甚至提供了一个特殊的变量[$__rate_interval](https://grafana.com/blog/2020/09/28/new-in-grafana-7.2-__rate_interval-for-prometheus-rate-queries-that-just-work/) 来解决这个问题，但它可能会引起下面的问题：
 
-+ Users need to configure the scrape interval value in datasource settings to get it to work;
-+ Users still need to add `$__rate_interval` manually to every query that uses `rate`;
-+ It won't work if the datasource stores metrics with different scrape intervals (e.g. global view across multiple datasources);
-+ It only works in Grafana.
++ 用户需要在数据源里配置采集间隔，才能使它工作正常；
++ 用户依然需要给每一个用到`rate`的查询语句里手动添加 `$__rate_interval`；
++ 但如果数据源里的数据采集间隔是不一致的，这个方法就不奏效了；或者一个视图里使用了多种数据源。
++ 这只在 Grafana 里支持。
 
-In MetricsQL, a lookbehind window in square brackets may be omitted. VictoriaMetrics automatically selects the lookbehind window depending on the current step, so `rate(node_network_receive_bytes_total)` works just as `rate(node_network_receive_bytes_total[$__interval])`. And even if the interval is too small to capture enough data points, MetricsQL will automatically expand it. That's why queries like `deriv(demo_disk_usage_bytes[1s])` return no data for Prometheus and VictoriaMetrics expands the lookbehind window prior to making calculations.
+在 MetricsQL 里, 中括号`[]`里的回溯窗口可以省略。 VictoriaMetrics 会基于当前的步长自动设置回溯窗口。例如，`rate(node_network_receive_bytes_total)`和`rate(node_network_receive_bytes_total[$__interval])`是一样的。并且即便这里的`interval`太小导致时间窗口里数据点太少，MetricsQL 会自动扩展它。这就是为什么像`deriv(demo_disk_usage_bytes[1s])`这种查询语句会在 Prometheus 里返回空而在 VictoriaMetrics 会返回数据。
 
-There are 39 (~7% of 529 tests total) queries (rate, increase, deriv, changes, irate, idelta, resets, etc.) exercising this logic which cause the difference in results between VictoriaMetrics and Prometheus:
-
+有 39/529(~7%) 个查询 (rate, increase, deriv, changes, irate, idelta, resets 等) 存在这种和 Prometheus 不同的计算逻辑，导致结果不同。
 
 ```plain
 QUERY: rate(demo_cpu_usage_seconds_total[5m])
@@ -133,12 +136,12 @@ QUERY: rate(demo_cpu_usage_seconds_total[5m])
 +           Value:     Inverse(TranslateFloat64, float64(1.993400981075324)),
 ```
 
-For more details about how rate/increase works in MetricsQL please check [docs](https://docs.victoriametrics.com/MetricsQL.html#rate) and [example on github](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/1215#issuecomment-850305711).
+关于 MetricsQL 里 rate/increase 更多的内部细节可[查阅文档]({{< relref "./functions/rollup.md#rate" >}}) 和 [Github 上的例子](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/1215#issuecomment-850305711).
 
 ### NaNs
-NaNs are unexpectedly complicated. Let's begin with the fact that in [Prometheus there are two types of NaNs](https://www.robustperception.io/get-thee-to-a-nannary): [normal NaN](https://github.com/prometheus/prometheus/blob/19152a45d8a8f841206d321f79a60ab6d365a98f/pkg/value/value.go#L22) and [stale NaN](https://github.com/prometheus/prometheus/blob/19152a45d8a8f841206d321f79a60ab6d365a98f/pkg/value/value.go#L28). Stale NaNs are used as "staleness makers" — special values used to identify a time series that had become stale. VictoriaMetrics didn't initially support this because VictoriaMetrics needed to integrate with many systems beyond just Prometheus and had to have a way to detect staleness uniformly for series ingested via Graphite, Influx, OpenTSDB and other supported data ingestion protocols. Support of Prometheus staleness markers was [recently added](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/1526).
+NaNs 是非法计算结果。 我们来看下 [Prometheus 包含两种 NaNs](https://www.robustperception.io/get-thee-to-a-nannary): [normal NaN](https://github.com/prometheus/prometheus/blob/19152a45d8a8f841206d321f79a60ab6d365a98f/pkg/value/value.go#L22) 和 [stale NaN](https://github.com/prometheus/prometheus/blob/19152a45d8a8f841206d321f79a60ab6d365a98f/pkg/value/value.go#L28)。 Stale NaNs 被用于 "staleness makers" — 一个特殊的值被应用于一个已经 Stale 的。 VictoriaMetrics 不支持这个因为 VictoriaMetrics 需要与许多系统进行整合，不只是 Prometheus，必须有一个方法统一处理 Graphite、InfluxDB、OpenTSDB 和其他数据协议写进来数据的对齐问题。对 Prometheus 的对齐标记也有[支持](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/1526)。
 
-Normal NaNs are results of mathematical operations, e.g. `0/0=NaN`. However, in OpenMetrics there is [no special meaning or use case for NaNs](https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#nan).
+Normal NaNs 是算数运算计算出来的结果，比如`0/0=NaN`。但是，在 OpenMetrics 里[没有对 NaNs 的专门描述和用例](https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#nan).
 
 While NaNs are expected when evaluating mathematical expressions, it is not clear how useful they are for users, or if there are any benefits to return NaNs in the result. It looks like the opposite is true because users are [often](https://stackoverflow.com/questions/53430836/prometheus-sum-one-nan-value-result-into-nan-how-to-avoid-it)[confused](https://github.com/prometheus/prometheus/issues/7637)[with](https://github.com/prometheus/prometheus/issues/6780) the [received](https://github.com/prometheus/prometheus/issues/6645)[results](https://stackoverflow.com/questions/47056557/how-to-gracefully-avoid-divide-by-zero-in-prometheus).
 
@@ -146,30 +149,28 @@ MetricsQL consistently deletes NaN from query responses. This behavior is intent
 
 There were 6 (~1% of 529 tests total) queries in thetest suite expecting NaNs in responses: `sqrt(-metric)` , `ln(-metric)` , `log2(-metric)` , `log10(-metric)` and `metric * NaN` .
 
-### Negative offsets
-VictoriaMetrics supports negative offsets and Prometheus also does as well starting with version [2.26](https://github.com/prometheus/prometheus/releases/tag/v2.26.0) if a specific feature flag is enabled. However, query results are different even with the enabled feature flag due to the fact that Prometheus continues the last value of the metric during the additional 5min:
+### 负 Offset
+VictoriaMetrics 支持负 offset，不过 Prometheus 在 [2.26](https://github.com/prometheus/prometheus/releases/tag/v2.26.0) 版本之后也开始支持了（通过命令行参数开启）。但是，Prometheus 的查询结果还是和 VictoriaMetrics 不一样。
 
 ![](promql-diff-demo-4.png)
 
-VictoriaMetrics vs Prometheus negative offset query. VictoriaMetrics response value is shifted by 1e7 to show the difference between the lines visually. Without this shift, they are identical except the last 5min.
+VictoriaMetrics 和 Prometheus 的负 offset 查询结果。VictoriaMetrics查询结果偏移`1e7`，以直观地显示线条之间的差异。没有这个偏移，除了最后5分钟外，它们是相同的。
 
-Such behavior was unexpected to us. To get more details about it please check the following discussion:
+这种逻辑不是我们期望的，更多的详情可以参考下面的讨论：
 
 [Series with negative offset are continued with the last value up to 5min · Discussion #9428 ·…You can't perform that action at this time. You signed in with another tab or window. You signed out in another tab or…github.com](https://github.com/prometheus/prometheus/discussions/9428)
 
-VictoriaMetrics isn't going to change the logic of negative offsets because this feature was released [2 years before](https://github.com/prometheus/prometheus/issues/6282#issuecomment-564301756) Prometheus did it and users rely on that.
+VictoriaMetrics 并不计划改变负 offset 的逻辑，因为这个特性已经被发布[2年了](https://github.com/prometheus/prometheus/issues/6282#issuecomment-564301756)，Prometheus 是后做的。
 
-There were 3 (~0.5% of 529 tests total) queries for -1m, -5m, -10m offsets in the test suite:
-
+有 3/529(~0.5%) 个查询测试用例是针对`-1m`,`-5m`,`-10m`偏移的：
 
 ```plain
 QUERY: demo_memory_usage_bytes offset -1m
 RESULT: FAILED: Query succeeded, but should have failed.
 ```
 
-### Precision loss
-VictoriaMetrics fails the following test case:
-
+### 精度下降
+VictoriaMetrics 在下面的测试用例会失败：
 
 ```plain
 QUERY: demo_memory_usage_bytes % 1.2345
@@ -178,8 +179,7 @@ QUERY: demo_memory_usage_bytes % 1.2345
 + Value: Inverse(TranslateFloat64, float64(0.038790081382158004)),
 ```
 
-The result is indeed different. It is off on the 5th digit after the decimal point and the reason for this is not in MetricsQL but in VictoriaMetrics itself. The query result isn't correct because the raw data point value for this specific metric doesn't match between Prometheus and VictoriaMetrics:
-
+结果确实不同。它在小数点后的第5个数字上开始出现差别，原因不在MetricsQL中，而是在VictoriaMetrics本身中。查询结果不正确，因为指标的原始数据点值在Prometheus和VictoriaMetrics之间不匹配：
 
 ```plain
 curl  --data-urlencode 'query=demo_memory_usage_bytes{instance="demo.promlabs.com:10000", type="buffers"}' --data-urlencode 'time=1633504838' 
@@ -225,3 +225,5 @@ By the way, the percentage of failing tests is easy to increase or decrease by c
 
 We also want to say a big thank you to [Julius Volz](https://github.com/juliusv), the author of these [compliance tests](https://promlabs.com/promql-compliance-tests/). Thanks to his work and patience we were able to fix most of the real incompatibility issues in MetricsQL.
 
+
+## 子查询 {#subquery}

@@ -168,7 +168,7 @@ curl "http://localhost:8428/api/vq/query?query=measurement_field1"
 }
 ```
 
-### Range Query
+### Range Query {#range-query}
 
 我们可以使用`/api/v1/query_range`查询上面 [InfluxDB]("#influxdb") 部分写入的历史数据
 
