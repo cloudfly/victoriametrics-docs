@@ -12,7 +12,7 @@ VictoriaMetrics 集群版本由以下几个服务组成：
 
 每项服务都可独立扩展，并可在最合适的硬件上运行。 `vmstorage` 节点之间互不相识，互不通信，也不共享任何数据。 这是一种[共享无架构](https://en.wikipedia.org/wiki/Shared-nothing_architecture) 。 它提高了集群的可用性，简化了集群维护和集群扩展。
 
-## 多租户
+## 多租户 {#tenant}
 VictoriaMetrics集群支持多个隔离的租户（即命名空间）。租户通过accountID或accountID:projectID进行标识，这些标识符被置于请求URL中。详情请参阅[这些文档](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#url-format)。
 
 关于VictoriaMetrics中租户的一些事实：

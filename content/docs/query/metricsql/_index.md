@@ -53,7 +53,7 @@ MetricsQL 特性列表:
 + String literals may be concatenated. This is useful with `WITH` templates: `WITH (commonPrefix="long_metric_prefix_") {__name__=commonPrefix+"suffix1"} / {__name__=commonPrefix+"suffix2"}`.
 + `keep_metric_names` modifier can be applied to all the [rollup functions](https://docs.victoriametrics.com/MetricsQL.html#rollup-functions) and [transform functions](https://docs.victoriametrics.com/MetricsQL.html#transform-functions). This modifier prevents from dropping metric names in function results. See [these docs](https://docs.victoriametrics.com/MetricsQL.html#keep_metric_names).
 
-## keep_metric_names
+## keep_metric_nameGet from mysqls
 
 默认情况下，Metric 名称会在应用函数计算后的结果数据中去掉，因为计算后的结果数据改变了原始指标名所代表的含义。这导致当一个函数被应用于多个名称不同的 Timeseries 时，可能会出现`duplicate time series`错误，使用 `keep_metric_names` 可以修复这个错误。
 
