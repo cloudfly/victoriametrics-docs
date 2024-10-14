@@ -32,6 +32,12 @@ weight: 1
 + 等待进程停止。这可能需要几秒钟时间。 
 + 启动已升级的VictoriaMetrics。 
 
+#### 使用 docker-compose
+[Docker-compose](https://github.com/VictoriaMetrics/VictoriaMetrics/blob/master/deployment/docker/docker-compose.yml) 能帮助我们用一条命令加速启动 VictoriaMetrics, [vmagent](https://docs.victoriametrics.com/vmagent.html) 和 Grafana。更多详细信息请查阅[这里](https://github.com/VictoriaMetrics/VictoriaMetrics/tree/master/deployment/docker#folder-contains-basic-images-and-tools-for-building-and-running-victoria-metrics-in-docker)。
+
+#### Systemd Service
+参考[这里](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/43)将 VictoriaMetrics 设置为一个系统 Service。 一个 [snap 包](https://snapcraft.io/victoriametrics) 可在 Ubuntu 上直接使用。
+
 下面的几个文档，对初始化 VictoriaMetrics 可能会有些帮助：
 
 + [How to set up scraping of Prometheus-compatible targets](https://docs.victoriametrics.com/#how-to-scrape-prometheus-exporters-such-as-node-exporter)
@@ -52,12 +58,64 @@ VictoriaMetrics 会递归的转换环境变量。比如我们有 2 个环境变�
 
 此外，所有的VictoriaMetrics组件都允许根据以下规则通过环境变量设置参数：
 
-Additionally, all the VictoriaMetrics components allow setting flag values via environment variables according to these rules:
-
 + `-envflag.enable` 参数必须开启。
 + 参数名中的每一个`.`字符都会被用`_`替代（比如`-insert.maxQueueDuration <duration>` 会被转换成`insert_maxQueueDuration=<duration>`）。
 + 对于重复参数，有一个替代方式就是用逗号`,`把多个参数值链接起来（比如 `-storageNode <nodeA> -storageNode <nodeB>` 会被转换成 `storageNode=<nodeA>,<nodeB>`）。
 + 环境变量的前缀可以通过参数 `-envflag.prefix` 设定. 比如，如果`-envflag.prefix=VM_`, 那么所有环境变量名都要以 `VM_`开头。
+
+
+### 升级
+除非[发布说明](https://github.com/VictoriaMetrics/VictoriaMetrics/releases)另有说明，升级VictoriaMetrics到新版本是安全的。在升级过程中跳过多个版本也是安全的，除非[发布说明](https://github.com/VictoriaMetrics/VictoriaMetrics/releases)另有说明。建议定期升级到最新版本，因为它可能包含重要的错误修复、性能优化或新功能。 
+
+除非[发布说明](https://github.com/VictoriaMetrics/VictoriaMetrics/releases)另有说明，降级到旧版本也是安全的。 
+
+在升级/降级过程中必须执行以下步骤：
+
++ 向 VictoriaMetrics 进程发送`SIGINT`信号以正常停止它。请参阅[如何向进程发送信号](https://stackoverflow.com/questions/33239959/send-signal-to-process-from-command-line)。 
++ 等待进程停止。这可能需要几秒钟时间。 
++ 启动已升级的VictoriaMetrics。 
+
+Prometheus在重新启动VictoriaMetrics时不会丢失数据。详细信息请[参阅本文](https://grafana.com/blog/2019/03/25/whats-new-in-prometheus-2.8-wal-based-remote-write/)。对于[vmagent](https://docs.victoriametrics.com/vmagent.html)也适用相同规则。
+
+### 构建
+我们建议使用[发布的二进制](https://github.com/VictoriaMetrics/VictoriaMetrics/releases) 或者 [Docker 镜像](https://hub.docker.com/r/victoriametrics/victoria-metrics/)，而不是使用源代码进行构建。构建源代码一般是在你要开发一些定制化需求或者测试 BUG 修复时候才需要。
+
+#### 构建开发环境
+1. [安装 Go](https://golang.org/doc/install)。 要求最低版本是 Go 1.19。
+2. 在[仓库](https://github.com/VictoriaMetrics/VictoriaMetrics)的根目录运行命令 `make victoria-metrics` 。命令会构建 `victoria-metrics` 二进制然后把它放到 `bin` 目录中。
+
+#### 构建生产环境
+1. [安装 docker](https://docs.docker.com/install/)。
+2. 在[仓库](https://github.com/VictoriaMetrics/VictoriaMetrics)的跟目录执行命令`make victoria-metrics-prod` 。 命令会构建 `victoria-metrics-prod` 二进制，并把它放到 `bin` 目录中.
+
+#### ARM 构建 
+ARM 的构建可以在树莓派或 [energy-efficient ARM servers](https://blog.cloudflare.com/arm-takes-wing/)上执行。
+
+#### 开发环境 ARM 构建
+1. [安装 Go](https://golang.org/doc/install). 要求最低版本是 Go 1.19。
+2. 在[这个仓库](https://github.com/VictoriaMetrics/VictoriaMetrics)根目录执行 `make victoria-metrics-linux-arm` 或 `make victoria-metrics-linux-arm64`. 它构建出 `victoria-metrics-linux-arm`或`victoria-metrics-linux-arm64` 二进制，并把它放到`bin`目录中。
+
+#### 生产环境 ARM 构建
+1. [安装 docker](https://docs.docker.com/install/).
+2. 在[这个仓库](https://github.com/VictoriaMetrics/VictoriaMetrics)根目录执行 `make victoria-metrics-linux-arm-prod` 或 `make victoria-metrics-linux-arm64-prod`. 它构建出 `victoria-metrics-linux-arm-prod`或`victoria-metrics-linux-arm64-prod`二进制，并把它放到`bin`目录中。
+
+#### 纯 Go 构建 (CGO_ENABLED=0)
+
+`纯Go` 模式构建就是只构建没有 [cgo](https://golang.org/cmd/cgo/) 的依赖的 Go 代码。
+
+1. [安装Go](https://golang.org/doc/install)。 要求最低版本是 Go 1.19。
+2. 在[仓库](https://github.com/VictoriaMetrics/VictoriaMetrics)的根目录执行命令 `make victoria-metrics-pure` ，命令会构建出二进制 `victoria-metrics-pure` ，并把它放到 `bin` 目录中。
+
+#### 构建 Docker 镜像
+执行命令 `make package-victoria-metrics`。 命令会在本地构建 `victoriametrics/victoria-metrics:<PKG_TAG>` 的镜像。 `<PKG_TAG>` 是使用仓库的源代码自动生成的镜像 Tag。 The `<PKG_TAG>` 可以通过命令 `PKG_TAG=foobar make package-victoria-metrics`手动指定。
+
+Base Image 用的是 [alpine](https://hub.docker.com/_/alpine)，但是可以使用 `<ROOT_IMAGE>`环境变量选择使用其他 Base Image。比如，下面的命令就是使用 [scratch](https://hub.docker.com/_/scratch) 镜像作为我们的 Base Image:
+
+```plain
+ROOT_IMAGE=scratch make package-victoria-metrics
+```
+
+
 
 ## 集群版
 

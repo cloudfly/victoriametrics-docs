@@ -20,10 +20,10 @@ docker pull victoriametrics/victoria-metrics:latest
 docker run -it --rm -v `pwd`/victoria-metrics-data:/victoria-metrics-data -p 8428:8428 victoriametrics/victoria-metrics:latest
 ```
 
-用浏览器打开 [http://localhost:8428](http://localhost:8428/) 然后阅读[这些文档]({{< relref "ops/single.md#operation" >}})。
+用浏览器打开[`http://localhost:8428`](http://localhost:8428/)然后阅读[这些文档]({{< relref "ops/single.md#operation" >}})。
 
 #### 集群版
-下面的命令 clone 最新版本的 VictoriaMetrics 仓库，然后使用命令`make docker-cluster-up`启动 Docker 容器。更多的自定义启动项可以通过编辑[docker-compose-cluster.yml](https://github.com/VictoriaMetrics/VictoriaMetrics/blob/master/deployment/docker/docker-compose-cluster.yml)实现。
+下面的命令 clone 最新版本的 VictoriaMetrics 仓库，然后使用命令`make docker-cluster-up`启动 Docker 容器。更多的自定义启动项可以通过编辑[`docker-compose-cluster.yml`](https://github.com/VictoriaMetrics/VictoriaMetrics/blob/master/deployment/docker/docker-compose-cluster.yml)实现。
 
 
 ```shell
@@ -33,27 +33,14 @@ make docker-cluster-up
 
 更多详情[请看这个文档](https://github.com/VictoriaMetrics/VictoriaMetrics/tree/master/deployment/docker#readme)和[集群安装文档]({{< relref "ops/cluster#operation" >}})
 
-### 其他
-单机版的 VictoriaMetrics 还有以下几种提供方式：
-
-+ [Managed VictoriaMetrics at AWS](https://aws.amazon.com/marketplace/pp/prodview-4tbfq5icmbmyc)
-+ [Snap packages](https://snapcraft.io/victoriametrics)
-+ [Helm Charts](https://github.com/VictoriaMetrics/helm-charts#list-of-charts)
-+ [二进制](https://github.com/VictoriaMetrics/VictoriaMetrics/releases)
-+ [源代码](https://github.com/VictoriaMetrics/VictoriaMetrics)。 参见[如何构建源代码](https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben#how-to-build-from-sources)
-+ [VictoriaMetrics on Linode](https://www.linode.com/marketplace/apps/victoriametrics/victoriametrics/)
-+ [VictoriaMetrics on DigitalOcean](https://marketplace.digitalocean.com/apps/victoriametrics-single)
-
-只需要下载 VictoriaMetrics 然后跟随[这些步骤]({{< relref "ops/single.md#execute" >}})把 VictoriaMetrics 运行起来，
-
 ## 数据写入
 
 VictoriaMetrics 支持常见的多种数据协议写入，包括 prometheus remote write、influxdb、opentsdb 等等。
 
 ### InfluxDB {#influxdb}
-写入接口`/api/v1/write` 或 `/influx/api/v2/write`。
+写入接口`/influx/write` 或 `/influx/api/v2/write`。
 ```bash
-curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST 'http://localhost:8428/api/v2/write'
+curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST 'http://localhost:8428/influx/api/v2/write'
 ```
 使用`/api/v1/export`接口查询写入内容会返回如下数据：
 ```bash
@@ -61,9 +48,8 @@ curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST 'ht
 {"metric":{"__name__":"measurement_field2","tag1":"value1","tag2":"value2"},"values":[1.23],"timestamps":[1695902762311]}
 ```
 
-
 ### OpenTSDB
-需要在运行 VictoriaMetrics 时候使用`-opentsdbHTTPListenAddr`参数来开启针对 OpenTSDB 协议的 HTTP写入接口`/api/put`。例如，下面的命令将 OpenTSDB 的 HTTP 写入接口开在 4242 端口上：
+需要在运行 VictoriaMetrics 时候使用`-opentsdbHTTPListenAddr`参数来开启针对 OpenTSDB 协议的 HTTP 写入接口`/api/put`。例如，下面的命令将 OpenTSDB 的 HTTP 写入接口开在`4242`端口上：
 
 ```bash
 /path/to/victoria-metrics-prod -opentsdbHTTPListenAddr=:4242
@@ -91,16 +77,16 @@ curl -G 'http://localhost:8428/api/v1/export' -d 'match[]=x.y.z' -d 'match[]=foo
 
 可在写入 URL `/api/put` 加上`extra_label`参数为所有写入数据注入额外的 Label。比如使用`/api/put?extra_label=foo=bar`URL写数据，系统会为每条写入的 Metric 数据追加`{foo="bar"}`Label
 
-更多数据写入详情，请[参考这里](https://www.victoriametrics.com.cn/victoriametrics/shu-ju-xie-ru)。
+更多数据写入详情，请[参考这里]({{< relref "./write/api.md" >}})。
 
 ### Prometheus Exposition Format
 
-VictoriaMetrics 通过`/api/v1/import/prometheus`接口来接收 [Prometheus exposition format](https://github.com/prometheus/docs/blob/master/content/docs/instrumenting/exposition_formats.md#text-based-format)数据，以及接收 [Pushgateway 协议](https://github.com/prometheus/pushgateway#url)的数据
+VictoriaMetrics 通过`/prometheus/api/v1/import`接口来接收 [Prometheus exposition format](https://github.com/prometheus/docs/blob/master/content/docs/instrumenting/exposition_formats.md#text-based-format)数据，以及接收 [Pushgateway 协议](https://github.com/prometheus/pushgateway#url)的数据
 
 比如下面一行命令将 Prometheus Exposition Format 的指标数据写入到 VictoriaMetrics：
 
 ```bash
-curl -d 'foo{bar="baz"} 123' -X POST 'http://localhost:8428/api/v1/import/prometheus'
+curl -d 'foo{bar="baz"} 123' -X POST 'http://localhost:8428/prometheus/api/v1/import/prometheus'
 ```
 
 用下面的命令可验证写入的数据：
@@ -120,12 +106,12 @@ curl -d 'metric{label="abc"} 123' -X POST 'http://localhost:8428/api/v1/import/p
 
 ### Prometheus Remote Write
 
-VictoriaMetrics 在`/api/v1/write`接口上接收处理 [Prometheus Remote Write](https://prometheus.io/docs/specs/remote_write_spec/) 协议写入的数据。
+VictoriaMetrics 在`/prometheus/api/v1/write`或`/prometheus`接口上接收处理 [Prometheus Remote Write](https://prometheus.io/docs/specs/remote_write_spec/) 协议写入的数据。
 
 可以在 Prometheus 的配置文件中（通常是在`/etc/prometheus/prometheus.yml`中）配置上 remote_write 地址，它就会将数据发送给 VictoriaMetrics:
 ```yaml
 remote_write:
-  - url: http://<victoriametrics-addr>:8428/api/v1/write
+  - url: http://<victoriametrics-addr>:8428/prometheus/api/v1/write
 ```
 
 ### 其他
@@ -145,7 +131,7 @@ VictoriaMetrics 提供了 HTTP 接口来处理查询请求。这些接口会被�
 我们使用`/api/v1/query`来查询上面 [InfluxDB]("#influxdb") 部分写入的即时数据。
 
 ```bash
-curl "http://localhost:8428/api/vq/query?query=measurement_field1"
+curl "http://localhost:8428/api/v1/query?query=measurement_field1"
 ```
 该命令将得到查询结果：
 ```json

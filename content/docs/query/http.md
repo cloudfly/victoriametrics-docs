@@ -5,6 +5,233 @@ weight: 5
 
 ## 单机版
 ### Prometheus 查询接口 {#single-prometheus}
+
+#### Instance Query
+
+Instant Query 在指定的时间点上执行查询：
+```
+GET | POST /api/v1/query?query=...&time=...&step=...&timeout=...
+```
+
+参数：
+
+- query - MetricsQL expression.
+- time - optional, timestamp in second precision to evaluate the query at. If omitted, time is set to now() (current timestamp). The time param can be specified in multiple allowed formats.
+- step - optional interval for searching for raw samples in the past when executing the query (used when a sample is missing at the specified time). For example, the request /api/v1/query?query=up&step=1m looks for the last written raw sample for the metric up in the interval between now() and now()-1m. If omitted, step is set to 5m (5 minutes) by default.
+- timeout - optional query timeout. For example, timeout=5s. Query is canceled when the timeout is reached. By default the timeout is set to the value of -search.maxQueryDuration command-line flag passed to single-node VictoriaMetrics or to vmselect component of VictoriaMetrics cluster.
+
+The result of Instant query is a list of time series matching the filter in query expression. Each returned series contains exactly one (timestamp, value) entry, where timestamp equals to the time query arg, while the value contains query result at the requested time.
+
+To understand how instant queries work, let’s begin with a data sample:
+
+```
+foo_bar 1.00 1652169600000 # 2022-05-10 10:00:00
+foo_bar 2.00 1652169660000 # 2022-05-10 10:01:00
+foo_bar 3.00 1652169720000 # 2022-05-10 10:02:00
+foo_bar 5.00 1652169840000 # 2022-05-10 10:04:00, one point missed
+foo_bar 5.50 1652169960000 # 2022-05-10 10:06:00, one point missed
+foo_bar 5.50 1652170020000 # 2022-05-10 10:07:00
+foo_bar 4.00 1652170080000 # 2022-05-10 10:08:00
+foo_bar 3.50 1652170260000 # 2022-05-10 10:11:00, two points missed
+foo_bar 3.25 1652170320000 # 2022-05-10 10:12:00
+foo_bar 3.00 1652170380000 # 2022-05-10 10:13:00
+foo_bar 2.00 1652170440000 # 2022-05-10 10:14:00
+foo_bar 1.00 1652170500000 # 2022-05-10 10:15:00
+foo_bar 4.00 1652170560000 # 2022-05-10 10:16:00
+```
+
+The data above contains a list of samples for the foo_bar time series with time intervals between samples ranging from 1m to 3m. If we plot this data sample on the graph, it will have the following form:
+
+![](https://docs.victoriametrics.com/keyconcepts/data_samples.webp)
+
+To get the value of the foo_bar series at some specific moment of time, for example 2022-05-10 10:03:00, in VictoriaMetrics we need to issue an instant query：
+
+```sh
+curl "http://<victoria-metrics-addr>/api/v1/query?query=foo_bar&time=2022-05-10T10:03:00.000Z"
+```
+
+```json
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": [
+      {
+        "metric": {
+          "__name__": "foo_bar"
+        },
+        "value": [
+          1652169780, // 2022-05-10 10:03:00
+          "3"
+        ]
+      }
+    ]
+  }
+}
+```
+
+In response, VictoriaMetrics returns a single sample-timestamp pair with a value of 3 for the series foo_bar at the given moment in time 2022-05-10 10:03. But, if we take a look at the original data sample again, we’ll see that there is no raw sample at 2022-05-10 10:03. When there is no raw sample at the requested timestamp, VictoriaMetrics will try to locate the closest sample before the requested timestamp：
+
+![](https://docs.victoriametrics.com/keyconcepts/instant_query.webp)
+
+The time range in which VictoriaMetrics will try to locate a replacement for a missing data sample is equal to 5m by default and can be overridden via the step parameter.
+
+Instant queries can return multiple time series, but always only one data sample per series. Instant queries are used in the following scenarios:
+
+- Getting the last recorded value;
+- For rollup functions such as count_over_time;
+- For alerts and recording rules evaluation;
+- Plotting Stat or Table panels in Grafana.
+
+#### Range Query
+Range query executes the query expression at the given [start…end] time range with the given step:
+
+```
+GET | POST /api/v1/query_range?query=...&start=...&end=...&step=...&timeout=...
+```
+
+Params:
+
+- query - MetricsQL expression.
+- start - the starting timestamp of the time range for query evaluation.
+- end - the ending timestamp of the time range for query evaluation. If the end isn’t set, then the end is automatically set to the current time.
+- step - the interval between data points, which must be returned from the range query. The query is executed at start, start+step, start+2*step, …, end timestamps. If the step isn’t set, then it default to 5m (5 minutes).
+- timeout - optional query timeout. For example, timeout=5s. Query is canceled when the timeout is reached. By default the timeout is set to the value of -search.maxQueryDuration command-line flag passed to single-node VictoriaMetrics or to vmselect component in VictoriaMetrics cluster.
+
+The result of Range query is a list of time series matching the filter in query expression. Each returned series contains (timestamp, value) results for the query executed at start, start+step, start+2*step, …, end timestamps. In other words, Range query is an Instant query executed independently at start, start+step, …, end timestamps.
+
+For example, to get the values of foo_bar during the time range from 2022-05-10 09:59:00 to 2022-05-10 10:17:00, we need to issue a range query:
+
+```sh
+curl "http://<victoria-metrics-addr>/api/v1/query_range?query=foo_bar&step=1m&start=2022-05-10T09:59:00.000Z&end=2022-05-10T10:17:00.000Z"
+```
+
+```json
+{
+  "status": "success",
+  "data": {
+    "resultType": "matrix",
+    "result": [
+      {
+        "metric": {
+          "__name__": "foo_bar"
+        },
+        "values": [
+          [
+            1652169600,
+            "1"
+          ],
+          [
+            1652169660,
+            "2"
+          ],
+          [
+            1652169720,
+            "3"
+          ],
+          [
+            1652169780,
+            "3"
+          ],
+          [
+            1652169840,
+            "7"
+          ],
+          [
+            1652169900,
+            "7"
+          ],
+          [
+            1652169960,
+            "7.5"
+          ],
+          [
+            1652170020,
+            "7.5"
+          ],
+          [
+            1652170080,
+            "6"
+          ],
+          [
+            1652170140,
+            "6"
+          ],
+          [
+            1652170260,
+            "5.5"
+          ],
+          [
+            1652170320,
+            "5.25"
+          ],
+          [
+            1652170380,
+            "5"
+          ],
+          [
+            1652170440,
+            "3"
+          ],
+          [
+            1652170500,
+            "1"
+          ],
+          [
+            1652170560,
+            "4"
+          ],
+          [
+            1652170620,
+            "4"
+          ]
+        ]
+      }
+    ]
+  }
+}
+```
+
+In response, VictoriaMetrics returns 17 sample-timestamp pairs for the series foo_bar at the given time range from 2022-05-10 09:59:00 to 2022-05-10 10:17:00. But, if we take a look at the original data sample again, we’ll see that it contains only 13 raw samples. What happens here is that the range query is actually an instant query executed 1 + (start-end)/step times on the time range from start to end. If we plot this request in VictoriaMetrics the graph will be shown as the following:
+
+![](https://docs.victoriametrics.com/keyconcepts/range_query.webp)
+
+The blue dotted lines in the figure are the moments when the instant query was executed. Since the instant query retains the ability to return replacements for missing points, the graph contains two types of data points: real and ephemeral. ephemeral data points always repeat the closest raw sample that occurred before (see red arrow on the pic above).
+
+This behavior of adding ephemeral data points comes from the specifics of the pull model:
+
+- Metrics are scraped at fixed intervals.
+- Scrape may be skipped if the monitoring system is overloaded.
+- Scrape may fail due to network issues.
+
+According to these specifics, the range query assumes that if there is a missing raw sample then it is likely a missed scrape, so it fills it with the previous raw sample. The same will work for cases when step is lower than the actual interval between samples. In fact, if we set step=1s for the same request, we’ll get about 1 thousand data points in response, where most of them are ephemeral.
+
+Sometimes, the lookbehind window for locating the datapoint isn’t big enough and the graph will contain a gap. For range queries, lookbehind window isn’t equal to the step parameter. It is calculated as the median of the intervals between the first 20 raw samples in the requested time range. In this way, VictoriaMetrics automatically adjusts the lookbehind window to fill gaps and detect stale series at the same time.
+
+Range queries are mostly used for plotting time series data over specified time ranges. These queries are extremely useful in the following scenarios:
+
+- Track the state of a metric on the given time interval;
+- Correlate changes between multiple metrics on the time interval;
+- Observe trends and dynamics of the metric change.
+
+#### Query 延时
+
+By default, Victoria Metrics does not immediately return the recently written samples. Instead, it retrieves the last results written prior to the time specified by the -search.latencyOffset command-line flag, which has a default offset of 30 seconds. This is true for both query and query_range and may give the impression that data is written to the VM with a 30-second delay.
+
+This flag prevents from non-consistent results due to the fact that only part of the values are scraped in the last scrape interval.
+
+Here is an illustration of a potential problem when -search.latencyOffset is set to zero:
+
+![](https://docs.victoriametrics.com/keyconcepts/without_latencyOffset.webp)
+
+When this flag is set, the VM will return the last metric value collected before the -search.latencyOffset duration throughout the -search.latencyOffset duration:
+
+![](https://docs.victoriametrics.com/keyconcepts/with_latencyOffset.webp)
+
+It can be overridden on per-query basis via latency_offset query arg.
+
+VictoriaMetrics buffers recently ingested samples in memory for up to a few seconds and then periodically flushes these samples to disk. This bufferring improves data ingestion performance. The buffered samples are invisible in query results, even if -search.latencyOffset command-line flag is set to 0, or if latency_offset query arg is set to 0. You can send GET request to /internal/force_flush http handler at single-node VictoriaMetrics or to vmstorage at cluster version of VictoriaMetrics in order to forcibly flush the buffered samples to disk, so they become visible for querying. The /internal/force_flush handler is provided for debugging and testing purposes only. Do not call it in production, since this may significantly slow down data ingestion performance and increase resource usage.
+
 VictoriaMetrics 支持下面这些 [Prometheus 查询 API](https://prometheus.io/docs/prometheus/latest/querying/api/):
 
 + [/api/v1/query](https://docs.victoriametrics.com/keyConcepts.html#instant-query)

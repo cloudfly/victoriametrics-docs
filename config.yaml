@@ -22,6 +22,14 @@ menu:
     params:
       type: search
 
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+  highlight:
+    noClasses: false
+    style: github
+
 params:
   navbar:
     displayTitle: true
@@ -35,6 +43,12 @@ params:
   search:
     enable: true
     type: flexsearch
+    flexsearch:
+      index: content
+  highlight:
+    copy:
+      enable: true
+      display: hover
 
   page:
     # full (100%), wide (90rem), normal (1280px)
@@ -52,6 +66,7 @@ params:
     displayCopyright: true
     displayPoweredBy: false
   theme:
+    default: system
     displayToggle: true
 
   copyright: "© 2024 陈云飞."

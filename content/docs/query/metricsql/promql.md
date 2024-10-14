@@ -10,13 +10,13 @@ weight: 3
 ## 查询一个 Timeseries
 选择使用 PromQL 查询 Timeseries 就像在查询中写入一个时间序列名称一样简单。例如，下面的查询将返回所有名称为`node_network_receive_bytes_total`的 timeseries：
 
-```plsql
+```
 node_network_receive_bytes_total
 ```
 
 这个名称源自于[node_exporter指标](https://github.com/prometheus/node_exporter)，它包含了在各种网络接口上接收的字节数。这样一个简单的查询可能会返回具有相同名称但带有不同 Label Set 的多个 Timeseries。例如，上面的查询可能会返回以下 `device` Label 等于`eth0`、`eth1`和`eth2`的 Timeseries：
 
-```plsql
+```
 node_network_receive_bytes_total{device="eth0"}
 node_network_receive_bytes_total{device="eth1"}
 node_network_receive_bytes_total{device="eth2"}
@@ -26,7 +26,7 @@ node_network_receive_bytes_total{device="eth2"}
 
 让我们来看下 TimescaleDB 的 SQL 来达到同样的效果：
 
-```plsql
+```
 SELECT
   ts.metric_name_plus_tags,
   r.timestamps,
@@ -54,19 +54,19 @@ FROM (
 ## 使用Label过滤
 一个指标名称可能返回多个具有不同 Label Set 的 timeseries，就像上面的例子一样。如何选择只匹配`{device="eth1"}`的 timeseries？只需在查询中提及所需的 Label 即可：
 
-```plsql
+```
 node_network_receive_bytes_total{device="eth1"}
 ```
 
 如果你想要查询除了 `eth1` 的所有 timeseries，只需要把语句里的`=`换成`!=`就可以：
 
-```plsql
+```
 node_network_receive_bytes_total{device!="eth1"}
 ```
 
 如何选择`device`以 `eth` 开头的所有 timeseries 呢？只需要使用正则表达式：
 
-```plsql
+```
 node_network_receive_bytes_total{device=~"eth.+"}
 ```
 
@@ -74,14 +74,14 @@ node_network_receive_bytes_total{device=~"eth.+"}
 
 要查询所有`device`不以 `eth` 开头的 timeseries，则只需要把 `=~` 替换为 `!~`：
 
-```plsql
+```
 node_network_receive_bytes_total{device!~"eth.+"}
 ```
 
 ## 使用多个Label过滤
 Label 过滤器可以被联合使用。举个例子：下面的查询语句只会返回`node42:9100`实例中`device`以`eth`开头的 timeseries。
 
-```plain
+```
 node_network_receive_bytes_total{instance="node42:9100", device=~"eth.+"}
 ```
 
@@ -89,21 +89,21 @@ node_network_receive_bytes_total{instance="node42:9100", device=~"eth.+"}
 
 那如果实现或运算逻辑呢？当前的 PromQL 是不支持或运算的，但大多数场景是可以通过正则表达式来解决的。举个例子，下面的查询语句就会返回 `device` 是 `eth1` 或 `lo` 的 timeseries。
 
-```plain
+```
 node_network_receive_bytes_total{device=~"eth1|lo"}
 ```
 
 ## 对 Metric 名称使用正则过滤
 有时我们可能需要同时返回多个监控指标。Metric 名称本质上也是一个普通的 Label 的值，其 Label 名是`__name__`。所以可以通过对 Metric 名使用正则的方式，来过滤出多个指标名的数据。举个例子，下面的查询语句会返回 `node_network_receive_bytes_total` 和`node_network_transmit_bytes_total`两个指标的 timeseries 数据：
 
-```plsql
+```
 {__name__=~"node_network_(receive|transmit)_bytes_total"}
 ```
 
 ## 对比最新数据和历史数据
 PromQL 支持查询历史数据，并将它与当前最新数据进行合并或对比。只需要给查询语句增加一个 [offset](https://prometheus.io/docs/prometheus/latest/querying/basics/#offset-modifier)。举个例子，下面的查询语句会返回一周前名字是`node_network_receive_bytes_total`的所有 timeseries：
 
-```plsql
+```
 node_network_receive_bytes_total offset 7d
 ```
 
@@ -111,7 +111,7 @@ The following query would return points where the current GC overhead exceeds ho
 
 下面的查询将返回当前GC开销超过一小时前GC开销1.5倍的数据点。
 
-```plsql
+```
 go_memstats_gc_cpu_fraction > 1.5 * (go_memstats_gc_cpu_fraction offset 1h)
 ```
 
@@ -124,7 +124,7 @@ go_memstats_gc_cpu_fraction > 1.5 * (go_memstats_gc_cpu_fraction offset 1h)
 
 这样的图表实用性几乎为零，因为它们显示的是难以解释的不断增长的Counter值，而我们想要的是网络带宽图表 —— 在图表左侧看到`MB/s`。PromQL有一个神奇的函数可以实现这个功能 —— `rate()`。它可以计算所有匹配时间序列的每秒速率：
 
-```plsql
+```
 rate(node_network_receive_bytes_total[5m])
 ```
 
@@ -136,7 +136,7 @@ rate(node_network_receive_bytes_total[5m])
 
 如果这看起来太复杂，那么就记住，这个时间区间越大，监控图就会约平滑；而更小的时间区间会让监控图变得更加跳跃（抖动）。VictoriaMetrics 对 PromQL 进行了扩展，这个时间区间`[d]`可以省略不写，缺省情况下就是2个数据点之间的间隔（通过`step`参数指定的），而`step`的默认缺省值是`5m`。
 
-```plsql
+```
 rate(node_network_receive_bytes_total)
 ```
 
@@ -159,13 +159,13 @@ PromQL 支持所有基础的算术运算
 
 这样就可以进行各种数据转换。比如，将`bytes/s`转换成`bits/s`：
 
-```plsql
+```
 rate(node_network_receive_bytes_total[5m]) * 8
 ```
 
 此外，也可以进行跨指标运算。例如，[该文中巨大的 Flux 查询](https://www.influxdata.com/blog/practical-uses-of-cross-measurement-math-in-flux/)就可以简单地用下面的 PromQL 语句表达：
 
-```plsql
+```
 co2 * (((temp_c + 273.15) * 1013.25) / (pressure * 298.15))
 ```
 
@@ -188,7 +188,7 @@ PromQL 支持下面几种[比较运算](https://prometheus.io/docs/prometheus/la
 
 这些运算符可以像算术运算符一样应用于任意 PromQL 表达式。 比较操作的结果是具有唯一匹配数据点的时间序列。 例如，以下查询将仅返回小于 2300 字节/秒的带宽
 
-```plsql
+```
 rate(node_network_receive_bytes_total[5m]) < 2300
 ```
 
@@ -198,7 +198,7 @@ rate(node_network_receive_bytes_total[5m]) < 2300
 
 比较运算符的结果可以使用 bool 修饰符进行修改：
 
-```plsql
+```
 rate(node_network_receive_bytes_total[5m]) < bool 2300
 ```
 
@@ -209,58 +209,58 @@ rate(node_network_receive_bytes_total[5m]) < bool 2300
 ## 分组聚合函数
 PromQL 支持对时间序列进行[分组聚合](https://prometheus.io/docs/prometheus/latest/querying/operators/#aggregation-operators)。时间序列按给定的标签集（Labels）进行分组，然后将给定的聚合函数应用于每个组。 例如，以下查询将返回按实例分组的所有网络接口的入口流量总和：
 
-```plsql
+```
 sum(rate(node_network_receive_bytes_total[5m])) by (instance)
 ```
 
 ## 使用 Gauge
 Gauge 是随时可能上下波动的时间序列。 例如，内存使用情况、温度或压力。 绘制仪表图表时，预计会看到图表上每个点的最小值、最大值、平均值和/或分位数值。PromQL 支持使用下面的函数完成这些：
 
-+ [min_over_time](https://docs.victoriametrics.com/MetricsQL.html#min_over_time)
-+ [max_over_time](https://docs.victoriametrics.com/MetricsQL.html#max_over_time)
-+ [avg_over_time](https://docs.victoriametrics.com/MetricsQL.html#avg_over_time)
-+ [quantile_over_time](https://docs.victoriametrics.com/MetricsQL.html#quantile_over_time)
++ [min_over_time]({{< relref "./functions/rollup.md#min_over_time" >}})
++ [max_over_time]({{< relref "./functions/rollup.md#max_over_time" >}})
++ [avg_over_time]({{< relref "./functions/rollup.md#avg_over_time" >}})
++ [quantile_over_time]({{< relref "./functions/rollup.md#quantile_over_time" >}})
 
 比如，以下查询将在图表上绘制每个时间序列的可用内存的最小值：
 
-```plsql
+```
 min_over_time(node_memory_MemFree_bytes[5m])
 ```
 
-VictoriaMetrics 为 PromQL 增添了 [rollup_*](https://docs.victoriametrics.com/MetricsQL.html#rollup) 函数，当处理 Gauge 时，它会自动返回 `min`, `max` 和 `avg` 值，例如:
+VictoriaMetrics 为 PromQL 增添了 [rollup_*]({{< relref "./functions/rollup.md#rollup" >}}) 函数，当处理 Gauge 时，它会自动返回 `min`, `max` 和 `avg` 值，例如:
 
-```plsql
+```
 rollup(node_memory_MemFree_bytes)
 ```
 
 ## 操纵Label
 PromQL 提供了 2 个函数用于 Label 修改，丰富、删除或创建：
 
-+ [label_replace](https://docs.victoriametrics.com/MetricsQL.html#label_replace)
-+ [label_join](https://docs.victoriametrics.com/MetricsQL.html#label_join)
++ [label_replace]({{< relref "./functions/label.md#label_replace" >}})
++ [label_join]({{< relref "./functions/label.md#label_join" >}})
 
 尽管这些函数使用起来很困难，但它们允许对所选时间序列上的标签进行强大的动态操作。 label_ 函数的主要用例是将标签转换为所需的值。
 
-VictoriaMetrics 提供了[更丰富的而方便的 Label 改写方法](https://docs.victoriametrics.com/MetricsQL.html#label-manipulation-functions)了扩展了这方面的能力。
+VictoriaMetrics 提供了[更丰富的而方便的 Label 改写方法]({{< relref "./functions/label.md#label-manipulation-functions" >}})了扩展了这方面的能力。
 
-+ [label_set](https://docs.victoriametrics.com/MetricsQL.html#label_set) — 为时间序列额外增加 Label
-+ [label_del](https://docs.victoriametrics.com/MetricsQL.html#label_del) — 从时间序列中删除指定的 Label
-+ [label_keep](https://docs.victoriametrics.com/MetricsQL.html#label_keep) — 从时间序列中保留指定的 Label，而删除其他所有 Label
-+ [label_copy](https://docs.victoriametrics.com/MetricsQL.html#label_copy) — 把某个 Label Values 复制成其他 Label
-+ [label_move](https://docs.victoriametrics.com/MetricsQL.html#label_move)— 重命名 Label Name
-+ [label_transform](https://docs.victoriametrics.com/MetricsQL.html#label_transform) — 将所有匹配了正则表达式的子串，替换到模板中。
-+ [label_value](https://docs.victoriametrics.com/MetricsQL.html#label_value) — 将规定 Label 的 Value 转换为数字，作为 Value 返回。
++ [label_set]({{< relref "./functions/label.md#label_set" >}}) — 为时间序列额外增加 Label
++ [label_del]({{< relref "./functions/label.md#label_del" >}}) — 从时间序列中删除指定的 Label
++ [label_keep]({{< relref "./functions/label.md#label_keep" >}}) — 从时间序列中保留指定的 Label，而删除其他所有 Label
++ [label_copy]({{< relref "./functions/label.md#label_copy" >}}) — 把某个 Label Values 复制成其他 Label
++ [label_move]({{< relref "./functions/label.md#label_move" >}})— 重命名 Label Name
++ [label_transform]({{< relref "./functions/label.md#label_transform" >}}) — 将所有匹配了正则表达式的子串，替换到模板中。
++ [label_value]({{< relref "./functions/label.md#label_value" >}}) — 将规定 Label 的 Value 转换为数字，作为 Value 返回。
 
 ## 一个查询返回多个结果
 有时候我们需要使用一个 PromQl 语句查询多个时间序列结果。可以使用 [or](https://prometheus.io/docs/prometheus/latest/querying/operators/#logical-set-binary-operators) 操作符。比如，下面的语句将会返回名为 `metric1`、`metric2` 和 `metric3` 的时序数据结果：
 
-```plsql
+```
 metric1 or metric2 or metric3
 ```
 
 VictoriaMetrics 简化了语句的写法，只需要把这些指标用括号（）包围起来：
 
-```plsql
+```
 (metric1, metric2, metric3)
 ```
 
@@ -268,7 +268,7 @@ VictoriaMetrics 简化了语句的写法，只需要把这些指标用括号（�
 
 使用组合表达式 or 时候时，经常会掉进一个陷阱：具有重复标签集（Label Set）的数据结果将被跳过。 例如，以下查询将跳过 sum(b)，因为 sum(a) 和 sum(b) 具有相同的标签集（它们根本没有标签）：
 
-```plsql
+```
 sum(a) or sum(b)
 ```
 
@@ -280,7 +280,7 @@ PromQL 是一种简单但功能强大的时间序列数据库查询语言。 它
 + 本文没有提及很多[函数](https://prometheus.io/docs/prometheus/latest/querying/functions/)和[逻辑运算符](https://prometheus.io/docs/prometheus/latest/querying/operators/#logical-set-binary-operators) 。
 + 本文没有包含[子查询](https://medium.com/@valyala/prometheus-subqueries-in-victoriametrics-9b1492b720b3)内容。
 + 本文没有包含查询模板(通过 `CTE` or [WITH templates](https://victoriametrics.com/promql/expand-with-exprs)), 它可以大大简化复杂的 PromQL 语句。
-+ 本味没有提及很多 VictoriaMetrics 所支持的 [MetricsQL](https://docs.victoriametrics.com/MetricsQL.html) 诸多有用特性。
++ 本味没有提及很多 VictoriaMetrics 所支持的 [MetricsQL]({{< relref "./functions/label.md" >}}) 诸多有用特性。
 
 我建议可以通过这个[备忘单](https://promlabs.com/promql-cheat-sheet/)来学习 PromQL。
 

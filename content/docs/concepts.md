@@ -96,9 +96,9 @@ requests_total{path="/", code="200"} 123 4567890
 
 这里有一个代表请求总数的 timeseries`{path="/health", code="200"}`，每30秒更新一次值。这意味着它的分辨率也是30秒。
 
-在 [Pull 模式]({{< relref "write#pull" >}})中，分辨率等于抓取间隔，并由监控系统（服务器）控制。对于 [Push 模式]({{< relref "write#push" >}})，分辨率是样本时间戳之间的间隔，并由客户端（指标收集器）控制。
+在 [Pull 模式]({{< relref "write/model.md#pull" >}})中，分辨率等于抓取间隔，并由监控系统（服务器）控制。对于 [Push 模式]({{< relref "write/model.md#push" >}})，分辨率是样本时间戳之间的间隔，并由客户端（指标收集器）控制。
 
-尽量保持时间序列的分辨率一致，因为某些[MetricsQL]({{< relref "query/metricsql" >}}) 函数可能期望如此，以免计算出『奇怪』的结果。
+尽量保持时间序列的分辨率一致，因为某些 [MetricsQL]({{< relref "query/metricsql" >}}) 函数可能期望如此，以免计算出『奇怪』的结果。
 
 ## Metric 类型 {#metrics}
 在 VictoriaMetrics 内部，并 metric type 的概念。此概念存在是为了帮助用户理解度量是如何测量的。有四种常见的度量类型。

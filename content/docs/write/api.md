@@ -9,7 +9,7 @@ weight: 10
 
 写入 API 的 URL 格式为:
 
-```sh
+```
 http://<vminsert>:8480/insert/<accountID>/<suffix>
 ```
 
@@ -24,17 +24,19 @@ http://<vminsert>:8480/insert/<accountID>/<suffix>
 ## 导入
 ### JSON
 
-单机版：
+{{< tabs items="单机版,集群版" >}}
+  {{< tab >}}
+  ```sh
+  curl -H 'Content-Type: application/json' --data-binary "@filename.json" -X POST http://localhost:8428/api/v1/import
+  ```
+  {{< /tab >}}
+  {{< tab >}}
+  ```sh
+  curl -H 'Content-Type: application/json' --data-binary "@filename.json" -X POST http://<vminsert>:8480/insert/0/prometheus/api/v1/import
+  ```
+  {{< /tab >}}
+{{< /tabs >}}
 
-```sh
-curl -H 'Content-Type: application/json' --data-binary "@filename.json" -X POST http://localhost:8428/api/v1/import
-```
-
-集群版：
-
-```sh
-curl -H 'Content-Type: application/json' --data-binary "@filename.json" -X POST http://<vminsert>:8480/insert/0/prometheus/api/v1/import
-```
 
 JSON 格式如下所示，从`/api/v1/export`导出的就是这种格式:
 ```plain
@@ -44,30 +46,35 @@ JSON 格式如下所示，从`/api/v1/export`导出的就是这种格式:
 
 ### CSV
 
+{{< tabs items="单机版,集群版" >}}
+  {{< tab >}}
 ```sh
 curl -d "GOOG,1.23,4.56,NYSE" 'http://localhost:8428/api/v1/import/csv?format=2:metric:ask,3:metric:bid,1:label:ticker,4:label:market'
 ```
-
-集群版：
-
+  {{< /tab >}}
+  {{< tab >}}
 ```sh
 curl -d "GOOG,1.23,4.56,NYSE" 'http://<vminsert>:8480/insert/0/prometheus/api/v1/import/csv?format=2:metric:ask,3:metric:bid,1:label:ticker,4:label:market'
 ```
+  {{< /tab >}}
+{{< /tabs >}}
+
 
 ### Native
 导入二进制数据，该二进制数据是通过`/api/v1/export/native`接口导出的。
 
-单机版：
-
+{{< tabs items="单机版,集群版" >}}
+  {{< tab >}}
 ```sh
 curl -X POST http://localhost:8428/api/v1/import/native -T filename.bin
 ```
-
-集群版：
-
+  {{< /tab >}}
+  {{< tab >}}
 ```sh
 curl -X POST http://<vminsert>:8480/insert/0/prometheus/api/v1/import/native -T filename.bin
 ```
+  {{< /tab >}}
+{{< /tabs >}}
 
 ## Prometheus
 
@@ -75,70 +82,84 @@ curl -X POST http://<vminsert>:8480/insert/0/prometheus/api/v1/import/native -T 
 
 想 VictoriaMetrics 中导入 Prometheus 文本格式指标：
 
-单机版：
-
+{{< tabs items="单机版,集群版" >}}
+  {{< tab >}}
 ```sh
 curl -d 'metric_name{foo="bar"} 123' -X POST http://localhost:8428/api/v1/import/prometheus
 ```
-
-集群版：
-
+  {{< /tab >}}
+  {{< tab >}}
 ```sh
 curl -d 'metric_name{foo="bar"} 123' -X POST http://<vminsert>:8480/insert/0/prometheus/api/v1/import/prometheus
 ```
+  {{< /tab >}}
+{{< /tabs >}}
 
 ### Remote Write
 
 `prometheus` and `prometheus/api/v1/write` - 处理 Prometheus Remote Write 数据
 
-单机版：
+{{< tabs items="单机版,集群版" >}}
+  {{< tab >}}
 ```sh
 http://localhost:8428/prometheus
 # 或
 http://localhost:8428/prometheus/api/v1/write
 ```
-集群版：
+  {{< /tab >}}
+  {{< tab >}}
 ```sh
 http://<vminsert>:8480/insert/0/prometheus
 # 或
 http://<vminsert>:8480/insert/0/prometheus/api/v1/write
 ```
+  {{< /tab >}}
+{{< /tabs >}}
+
 
 ## OpenTelemetry
 
 VictoriaMetrics 不支持 OpenTelemetry 的 Stream 写入，只支持单次的 Protobuf 编码的 HTTP 写入。
 
-单机版：
+
+{{< tabs items="单机版,集群版" >}}
+  {{< tab >}}
 ```sh
 http://localhost:8428/opentelemetry/v1/push
 ```
-
-集群版：
+  {{< /tab >}}
+  {{< tab >}}
 ```sh
 http://<vminsert>:8480/insert/0/opentelemetry/v1/push
 ```
+  {{< /tab >}}
+{{< /tabs >}}
+
 
 ## DataDog
 
 VictoriaMetrics 支持接收 [DataDog agent](https://docs.datadoghq.com/agent/) 发送出的数据, [DogStatsD](https://docs.datadoghq.com/developers/dogstatsd/) 和 [DataDog Lambda Extension](https://docs.datadoghq.com/serverless/libraries_integrations/extension/)， 使用`/datadog/api/v2/series`『submit metrics』或使用`/datadog/api/beta/sketches`『sketches』。
 
-单机版：
-
+{{< tabs items="单机版,集群版" >}}
+  {{< tab >}}
 ```sh
-http://victoriametrics:8428/datadog
+http://localhost:8428/datadog
 ```
-
-集群版：
+  {{< /tab >}}
+  {{< tab >}}
 ```sh
-http://vminsert:8480/insert/0/datadog
+http://<vminsert>:8480/insert/0/datadog
 ```
+  {{< /tab >}}
+{{< /tabs >}}
+
 
 ### V1 Format
 
 `/datadog/api/v1/series`
 
-单机版：
-
+{{< tabs items="单机版,集群版" >}}
+  {{< tab >}}
 ```sh
 echo '
 {
@@ -160,9 +181,8 @@ echo '
 }
 ' | curl -X POST -H 'Content-Type: application/json' --data-binary @- http://localhost:8428/datadog/api/v1/series
 ```
-
-集群版：
-
+  {{< /tab >}}
+  {{< tab >}}
 ```sh
 echo '
 {
@@ -183,15 +203,16 @@ echo '
   ]
 }
 ' | curl -X POST -H 'Content-Type: application/json' --data-binary @- 'http://<vminsert>:8480/insert/0/datadog/api/v1/series'
-
 ```
+  {{< /tab >}}
+{{< /tabs >}}
 
 ### V2 Format
 
 `/datadog/api/v2/series`
 
-单机版：
-
+{{< tabs items="单机版,集群版" >}}
+  {{< tab >}}
 ```sh
 echo '
 {
@@ -217,9 +238,8 @@ echo '
 }
 ' | curl -X POST -H 'Content-Type: application/json' --data-binary @- http://localhost:8428/datadog/api/v2/series
 ```
-
-集群版：
-
+  {{< /tab >}}
+  {{< tab >}}
 ```sh
 echo '
 {
@@ -245,6 +265,10 @@ echo '
 }
 ' | curl -X POST -H 'Content-Type: application/json' --data-binary @- 'http://<vminsert>:8480/insert/0/datadog/api/v2/series'
 ```
+
+  {{< /tab >}}
+{{< /tabs >}}
+
 
 ### 其他
 #### DataDog Agent
@@ -313,32 +337,45 @@ DataDog agent 会将配置的Label发送到未注明的地址 - `/datadog/intake
 
 ## InfluxDB
 
+### V2 Format
+
+{{< tabs items="单机版,集群版" >}}
+  {{< tab >}}
+```sh
+curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST http://localhost:8428/api/v2/write
+```
+  {{< /tab >}}
+  {{< tab >}}
+```sh
+curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST http://<vminsert>:8480/insert/0/influx/api/v2/write
+```
+  {{< /tab >}}
+{{< /tabs >}}
+
 
 ### V1 Format
 
 单机版：
 
 ```sh
-curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST http://localhost:8428/api/v2/write
 ```
 集群版：
 
 ```sh
-curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST http://<vminsert>:8480/insert/0/influx/api/v2/write
 ```
 
-### V2 Format
-
-单机版：
-
+{{< tabs items="单机版,集群版" >}}
+  {{< tab >}}
 ```sh
 curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST http://localhost:8428/write
 ```
-集群版：
-
+  {{< /tab >}}
+  {{< tab >}}
 ```sh
 curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST http://<vminsert>:8480/insert/0/influx/write
 ```
+  {{< /tab >}}
+{{< /tabs >}}
 
 ### [Telegraf](https://www.influxdata.com/time-series-platform/telegraf/)
 
@@ -397,42 +434,53 @@ curl -G 'http://localhost:8428/api/v1/export' -d 'match={__name__=~"measurement_
 
 使用`-opentsdbListenAddr`参数开启 OpenTSDB 数据接收器。
 
-单机版：
+{{< tabs items="单机版,集群版" >}}
+  {{< tab >}}
 ```sh
 echo "put foo.bar.baz `date +%s` 123 tag1=value1 tag2=value2" | nc -N localhost 4242
 ```
-集群版：
+  {{< /tab >}}
+  {{< tab >}}
 ```sh
 echo "put foo.bar.baz `date +%s` 123  tag1=value1 tag2=value2" | nc -N http://<vminsert> 4242
 ```
+  {{< /tab >}}
+{{< /tabs >}}
+
 
 ### HTTP
 
 使用`-opentsdbHTTPListenAddr`参数开启 OpenTSDB 数据 HTT P接收器。
 
-
-单机版：
+{{< tabs items="单机版,集群版" >}}
+  {{< tab >}}
 ```sh
 curl -H 'Content-Type: application/json' -d '[{"metric":"foo","value":45.34},{"metric":"bar","value":43}]' http://localhost:4242/api/put
 ```
-集群版：
+  {{< /tab >}}
+  {{< tab >}}
 ```sh
 curl -H 'Content-Type: application/json' -d '[{"metric":"foo","value":45.34},{"metric":"bar","value":43}]' http://<vminsert>:8480/insert/42/opentsdb/api/put
 ```
+  {{< /tab >}}
+{{< /tabs >}}
 
 ## Graphite
 
 使用`-graphiteListenAddr`参数开启 Graphite 数据接收器。
 
-单机版：
+{{< tabs items="单机版,集群版" >}}
+  {{< tab >}}
 ```sh
 echo "foo.bar.baz;tag1=value1;tag2=value2 123 `date +%s`" | nc -N localhost 2003
 ```
-
-集群版：
+  {{< /tab >}}
+  {{< tab >}}
 ```sh
 echo "foo.bar.baz;tag1=value1;tag2=value2 123 `date +%s`" | nc -N http://<vminsert> 2003
 ```
+  {{< /tab >}}
+{{< /tabs >}}
 
 ### StatD
 
