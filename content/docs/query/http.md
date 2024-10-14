@@ -3,10 +3,9 @@ title: 查询 API
 weight: 5
 ---
 
-## 单机版
-### Prometheus 查询接口 {#single-prometheus}
+## Prometheus 查询接口 {#single-prometheus}
 
-#### Instance Query
+### Instant Query（即时查询） {#instant-query}
 
 Instant Query 在指定的时间点上执行查询：
 ```
@@ -15,24 +14,26 @@ GET | POST /api/v1/query?query=...&time=...&step=...&timeout=...
 
 参数：
 
-- query - MetricsQL expression.
-- time - optional, timestamp in second precision to evaluate the query at. If omitted, time is set to now() (current timestamp). The time param can be specified in multiple allowed formats.
-- step - optional interval for searching for raw samples in the past when executing the query (used when a sample is missing at the specified time). For example, the request /api/v1/query?query=up&step=1m looks for the last written raw sample for the metric up in the interval between now() and now()-1m. If omitted, step is set to 5m (5 minutes) by default.
-- timeout - optional query timeout. For example, timeout=5s. Query is canceled when the timeout is reached. By default the timeout is set to the value of -search.maxQueryDuration command-line flag passed to single-node VictoriaMetrics or to vmselect component of VictoriaMetrics cluster.
+- `query` - MetricsQL 查询语句.
+- `time` - 可选，以秒为精度来执行查询。如果省略，时间将设置为`now()`(当前时间戳)。`time`参数可以用[多种允许的格式]({{< relref "./_index.md#timestamp" >}})指定。
+- `step` - 可选，在执行查询时，用于在过去搜索原始样本的[间隔](https://prometheus.io/docs/prometheus/latest/querying/basics/#time-durations)（当在指定时间缺少样本时使用）。例如，请求 `/api/v1/query?query=up&step=1m` 会在 `now()` 和 `now()-1m` 之间的间隔内查找指标`up`的最近写入的数据点。如果省略，`step` 默认设置为`5m`(5分钟)。
+- `timeout` - 可选，查询超时时间。例如，`timeout=5s` 会在`5s`后取消请求。默认的超时时间会使用系统参数`-search.maxQueryDuration`指定的值。 该参数在单机版 VictoriaMetrics 和 vmselect 组件都有支持。
 
 The result of Instant query is a list of time series matching the filter in query expression. Each returned series contains exactly one (timestamp, value) entry, where timestamp equals to the time query arg, while the value contains query result at the requested time.
 
-To understand how instant queries work, let’s begin with a data sample:
+即时查询的结果是一个符合查询表达式中过滤条件的[时间序列]({{< relref "concepts.md#timeseries" >}})列表。每个返回的序列都包含一个（时间戳，值）条目，其中时间戳等于查询参数中的时间，而值包含请求时间的查询结果。
+
+要了解即时查询的工作原理，让我们从一个原始数据样本开始：
 
 ```
 foo_bar 1.00 1652169600000 # 2022-05-10 10:00:00
 foo_bar 2.00 1652169660000 # 2022-05-10 10:01:00
 foo_bar 3.00 1652169720000 # 2022-05-10 10:02:00
-foo_bar 5.00 1652169840000 # 2022-05-10 10:04:00, one point missed
-foo_bar 5.50 1652169960000 # 2022-05-10 10:06:00, one point missed
+foo_bar 5.00 1652169840000 # 2022-05-10 10:04:00, 丢了 1 个数据点
+foo_bar 5.50 1652169960000 # 2022-05-10 10:06:00, 丢了 1 个数据点
 foo_bar 5.50 1652170020000 # 2022-05-10 10:07:00
 foo_bar 4.00 1652170080000 # 2022-05-10 10:08:00
-foo_bar 3.50 1652170260000 # 2022-05-10 10:11:00, two points missed
+foo_bar 3.50 1652170260000 # 2022-05-10 10:11:00, 丢了 2 个数据点
 foo_bar 3.25 1652170320000 # 2022-05-10 10:12:00
 foo_bar 3.00 1652170380000 # 2022-05-10 10:13:00
 foo_bar 2.00 1652170440000 # 2022-05-10 10:14:00
@@ -40,11 +41,12 @@ foo_bar 1.00 1652170500000 # 2022-05-10 10:15:00
 foo_bar 4.00 1652170560000 # 2022-05-10 10:16:00
 ```
 
-The data above contains a list of samples for the foo_bar time series with time intervals between samples ranging from 1m to 3m. If we plot this data sample on the graph, it will have the following form:
+上面的数据包含了`foo_bar`时间序列的样本列表，样本之间的时间间隔从 1m 到 3m 不等。如果我们将这个数据样本绘制在图表上，它将具有以下形式：
 
 ![](https://docs.victoriametrics.com/keyconcepts/data_samples.webp)
 
 To get the value of the foo_bar series at some specific moment of time, for example 2022-05-10 10:03:00, in VictoriaMetrics we need to issue an instant query：
+为了获取`foo_bar`这个时间序列在特定时间的数值，比如`2022-05-10 10:03:00`，在 VictoriaMetrics 中我们使用即时查询：
 
 ```sh
 curl "http://<victoria-metrics-addr>/api/v1/query?query=foo_bar&time=2022-05-10T10:03:00.000Z"
@@ -69,8 +71,7 @@ curl "http://<victoria-metrics-addr>/api/v1/query?query=foo_bar&time=2022-05-10T
   }
 }
 ```
-
-In response, VictoriaMetrics returns a single sample-timestamp pair with a value of 3 for the series foo_bar at the given moment in time 2022-05-10 10:03. But, if we take a look at the original data sample again, we’ll see that there is no raw sample at 2022-05-10 10:03. When there is no raw sample at the requested timestamp, VictoriaMetrics will try to locate the closest sample before the requested timestamp：
+作为返回值，VictoriaMetrics 返回了一个值为 3 的 (时间戳, 样本值) 数据，表示在给定时间`2022-05-10 10:03:00` 的 `foo_bar` 序列。但是，如果我们再次查看原始数据样本，会发现`2022-05-10 10:03:00` 并没有原始样本数据。当请求的时间戳没有原始样本时，，VictoriaMetrics 会尝试找到请求时间戳之前最近的样本：
 
 ![](https://docs.victoriametrics.com/keyconcepts/instant_query.webp)
 
@@ -83,7 +84,16 @@ Instant queries can return multiple time series, but always only one data sample
 - For alerts and recording rules evaluation;
 - Plotting Stat or Table panels in Grafana.
 
-#### Range Query
+VictoriaMetrics 尝试寻找缺失样本数据替代品的时间范围默认是`5m`(5分钟)，可以通过`step`参数自定义。
+
+即时查询可以返回多个时间序列，但每个序列始终只有一个数据样本。即时查询用于以下场景：
+
+- 获取最后写入的值；
+- 用于`count_over_time`等汇总函数；
+- 用于警报规则；
+- 在 Grafana 中绘制 Stat 或 Table 面板。
+
+### Range Query
 Range query executes the query expression at the given [start…end] time range with the given step:
 
 ```
