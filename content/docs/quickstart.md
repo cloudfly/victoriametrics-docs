@@ -226,7 +226,11 @@ curl "http://localhost:8428/api/v1/query_range?query=measurement_field1&step=1m&
 
 更多数据查询详情，请[参考这里]({{< relref "query" >}})。
 
-## 扩展阅读
+
+## 监控告警
+
+
+
 
 ### 监控 {#monitoring}
 
@@ -238,7 +242,7 @@ curl "http://localhost:8428/api/v1/query_range?query=measurement_field1&step=1m&
 VictoriaMetrics 团队为核心组件准备了一系列的 [Grafana Dashboard](https://grafana.com/orgs/victoriametrics/dashboards)。每个 Dashboard 中都包含很多有用的信息和提示。建议使用安装这些 Dashboard 并保持更新。
 
 {{< callout type="info" >}}
-  有一个经验是：使用另外一套独立的监控系统，去监控生产环境的 VictoriaMetrics。而不是让它自己监控自己。
+  注：建议使用另外一套独立的监控系统，去监控生产环境的 VictoriaMetrics。而不是让它自己监控自己。
 {{< /callout >}}
 
 更多详细内容请参考[这篇文章](https://victoriametrics.com/blog/victoriametrics-monitoring)。
@@ -247,29 +251,29 @@ VictoriaMetrics 团队为核心组件准备了一系列的 [Grafana Dashboard](h
 ### 告警
 我们不可能一直盯着监控图表来跟踪所有变化，这就是我们需要告警的原因。[vmalert]({{< relref "components/vmalert" >}}) 可以基于 PromQL 或 MetricsQL 查询语句创建一系列条件，当条件触发时候会发送自动发送通知。
 
-### 发布到生产
+## 发布到生产
 
 如果要在生产环境真正使用 VictoriaMetrics，我们有以下一些建议。
 
-#### 容量规划
+### 容量规划
 请阅读[集群版]({{< relref "ops/cluster#capacity" >}})和[单机版]({{< relref "ops/single.md#capacity" >}})文档中的容量规划部分。
 
 容量规划需要依赖于[监控](#monitoring)，所以你应该首先配置下监控。搞清楚资源使用情况以及VictoriaMetrics的性能的前提是，需要知道[活跃时序系列]({{< relref "faq.md#what-is-active-timeseries" >}})，[高流失率]({{< relref "faq.md#what-is-high-churn-rate" >}})，[基数]({{< relref "faq.md#what-is-high-cadinality" >}})，[慢写入]({{< relref "faq.md#what-is-slow-insert" >}})这些基础技术概念，他们都会在 [Grafana Dashboard](https://grafana.com/orgs/victoriametrics/dashboards) 中呈现。
 
-#### 数据安全
+### 数据安全
 建议阅读下面几篇内容：
 
 + [多副本和数据可靠性]({{< relref "ops/single.md#replication" >}})
 + [Why replication doesn't save from disaster?](https://valyala.medium.com/speeding-up-backups-for-big-time-series-databases-533c1a927883)
 + [数据备份]({{< relref "ops/single.md#backup" >}})
 
-#### 配置限制
+### 配置限制
 为了避免资源使用过度或性能下降，必须设置限制：
 
 + [资源使用限制]({{< relref "faq.md#how-to-limit-memory-usage" >}})
 + [基数限制]({{< relref "ops/single.md#cadinality-limit" >}})
 
-#### 安全建议
+### 安全建议
 + [单机版安全建议]({{< relref "ops/single.md#security" >}})
 + [集群版安全建议]({{< relref "ops/cluster#security" >}})
 

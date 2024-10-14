@@ -3,76 +3,192 @@ title: 写入 API
 weight: 10
 ---
 
-## 单机版
+## 单机版和集群版的区别
 
-### 采集 Prometheus exporters（比如 [node-exporter](https://github.com/prometheus/node_exporter)）
+集群版和单机版在 API URL 上的主要区别，就是集群版在 URL Path 上对查询和写入都增加了前缀，用`insert`和`select`区分了查询和写入 Path，同时支持了租户。
 
-VictoriaMetrics 可作为 Prometheus 的直接替代品，用于根据规范采集在`prometheus.yml`配置文件中配置的目标。 只需将`-promscrape.config`命令行参数设置为`prometheus.yml`配置文件的路径，VictoriaMetrics 就会开始抓取配置的目标。 如果所提供的配置文件包含不支持的选项，那么要么从文件中删除这些配置项，要么将`-promscrape.config.strictParse=false`命令行参数传递给 VictoriaMetrics，这样它就会忽略不支持的配置项。
+写入 API 的 URL 格式为:
 
-`-promscrape.config`指向的文件可能包含`%{ENV_VAR}`占位符，这些占位符会被相应的`ENV_VAR`环境变量值取代。
+```sh
+http://<vminsert>:8480/insert/<accountID>/<suffix>
+```
 
-### DataDog
+这里：
+
+- `<accountID>` 是一个32位整型数字，代表数据写入的控件（即租户）。
+  - 它也可以设置为`accountID:projectID`，这里的projectID也是一个32位整型。如果projectID没有指定，则默认为0。更多内容请阅读[多租户]({{< relref "../ops/cluster.md#tenant" >}})。
+  - `<accountID>`也可以写成字符串`multitenant`，例如`http://<vminsert>:8480/insert/multitenant/<suffix>`，使用这种 URL 写入的数据，系统会从数据 Label 中寻找`vm_account_id`和`vm_project_id`信息，将 Label 值作为租户信息。更多内容请阅读[多租户]({{< relref "../ops/cluster.md#tenant" >}})
+- `<suffix>` 就是单机版中的 URL Path，下面会一一给出。
+
+
+## 导入
+### JSON
+
+单机版：
+
+```sh
+curl -H 'Content-Type: application/json' --data-binary "@filename.json" -X POST http://localhost:8428/api/v1/import
+```
+
+集群版：
+
+```sh
+curl -H 'Content-Type: application/json' --data-binary "@filename.json" -X POST http://<vminsert>:8480/insert/0/prometheus/api/v1/import
+```
+
+JSON 格式如下所示，从`/api/v1/export`导出的就是这种格式:
+```plain
+{"metric":{"__name__":"up","job":"node_exporter","instance":"localhost:9100"},"values":[0,0,0],"timestamps":[1549891472010,1549891487724,1549891503438]}
+{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"values":[1,1,1],"timestamps":[1549891461511,1549891476511,1549891491511]}
+```
+
+### CSV
+
+```sh
+curl -d "GOOG,1.23,4.56,NYSE" 'http://localhost:8428/api/v1/import/csv?format=2:metric:ask,3:metric:bid,1:label:ticker,4:label:market'
+```
+
+集群版：
+
+```sh
+curl -d "GOOG,1.23,4.56,NYSE" 'http://<vminsert>:8480/insert/0/prometheus/api/v1/import/csv?format=2:metric:ask,3:metric:bid,1:label:ticker,4:label:market'
+```
+
+### Native
+导入二进制数据，该二进制数据是通过`/api/v1/export/native`接口导出的。
+
+单机版：
+
+```sh
+curl -X POST http://localhost:8428/api/v1/import/native -T filename.bin
+```
+
+集群版：
+
+```sh
+curl -X POST http://<vminsert>:8480/insert/0/prometheus/api/v1/import/native -T filename.bin
+```
+
+## Prometheus
+
+### Exposition Text Format {#exposition}
+
+想 VictoriaMetrics 中导入 Prometheus 文本格式指标：
+
+单机版：
+
+```sh
+curl -d 'metric_name{foo="bar"} 123' -X POST http://localhost:8428/api/v1/import/prometheus
+```
+
+集群版：
+
+```sh
+curl -d 'metric_name{foo="bar"} 123' -X POST http://<vminsert>:8480/insert/0/prometheus/api/v1/import/prometheus
+```
+
+### Remote Write
+
+`prometheus` and `prometheus/api/v1/write` - 处理 Prometheus Remote Write 数据
+
+单机版：
+```sh
+http://localhost:8428/prometheus
+# 或
+http://localhost:8428/prometheus/api/v1/write
+```
+集群版：
+```sh
+http://<vminsert>:8480/insert/0/prometheus
+# 或
+http://<vminsert>:8480/insert/0/prometheus/api/v1/write
+```
+
+## OpenTelemetry
+
+VictoriaMetrics 不支持 OpenTelemetry 的 Stream 写入，只支持单次的 Protobuf 编码的 HTTP 写入。
+
+单机版：
+```sh
+http://localhost:8428/opentelemetry/v1/push
+```
+
+集群版：
+```sh
+http://<vminsert>:8480/insert/0/opentelemetry/v1/push
+```
+
+## DataDog
 
 VictoriaMetrics 支持接收 [DataDog agent](https://docs.datadoghq.com/agent/) 发送出的数据, [DogStatsD](https://docs.datadoghq.com/developers/dogstatsd/) 和 [DataDog Lambda Extension](https://docs.datadoghq.com/serverless/libraries_integrations/extension/)， 使用`/datadog/api/v2/series`『submit metrics』或使用`/datadog/api/beta/sketches`『sketches』。
 
-#### 发送 metrics 到 VictoriaMetrics #
-
-DataDog agent 支持通过环境变量`DD_DD_URL`配置发送地址，或者在配置文件的`dd_url`部分配置
-
-![](https://docs.victoriametrics.com/README_sending_DD_metrics_to_VM.webp)
-
-
-使用环境变量配置发送地址：
+单机版：
 
 ```sh
-DD_DD_URL=http://victoriametrics:8428/datadog
+http://victoriametrics:8428/datadog
 ```
 
-在配置文件中配置发送地址，只需在配置文件中加入下面一行内容：
-
-```yaml
-dd_url: http://victoriametrics:8428/datadog
+集群版：
+```sh
+http://vminsert:8480/insert/0/datadog
 ```
 
-[vmagent]({{< relref "../components/vmagent.md" >}}) 组件也可以接收 DataDog metrics 数据格式。
+### V1 Format
 
-#### 发送 metrics 到 DataDog 和 VictoriaMetrics
+`/datadog/api/v1/series`
 
-DataDog 允许通过环境变量`DD_ADDITIONAL_ENDPOINTS`添加额外的地址实现[数据双发](https://docs.datadoghq.com/agent/guide/dual-shipping/)，让它把 metrics 发送给其他额外的地址，也可以通过配置文件中的`additional_endpoints`配置项设置。
-
-![](https://docs.victoriametrics.com/README_sending_DD_metrics_to_VM_and_DD.webp)
-
-使用环境变量配置额外的发送地址：
+单机版：
 
 ```sh
-DD_ADDITIONAL_ENDPOINTS='{\"http://victoriametrics:8428/datadog\": [\"apikey\"]}'
+echo '
+{
+  "series": [
+    {
+      "host": "test.example.com",
+      "interval": 20,
+      "metric": "system.load.1",
+      "points": [[
+        0,
+        0.5
+      ]],
+      "tags": [
+        "environment:test"
+      ],
+      "type": "rate"
+    }
+  ]
+}
+' | curl -X POST -H 'Content-Type: application/json' --data-binary @- http://localhost:8428/datadog/api/v1/series
 ```
 
-使用[配置文件](https://docs.datadoghq.com/agent/guide/agent-configuration-files)设置额外的发送地址：
+集群版：
 
-```yaml
-additional_endpoints:
-  "http://victoriametrics:8428/datadog":
-  - apikey
+```sh
+echo '
+{
+  "series": [
+    {
+      "host": "test.example.com",
+      "interval": 20,
+      "metric": "system.load.1",
+      "points": [[
+        0,
+        0.5
+      ]],
+      "tags": [
+        "environment:test"
+      ],
+      "type": "rate"
+    }
+  ]
+}
+' | curl -X POST -H 'Content-Type: application/json' --data-binary @- 'http://<vminsert>:8480/insert/0/datadog/api/v1/series'
+
 ```
 
-#### 使用 Serverless DataDog 插件发送 metrics
+### V2 Format
 
-禁用日志能力(因为 VictoriaMetrics 不支持日志写入) ，且在`serverless.yaml`中自定义发送地址：
-
-```yaml
-custom:
-  datadog:
-    enableDDLogs: false             # Disabled not supported DD logs
-    apiKey: fakekey                 # Set any key, otherwise plugin fails
-provider:
-  environment:
-    DD_DD_URL: <<vm-url>>/datadog   # VictoriaMetrics endpoint for DataDog
-```
-
-#### 通过 cURL 发送
-
-URL 地址是`/datadog/api/v2/series`
+`/datadog/api/v2/series`
 
 单机版：
 
@@ -102,8 +218,8 @@ echo '
 ' | curl -X POST -H 'Content-Type: application/json' --data-binary @- http://localhost:8428/datadog/api/v2/series
 ```
 
-
 集群版：
+
 ```sh
 echo '
 {
@@ -130,6 +246,62 @@ echo '
 ' | curl -X POST -H 'Content-Type: application/json' --data-binary @- 'http://<vminsert>:8480/insert/0/datadog/api/v2/series'
 ```
 
+### 其他
+#### DataDog Agent
+
+DataDog agent 支持通过环境变量`DD_DD_URL`配置发送地址，或者在配置文件的`dd_url`部分配置
+
+![](https://docs.victoriametrics.com/README_sending_DD_metrics_to_VM.webp)
+
+
+使用环境变量配置发送地址：
+
+```sh
+DD_DD_URL=http://victoriametrics:8428/datadog
+```
+
+在配置文件中配置发送地址，只需在配置文件中加入下面一行内容：
+
+```yaml
+dd_url: http://victoriametrics:8428/datadog
+```
+
+[vmagent]({{< relref "../components/vmagent.md" >}}) 组件也可以接收 DataDog metrics 数据格式。
+
+#### 数据双发
+
+DataDog 允许通过环境变量`DD_ADDITIONAL_ENDPOINTS`添加额外的地址实现[数据双发](https://docs.datadoghq.com/agent/guide/dual-shipping/)，让它把 metrics 发送给其他额外的地址，也可以通过配置文件中的`additional_endpoints`配置项设置。
+
+![](https://docs.victoriametrics.com/README_sending_DD_metrics_to_VM_and_DD.webp)
+
+使用环境变量配置额外的发送地址：
+
+```sh
+DD_ADDITIONAL_ENDPOINTS='{\"http://victoriametrics:8428/datadog\": [\"apikey\"]}'
+```
+
+使用[配置文件](https://docs.datadoghq.com/agent/guide/agent-configuration-files)设置额外的发送地址：
+
+```yaml
+additional_endpoints:
+  "http://victoriametrics:8428/datadog":
+  - apikey
+```
+
+#### Serverless Plugin
+
+禁用日志能力(因为 VictoriaMetrics 不支持日志写入) ，且在`serverless.yaml`中自定义发送地址：
+
+```yaml
+custom:
+  datadog:
+    enableDDLogs: false             # Disabled not supported DD logs
+    apiKey: fakekey                 # Set any key, otherwise plugin fails
+provider:
+  environment:
+    DD_DD_URL: <<vm-url>>/datadog   # VictoriaMetrics endpoint for DataDog
+```
+
 #### 更多细节
 
 VictoriaMetrics 会根据 DataDog 指标命名建议，自动对通过 DataDog 协议写入的数据进行指标名称转换。 如果您需要接受不经过转换的指标名称，则向 VictoriaMetrics 传递`-datadog.sanitizeMetricName=false`参数。 
@@ -139,9 +311,36 @@ VictoriaMetrics 会根据 DataDog 指标命名建议，自动对通过 DataDog �
 DataDog agent 会将配置的Label发送到未注明的地址 - `/datadog/intake`。 VictoriaMetrics 尚不支持该接口。 这导致无法将配置的标记添加到发送到 VictoriaMetrics 的 DataDog agent 数据中。解决方法是在运行每个 DataDog agent 的同时运行一个 sidecar vmagent，该 agent 必须使用`DD_DD_URL=http://localhost:8429/datadog`环境变量运行。 必须通过`-remoteWrite.label`参数使用所需的标签配置 sidecar vmagent，并且必须将带有已添加标签的传入数据转发到通过 `-remoteWrite.url`参数指定的集中式 VictoriaMetrics。
 
 
-### InfluxDB
+## InfluxDB
 
-#### 如何让 InfluxDB兼容的 agent 发送数据给 VictoriaMetrics（例如 [Telegraf](https://www.influxdata.com/time-series-platform/telegraf/)）
+
+### V1 Format
+
+单机版：
+
+```sh
+curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST http://localhost:8428/api/v2/write
+```
+集群版：
+
+```sh
+curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST http://<vminsert>:8480/insert/0/influx/api/v2/write
+```
+
+### V2 Format
+
+单机版：
+
+```sh
+curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST http://localhost:8428/write
+```
+集群版：
+
+```sh
+curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST http://<vminsert>:8480/insert/0/influx/write
+```
+
+### [Telegraf](https://www.influxdata.com/time-series-platform/telegraf/)
 
 使用`http://<victoriametrics-addr>:8428`地址代替 agent 配置中的 InfluxDB 地址。例如，把下面几行放到 telegraf 的配置中，那么它就会将数据发送给 VictoriaMetrics：
 
@@ -174,22 +373,14 @@ foo_field1{tag1="value1", tag2="value2"} 12
 foo_field2{tag1="value1", tag2="value2"} 40
 ```
 
-通过 curl 命令将 InfluxDB Line Protocol 格式数据写入到本地的 VictoriaMetrics 举例：
 
-```sh
-curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST 'http://localhost:8428/write'
-```
-
-你可以使用`\n`在一个请求里发送多行数据。通过如下的命令可以将写入的数据导出：
-
-
-```sh
-curl -G 'http://localhost:8428/api/v1/export' -d 'match={__name__=~"measurement_.*"}'
-```
 
 使用 `/api/v1/export` 接口查询数据，会返回如下内容：
 
-```json
+```sh
+curl -G 'http://localhost:8428/api/v1/export' -d 'match={__name__=~"measurement_.*"}'
+
+# 结果
 {"metric":{"__name__":"measurement_field1","tag1":"value1","tag2":"value2"},"values":[123],"timestamps":[1560272508147]}
 {"metric":{"__name__":"measurement_field2","tag1":"value1","tag2":"value2"},"values":[1.23],"timestamps":[1560272508147]}
 ```
@@ -200,26 +391,50 @@ curl -G 'http://localhost:8428/api/v1/export' -d 'match={__name__=~"measurement_
 
 一些 Telegraf 的插件如 fluentd, Juniper/open-nti 或 Juniper/jitmon 会发送`SHOW DATABASES`查询到`/query`来获取数据库名字列表，并期望返回结果中包含特定的数据库名。可以将逗号分割的多个数据库名作为`-influx.databaseNames`参数。
 
-#### 发送 V2 版本
+## OpenTSDB
 
-VictoriaMetrics 在`/influx/api/v2/write`和`/api/v2/write`接口上支持 InfluxDB v2 HTTP API 写入协议。
+### TCP
 
-通过 curl 命令将 InfluxDB Line Protocol 格式数据写入到本地的 VictoriaMetrics 举例：
+使用`-opentsdbListenAddr`参数开启 OpenTSDB 数据接收器。
 
+单机版：
 ```sh
-curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST 'http://localhost:8428/api/v2/write'
+echo "put foo.bar.baz `date +%s` 123 tag1=value1 tag2=value2" | nc -N localhost 4242
+```
+集群版：
+```sh
+echo "put foo.bar.baz `date +%s` 123  tag1=value1 tag2=value2" | nc -N http://<vminsert> 4242
 ```
 
-使用 `/api/v1/export` 接口查询数据，会返回如下内容：
+### HTTP
 
-```json
-{"metric":{"__name__":"measurement_field1","tag1":"value1","tag2":"value2"},"values":[123],"timestamps":[1695902762311]}
-{"metric":{"__name__":"measurement_field2","tag1":"value1","tag2":"value2"},"values":[1.23],"timestamps":[1695902762311]}
+使用`-opentsdbHTTPListenAddr`参数开启 OpenTSDB 数据 HTT P接收器。
+
+
+单机版：
+```sh
+curl -H 'Content-Type: application/json' -d '[{"metric":"foo","value":45.34},{"metric":"bar","value":43}]' http://localhost:4242/api/put
+```
+集群版：
+```sh
+curl -H 'Content-Type: application/json' -d '[{"metric":"foo","value":45.34},{"metric":"bar","value":43}]' http://<vminsert>:8480/insert/42/opentsdb/api/put
 ```
 
-### Graphite
+## Graphite
 
-#### StatD
+使用`-graphiteListenAddr`参数开启 Graphite 数据接收器。
+
+单机版：
+```sh
+echo "foo.bar.baz;tag1=value1;tag2=value2 123 `date +%s`" | nc -N localhost 2003
+```
+
+集群版：
+```sh
+echo "foo.bar.baz;tag1=value1;tag2=value2 123 `date +%s`" | nc -N http://<vminsert> 2003
+```
+
+### StatD
 
 使用`-graphiteListenAddr`参数可以开启 Graphite 支持；比如下面的命令使 VictoriaMetrics 通过监听`2003`TCP/UDP端口 来接收 Graphite 数据。
 
@@ -252,42 +467,3 @@ The /api/v1/export endpoint should return the following response:
 {"metric":{"__name__":"foo.bar.baz","tag1":"value1","tag2":"value2"},"values":[123],"timestamps":[1560277406000]}
 ```
 Graphite relabeling can be used if the imported Graphite data is going to be queried via MetricsQL.
-
-### 导入 Prometheus exposition 格式数据 {#exposition}
-
-VictoriaMetrics 支持 Prometheus exposition 数据格式， OpenMetrics 格式以及 Pushgateway 格式数据写入。写入 URL 是`/api/v1/import/prometheus`。
-
-例如，下面的命令就是将一行 Prometheus exposition 格式的数据写入 VictoriaMetrics：
-```sh
-curl -d 'foo{bar="baz"} 123' -X POST 'http://localhost:8428/api/v1/import/prometheus'
-```
-可使用下面的命令验证刚导入的数据：
-```sh
-curl -G 'http://localhost:8428/api/v1/export' -d 'match={__name__=~"foo"}'
-```
-上面的命令将返回如下内容：
-```json
-{"metric":{"__name__":"foo","bar":"baz"},"values":[123],"timestamps":[1594370496905]}
-```
-
-## 集群版
-
-集群版和单机版在 API URL 上的主要区别，就是集群版在 URL Path 上对查询和写入都增加了前缀。并且集群版支持`/prometheus/api/v1`接口接收`jsonl`,`csv`,`native`和prometheus格式数据。
-
-写入 API 的 URL 格式为:`http://<vminsert>:8480/insert/<accountID>/<suffix>`，这里：
-
-- <accountID> 是一个32位整型数字，代表数据写入的控件（即租户）。它也可以设置为`accountID:projectID`，这里的projectID也是一个32位整型。如果projectID没有指定，则默认为0。更多内容请阅读[多租户]({{< relref "../ops/cluster.md#tenant" >}})，`<accountID>`也可以写成字符串`multitenant`，例如`http://<vminsert>:8480/insert/multitenant/<suffix>`，使用这种 URL 写入的数据，系统会从数据 Label 中寻找`vm_account_id`和`vm_project_id`信息，将 Label 值作为租户信息。更多内容请阅读[多租户]({{< relref "../ops/cluster.md#tenant" >}})
-
-- <suffix> 可以是一下的内容：
-  - `prometheus` and `prometheus/api/v1/write` - 处理 Prometheus Remote Write 数据
-  - `prometheus/api/v1/import` - 处理从`api/v1/export`(vmselect组件提供)接口导出的数据，格式为 JSON
-  - `prometheus/api/v1/import/native` - 处理从`api/v1/export/native`(vmselect组件提供)接口导出的数据
-  - `prometheus/api/v1/import/csv` - 处理 CSV 数据
-  - `prometheus/api/v1/import/prometheus` - 处理 Prometheus Text Exposition 格式或 OpenMetrics 格式数据，也可以处理 Pushgateway 组件推送出来的数据
-  - `opentelemetry/v1/metrics` - 处理 OpenTelemetry 协议数据
-  - `datadog/api/v1/series` - 处理 DataDog submit metrics 数据
-  - `datadog/api/v2/series` - 处理 DataDog submit metrics 数据(v2)
-  - `datadog/api/beta/sketches` - 处理 DataDog lambda 表达式写入的数据
-  - `influx/write` and `influx/api/v2/write` - 处理 InfluxDB line protocol 数据 TCP 和 UDP 接收器默认是关闭的，需要使用`-influxListenAddr`参数打开
-  - `newrelic/infra/v2/metrics/events/bulk` - 处理 NewRelic agent 写入的数据
-  - `opentsdb/api/put` - 处理 OpenTSDB /api/put HTTP 请求，该处理器默认是关闭的，使用`-opentsdbHTTPListenAddr`参数开启

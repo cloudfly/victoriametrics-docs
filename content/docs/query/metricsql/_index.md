@@ -143,11 +143,13 @@ NaNs 是非法计算结果。 我们来看下 [Prometheus 包含两种 NaNs](htt
 
 Normal NaNs 是算数运算计算出来的结果，比如`0/0=NaN`。但是，在 OpenMetrics 里[没有对 NaNs 的专门描述和用例](https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#nan).
 
-While NaNs are expected when evaluating mathematical expressions, it is not clear how useful they are for users, or if there are any benefits to return NaNs in the result. It looks like the opposite is true because users are [often](https://stackoverflow.com/questions/53430836/prometheus-sum-one-nan-value-result-into-nan-how-to-avoid-it)[confused](https://github.com/prometheus/prometheus/issues/7637)[with](https://github.com/prometheus/prometheus/issues/6780) the [received](https://github.com/prometheus/prometheus/issues/6645)[results](https://stackoverflow.com/questions/47056557/how-to-gracefully-avoid-divide-by-zero-in-prometheus).
+虽然在评估数学表达式时预期会出现 NaN，但尚不清楚它们对用户有多大用处，或者在结果中返回 NaN 是否有任何好处。看起来情况正好相反，因为用户[经常](https://stackoverflow.com/questions/53430836/prometheus-sum-one-nan-value-result-into-nan-how-to-avoid-it)[对](https://github.com/prometheus/prometheus/issues/6780)[收到](https://github.com/prometheus/prometheus/issues/6645)的[结果](https://stackoverflow.com/questions/47056557/how-to-gracefully-avoid-divide-by-zero-in-prometheus)感到[困惑](https://github.com/prometheus/prometheus/issues/7637)。
 
 MetricsQL consistently deletes NaN from query responses. This behavior is intentional because there is no meaningful way to use such results. That's why testing queries such as `demo_num_cpus * NaN` or `sqrt(-demo_num_cpus)` return an empty response in MetricsQL, and returns NaNs in PromQL.
 
-There were 6 (~1% of 529 tests total) queries in thetest suite expecting NaNs in responses: `sqrt(-metric)` , `ln(-metric)` , `log2(-metric)` , `log10(-metric)` and `metric * NaN` .
+MetricsQL 一贯地从查询响应中删除 NaN。这种行为是有意为之的，因为没有有意义的方法来使用这样的结果。这就是为什么在 MetricsQL 中测试诸如`demo_num_cpus * NaN`或`sqrt(-demo_num_cpus)`的查询会返回空结果，而在 PromQL 中则返回 NaN。
+
+有 6/529(~1%) 个测试用例在结果中期待返回 NaN：`sqrt(-metric)` , `ln(-metric)` , `log2(-metric)` , `log10(-metric)` and `metric * NaN`。
 
 ### 负 Offset
 VictoriaMetrics 支持负 offset，不过 Prometheus 在 [2.26](https://github.com/prometheus/prometheus/releases/tag/v2.26.0) 版本之后也开始支持了（通过命令行参数开启）。但是，Prometheus 的查询结果还是和 VictoriaMetrics 不一样。
@@ -187,43 +189,49 @@ curl  --data-urlencode 'query=demo_memory_usage_bytes{instance="demo.promlabs.co
 ..."value":[1633504838,"148164507.4084375"]}]}}%
 ```
 
-VictoriaMetrics may reduce the precision of values with more than 15 decimal digits due to the [used compression algorithm](https://faun.pub/victoriametrics-achieving-better-compression-for-time-series-data-than-gorilla-317bc1f95932). If you want to get more details about how and why this happens, please read the "Precision loss" section in [Evaluating Performance and Correctness](https://medium.com/@valyala/evaluating-performance-and-correctness-victoriametrics-response-e27315627e87). In fact, any solution that works with floating point values has precision loss issues because of the nature of [floating-point arithmetic](https://en.wikipedia.org/wiki/Floating-point_arithmetic).
+由于使用的[压缩算法](https://faun.pub/victoriametrics-achieving-better-compression-for-time-series-data-than-gorilla-317bc1f95932)的原因，VictoriaMetrics 可能会降低超过 15 位小数的值的精度。如果您想了解更多关于这种情况发生的原因和方式，请阅读[《评估性能和正确性》](https://medium.com/@valyala/evaluating-performance-and-correctness-victoriametrics-response-e27315627e87)中的“精度损失”部分。事实上，任何处理浮点值的解决方案都会因为[浮点运算的性质](https://en.wikipedia.org/wiki/Floating-point_arithmetic)而存在精度损失问题。
 
-While such precision loss may be important in rare cases, it doesn't matter in most practical cases because the [measurement error](https://en.wikipedia.org/wiki/Observational_error) is usually much larger than the precision loss.
 
-While VictoriaMetrics does have higher precision loss than Prometheus, we believe it is completely justified by the [compression gains](https://valyala.medium.com/prometheus-vs-victoriametrics-benchmark-on-node-exporter-metrics-4ca29c75590f) our solution generates. Moreover, only 3 (~0.5% of 529 tests total) queries from the test suite fail due to precision loss.
+虽然这种精度损失在极少数情况下可能影响比较大，但在大多数实际情况下并不重要，因为[测量误差](https://en.wikipedia.org/wiki/Observational_error)通常比精度损失大得多。
+
+虽然 VictoriaMetrics 的精度损失比 Prometheus 更高，但我们相信这种损失完全可以通过我们的解决方案所产生的[压缩收益](https://valyala.medium.com/prometheus-vs-victoriametrics-benchmark-on-node-exporter-metrics-4ca29c75590f)来证明其合理性。此外，测试套件中的 529 个查询中只有 3 个（约占 0.5%）因精度损失而失败。
 
 ### Query succeeded, but should have failed
-The following query fails for PromQL but works in MetricsQL:
-
+下面的语句在 PromQL 里会报错，但在 MetricsQL 里会正常运行：
 
 ```plain
 QUERY: {__name__=~".*"}
 RESULT: FAILED: Query succeeded, but should have failed.
 ```
 
-PromQL rejects such a query to prevent database overload because query [selects all the metrics](https://github.com/prometheus/prometheus/issues/2162) from it. At the same time, PromQL does not prevent a user from running an almost identical query`{__name__=~".+"}` , which serves the same purpose.
+PromQL 拒绝此类查询以防止数据库过载，因为查询选择了[所有指标](https://github.com/prometheus/prometheus/issues/2162)。但同时，PromQL 不会阻止用户运行几乎相同的查询`{__name__=~".+"}`，这俩语句其实没区别。
 
-The other example of a failing query is the following:
-
+其他失败查询的例子：
 
 ```plain
 QUERY: label_replace(demo_num_cpus, "~invalid", "", "src", "(.*)")
 RESULT: FAILED: Query succeeded, but should have failed.
 ```
 
-The query fails for PromQL because it doesn't allow using `~` char in label names. VictoriaMetrics accepts data ingestion from various protocols and systems where such char is allowed, so it [has to support](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/672#issuecomment-670189308) a wider list of allowed chars.
+查询在 PromQL 中失败，因为它不允许在标签名称中使用`~`字符。VictoriaMetrics 接受来自各种协议和系统的数据写入，这些协议和系统允许使用此类字符，因此它必须[支持](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/672#issuecomment-670189308)更广泛的允许字符列表。
 
-There were 2 (~0.3% of 529 tests total) queries that failed because of incompatibility but we can’t imagine a situation where it would harm a user’s experience.
+在 529 个测试中，有 2 个（约占 0.3%）查询因不兼容而失败，但我们无法想象这种情况会对用户体验造成影响。
 
-### Summary
-There are differences between MetricsQL and PromQL. MetricsQL was created long after the PromQL with the goal of improving the user experience and making the language easier to use and understand.
+### 总结
 
-How compatibility is measured in the [Prometheus Conformance Program](https://prometheus.io/blog/2021/05/03/introducing-prometheus-conformance-program/) isn't ideal because it really only shows if the tested software uses Prometheus PromQL library under the hood or not. This is particularly complicated for solutions written in programming languages other than Go.
+MetricsQL 和 PromQL 之间存在差异。MetricsQL 是在 PromQL 之后很久才创建的，目的是改善用户体验，使语言更易于使用和理解。
 
-By the way, the percentage of failing tests is easy to increase or decrease by changing the number of range intervals (e.g. 1m, 5m etc.) in tests. In the case of VictoriaMetrics, about 90 tests have failed not because of wrong calculations, but because of the metric name present in the response. Of course, there is no ideal way to be fair to everyone. That's why this post exists to explain the differences.
+[Prometheus 合规性计划](https://prometheus.io/blog/2021/05/03/introducing-prometheus-conformance-program/)中衡量兼容性的方式并不理想，因为它实际上只是显示被测试的软件是否在底层使用了 Prometheus PromQL 库。这对于用 Go 语言以外的编程语言编写的解决方案来说尤其复杂。
 
-We also want to say a big thank you to [Julius Volz](https://github.com/juliusv), the author of these [compliance tests](https://promlabs.com/promql-compliance-tests/). Thanks to his work and patience we were able to fix most of the real incompatibility issues in MetricsQL.
+顺便说一下，通过更改测试中的范围间隔（例如 1m、5m 等），很容易增加或减少失败测试的百分比。在 VictoriaMetrics 的情况下，大约有 90 个测试失败并不是因为计算错误，而是因为响应中存在的指标名称。当然，没有一种理想的方式可以对所有人都公平。这就是为什么这篇文章存在，以解释这些差异。
+
+我们还要特别感谢这些[合规性测试](https://promlabs.com/promql-compliance-tests/)的作者 [Julius Volz](https://github.com/juliusv) 。感谢他的工作和耐心，我们能够修复 MetricsQL 中大多数真正的不兼容问题。
 
 
 ## 子查询 {#subquery}
+
+MetricsQL 支持并扩展了 PromQL 子查询。详情请参见[这篇文章](https://valyala.medium.com/prometheus-subqueries-in-victoriametrics-9b1492b720b3)。任何针对非[series selector]({{< relref "./basic.md#filter" >}})的 [rollup 函数]({{< relref "./functions/rollup.md" >}})都会形成一个子查询。由于隐式查询转换，嵌套的 rollup 函数可以是隐式的。例如，`delta(sum(m))`会被隐式转换为`delta(sum(default_rollup(m))[1i:1i])`，因此它变成了一个子查询，因为它包含了嵌套在`delta`中的`default_rollup`。从 v1.101.0 版本开始，可以通过`-search.disableImplicitConversion`和`-search.logImplicitConversion`命令行标志禁用或记录此行为。
+
+VictoriaMetrics 按照下面的逻辑执行子查询：
+- 它使用外部 rollup 函数的 step 值来计算内部 rollup 函数。例如，对于表达式`max_over_time(rate(http_requests_total[5m])[1h:30s])`，内部函数`rate(http_requests_total[5m])` 是以`step=30s`计算的。生成的数据点按 step 对齐。
+- 它使用 Grafana 传递给 `/api/v1/query_range` 的 step 值，在内部 rollup 函数的结果上计算外部 rollup 函数。
