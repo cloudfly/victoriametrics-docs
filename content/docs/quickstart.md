@@ -9,10 +9,7 @@ VictoriaMetrics 有 2 种发布形式：
 + [单机版本]({{< relref "ops/single.md" >}}) - ALL-IN-ONE 的二进制形式，非常易于使用和维护。可完美地垂直扩展，并且轻松处理百万级的QPS写入。
 + [集群版本]({{< relref "ops/cluster" >}}) - 一套组件，可用于构建水平可扩展集群。
 
-
-### Docker
-
-#### 单机版
+### 单机版
 使用下面的命令下载最新版本的 VictoriaMetrics Docker 镜像，然后使用`8482`端口运行，并将数据存储在当前目录中的 `victoria-metrics-data` 目录下。
 
 ```shell
@@ -22,7 +19,7 @@ docker run -it --rm -v `pwd`/victoria-metrics-data:/victoria-metrics-data -p 842
 
 用浏览器打开[`http://localhost:8428`](http://localhost:8428/)然后阅读[这些文档]({{< relref "ops/single.md#operation" >}})。
 
-#### 集群版
+### 集群版
 下面的命令 clone 最新版本的 VictoriaMetrics 仓库，然后使用命令`make docker-cluster-up`启动 Docker 容器。更多的自定义启动项可以通过编辑[`docker-compose-cluster.yml`](https://github.com/VictoriaMetrics/VictoriaMetrics/blob/master/deployment/docker/docker-compose-cluster.yml)实现。
 
 
@@ -222,7 +219,7 @@ curl "http://localhost:8428/api/v1/query_range?query=measurement_field1&step=1m&
 
 每个 VictoriaMetrics 组件都会在`/metrics`接口上暴露自己的 Prometheus 格式指标，其中包含有关性能和健康状态的各种详细信息。这些指标可以通过`vmagent`或`Prometheus`进行抓取。
 
-对于单机版，当`-selfScrapeInterval`命令行参数设置为大于`0`时，它会自动抓取自己的`/metrics`并存储。例如，`-selfScrapeInterval=10s`将标识每10秒一次的自动抓取`/metrics`数据并存储。 更多内容[参见这里]({{< relref "ops/single.md#metrics" >}})。
+对于单机版，当`-selfScrapeInterval`启动参数设置为大于`0`时，它会自动抓取自己的`/metrics`并存储。例如，`-selfScrapeInterval=10s`将标识每10秒一次的自动抓取`/metrics`数据并存储。 更多内容[参见这里]({{< relref "ops/single.md#metrics" >}})。
 
 
 VictoriaMetrics 团队为核心组件准备了一系列的 [Grafana Dashboard](https://grafana.com/orgs/victoriametrics/dashboards)。每个 Dashboard 中都包含很多有用的信息和提示。建议使用安装这些 Dashboard 并保持更新。

@@ -12,7 +12,7 @@ foo_bar
 
 一个简单的指标名称会得到拥有不同 label 组合的多个 Timeseries 返回响应值。比如：
 
-```
+```plain
 requests_total{path="/", code="200"} 
 requests_total{path="/", code="403"}
 ```
@@ -37,7 +37,7 @@ requests_total{code=~"200", path="/home"}
 
 上面的查询返回所有名字是`request_total`，同时带有 `code="200"` 和 `path="/home"` Label 的所有 Timeseries。
 
-### 使用名字过滤
+### 使用名字过滤 {#filter-by-name}
 有时我们可能需要同时返回多个监控指标。就如同[数据模型]({{< relref "../../concepts.md#metrics" >}})中提到的，Metric 名称本质上也是一个普通的 Label 的值，其 Label 名是`__name__`。所以可以通过对 Metric 名使用正则的方式，来过滤出多个指标名的数据：
 
 ```

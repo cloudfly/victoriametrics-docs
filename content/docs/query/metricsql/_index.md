@@ -206,7 +206,7 @@ MetricsQL 一贯地从查询响应中删除`NaN`。这种逻辑是故意的，�
 有`6/529(约1%)`个测试用例在结果中期待返回 NaN：`sqrt(-metric)` , `ln(-metric)` , `log2(-metric)` , `log10(-metric)` and `metric * NaN`。
 
 ### 负 Offset
-VictoriaMetrics 支持负 offset，不过 Prometheus 在 [2.26](https://github.com/prometheus/prometheus/releases/tag/v2.26.0) 版本之后也开始支持了（通过命令行参数开启）。但是，Prometheus 的处理方式还是和 VictoriaMetrics 不太一样。
+VictoriaMetrics 支持负 offset，不过 Prometheus 在 [2.26](https://github.com/prometheus/prometheus/releases/tag/v2.26.0) 版本之后也开始支持了（通过启动参数开启）。但是，Prometheus 的处理方式还是和 VictoriaMetrics 不太一样。
 
 ![](promql-diff-demo-4.png)
 
@@ -284,7 +284,7 @@ MetricsQL 和 PromQL 之间存在差异。MetricsQL 是在 PromQL 之后很久�
 
 ## 子查询 {#subquery}
 
-MetricsQL 支持并扩展了 PromQL 子查询。详情请参见[这篇文章](https://valyala.medium.com/prometheus-subqueries-in-victoriametrics-9b1492b720b3)。任何针对非[series selector]({{< relref "./basic.md#filter" >}})的 [rollup 函数]({{< relref "./functions/rollup.md" >}})都会形成一个子查询。由于隐式查询转换，嵌套的 rollup 函数可以是隐式的。例如，`delta(sum(m))`会被隐式转换为`delta(sum(default_rollup(m))[1i:1i])`，因此它变成了一个子查询，因为它包含了嵌套在`delta`中的`default_rollup`。从 v1.101.0 版本开始，可以通过`-search.disableImplicitConversion`和`-search.logImplicitConversion`命令行标志禁用或记录此行为。
+MetricsQL 支持并扩展了 PromQL 子查询。详情请参见[这篇文章](https://valyala.medium.com/prometheus-subqueries-in-victoriametrics-9b1492b720b3)。任何针对非[series selector]({{< relref "./basic.md#filter" >}})的 [rollup 函数]({{< relref "./functions/rollup.md" >}})都会形成一个子查询。由于隐式查询转换，嵌套的 rollup 函数可以是隐式的。例如，`delta(sum(m))`会被隐式转换为`delta(sum(default_rollup(m))[1i:1i])`，因此它变成了一个子查询，因为它包含了嵌套在`delta`中的`default_rollup`。从 v1.101.0 版本开始，可以通过`-search.disableImplicitConversion`和`-search.logImplicitConversion`启动参数禁用或记录此行为。
 
 VictoriaMetrics 按照下面的逻辑执行子查询：
 1. 它使用外部 rollup 函数的 step 值来计算内部 rollup 函数。例如，对于表达式`max_over_time(rate(http_requests_total[5m])[1h:30s])`，内部函数`rate(http_requests_total[5m])` 是以`step=30s`计算的。生成的数据点按`step`对齐。

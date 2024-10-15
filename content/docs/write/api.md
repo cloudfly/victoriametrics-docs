@@ -28,7 +28,12 @@ http://<vminsert>:8480/insert/<accountID>/<suffix>
   {{< tab >}}
   ```sh
   curl -H 'Content-Type: application/json' --data-binary "@filename.json" -X POST http://localhost:8428/api/v1/import
+  curl -H 'Content-Encoding: gzip' -X POST http://destination-victoriametrics:8428/api/v1/import -T exported_data.jsonl.gz
   ```
+
+
+将 `Content-Encoding: gzip` 的 HTTP 请求头传递给 `/api/v1/import`，用于导入经过压缩的数据：
+
   {{< /tab >}}
   {{< tab >}}
   ```sh

@@ -43,7 +43,7 @@ foo_bar 4.00 1652170560000 # 2022-05-10 10:16:00
 
 上面的数据包含了`foo_bar`时间序列的样本列表，样本之间的时间间隔从 1m 到 3m 不等。如果我们将这个数据样本绘制在图表上，它将具有以下形式：
 
-![](https://docs.victoriametrics.com/keyconcepts/data_samples.webp)
+![](./data_samples.webp)
 
 为了获取`foo_bar`这个时间序列在特定时间的数值，比如`2022-05-10 10:03:00`，在 VictoriaMetrics 中我们使用即时查询：
 
@@ -72,7 +72,7 @@ curl "http://<victoria-metrics-addr>/api/v1/query?query=foo_bar&time=2022-05-10T
 ```
 作为返回值，VictoriaMetrics 返回了一个值为 3 的 (时间戳, 样本值) 数据，表示在给定时间`2022-05-10 10:03:00` 的 `foo_bar` 序列。但是，如果我们再次查看原始数据样本，会发现`2022-05-10 10:03:00` 并没有原始样本数据。当请求的时间戳没有原始样本时，，VictoriaMetrics 会尝试找到请求时间戳之前最近的样本：
 
-![](https://docs.victoriametrics.com/keyconcepts/instant_query.webp)
+![](./instant_query.webp)
 
 
 VictoriaMetrics 尝试寻找缺失样本数据替代品的时间范围默认是`5m`(5分钟)，可以通过`step`参数自定义。
@@ -197,7 +197,7 @@ curl "http://<victoria-metrics-addr>/api/v1/query_range?query=foo_bar&step=1m&st
 在返回结果中，VictoriaMetrics 为`foo_bar`指标在时间`2022-05-10 09:59:00`到`2022-05-10 10:17:00`范围返回了`17`个（时间戳，样本值）的数据。但是，我们再看一下原始样本数据，会发现原始数据只有`13`个数据点。
 其原因是 Range Query 实际上在时间范围`[start...end]`内执行了`1 + (start-end)/step`次 [Instant Query](#instant-query)。如果我们该请求的返回结果绘制成看版图，则如下所示：
 
-![](https://docs.victoriametrics.com/keyconcepts/range_query.webp)
+![](./range_query.webp)
 
 蓝色的虚线代表的是系统在这些时间点上执行了 Instant Query。
 图中的蓝色虚线是执行 Instant Query 的时刻。由于 Instant Query 保留了补点能力，所以图中包含两种类型的数据点：真实数据点和临近数据点。临近数据点总是使用最近写入的[`raw sample`]({{< relref "concepts.md#sample" >}})（见上图中的红色箭头）。
@@ -222,22 +222,22 @@ Range Query 主要用于绘制指定时间范围内的时间序列数据。这�
 
 ## 查询数据延时 {#latency}
 
-默认情况下，VictoriaMetrics 不会立即返回最近写入的样本。相反，它会检索在 `-search.latencyOffset` 命令行参数指定的时间之前写入的最后结果，该参数的默认值为 30 秒。这对于 `query` 和 `query_range` 都是如此，这可能会给人带来一种数据写入有以 30 秒延迟的感觉。
+默认情况下，VictoriaMetrics 不会立即返回最近写入的样本。相反，它会检索在 `-search.latencyOffset` 启动参数指定的时间之前写入的最后结果，该参数的默认值为 30 秒。这对于 `query` 和 `query_range` 都是如此，这可能会给人带来一种数据写入有以 30 秒延迟的感觉。
 
 此参数的目的是为了防止最后一次采集间隔中，只有一部分指标写入到了数据库，而导致查询结果错误。
 
 下面我们用几个示意图来解释下将 `-search.latencyOffset` 设置为`0`会出现什么问题：
 
-![](https://docs.victoriametrics.com/keyconcepts/without_latencyOffset.webp)
+![](./without_latencyOffset.webp)
 
 When this flag is set, the VM will return the last metric value collected before the -search.latencyOffset duration throughout the -search.latencyOffset duration:
 如果设置了该参数，VM 将在整个 `-search.latencyOffset` 持续时间内返回在 `-search.latencyOffset` 持续时间之前写入的最后一个指标数据。
 
-![](https://docs.victoriametrics.com/keyconcepts/with_latencyOffset.webp)
+![](./with_latencyOffset.webp)
 
 可以通过`latency_offset`查询参数在每个查询请求中覆盖`-search.latencyOffset`系统参数值。
 
-VictoriaMetrics 将最近写入的样本缓存在内存中长达几秒钟，然后定期将这些样本刷新到磁盘。这种缓冲提高了数据摄取性能。即使将`-search.latencyOffset`命令行参数设置为`0`，或者将`latency_offset`查询参数设置为`0`，缓冲的样本在查询结果中也是看不到的。
+VictoriaMetrics 将最近写入的样本缓存在内存中长达几秒钟，然后定期将这些样本刷新到磁盘。这种缓冲提高了数据摄取性能。即使将`-search.latencyOffset`启动参数设置为`0`，或者将`latency_offset`查询参数设置为`0`，缓冲的样本在查询结果中也是看不到的。
 
 你可以向单机版的 VictoriaMetrics 的`/internal/force_flush` 发送 HTTP 请求，或下向[集群版的 VictoriaMetrics]({{< ref "../ops/cluster.md" >}}) 的 vmstorage 发送请求，另系统强制将缓冲的样本刷新到磁盘，使其能够被查询。通常`/internal/force_flush` 接口仅用于调试和测试目的。不要在生产环境中调用它，因为这可能会显著降低数据写入性能并增加资源使用。
 
@@ -246,9 +246,9 @@ VictoriaMetrics 将最近写入的样本缓存在内存中长达几秒钟，然�
 + VictoriaMetrics 接受`extra_filters[]=series_selector`查询参数（可选），可用于对查询强制执行任意的 Label 过滤器。例如，`/api/v1/query_range?extra_filters[]={env=~"prod|staging",user="xyz"}&query=<query>`将自动将`{env=~"prod|staging",user="xyz"}`Label 过滤器添加到给定的查询中。此功能可用于限制给定租户可见的 timeseries 范围。我们建议在 VictoriaMetrics 前面的查询代理自动设置`extra_filters[]`查询参数。您可以将[vmauth](https://docs.victoriametrics.com/vmauth.html)和[vmgateway](https://docs.victoriametrics.com/vmgateway.html)作为这种代理的示例。
 + VictoriaMetrics 接受多种格式的 `time`，`start` 和 `end` 查询参数，可参考[这些文档](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#timestamp-formats)。
 + VictoriaMetrics对于[/api/v1/query](https://docs.victoriametrics.com/keyConcepts.html#instant-query)和[/api/v1/query_range](https://docs.victoriametrics.com/keyConcepts.html#range-query)接口支持`round_digits`查询参数。它可用于指定返回的指标值的保留小数点位数。例如，`/api/v1/query?query=avg_over_time(temperature[1h])&round_digits=2`会将让返回的指标值保留小数点后面 2 位。
-+ VictoriaMetrics允许在[/api/v1/labels](https://docs.victoriametrics.com/url-examples.html#apiv1labels)和[/api/v1/label/<labelName>/values](https://docs.victoriametrics.com/url-examples.html#apiv1labelvalues)接口中使用`limit`查询参数来限制返回的条目数量。例如，对`/api/v1/labels?limit=5`的查询请求最多返回5个唯一的 Label 值，并忽略其他 Label。如果提供的`limit`值超过了相应的`-command-line`命令行参数`-search.maxTagKeys`或`-search.maxTagValues`，则会使用命令行参数中指定的限制。
++ VictoriaMetrics允许在[/api/v1/labels](https://docs.victoriametrics.com/url-examples.html#apiv1labels)和[/api/v1/label/<labelName>/values](https://docs.victoriametrics.com/url-examples.html#apiv1labelvalues)接口中使用`limit`查询参数来限制返回的条目数量。例如，对`/api/v1/labels?limit=5`的查询请求最多返回5个唯一的 Label 值，并忽略其他 Label。如果提供的`limit`值超过了相应的`-command-line`启动参数`-search.maxTagKeys`或`-search.maxTagValues`，则会使用启动参数中指定的限制。
 + 默认情况下，VictoriaMetrics从[/api/v1/series](https://docs.victoriametrics.com/url-examples.html#apiv1series)、[/api/v1/labels](https://docs.victoriametrics.com/url-examples.html#apiv1labels)和[/api/v1/label/<labelName>/values](https://docs.victoriametrics.com/url-examples.html#apiv1labelvalues)返回最近一天从00:00 UTC开始的 series 数据，而Prometheus API默认返回所有时间的数据。如果要选择特定的时间范围的 series 数据，可使用 `start` 和 `end` 参数指定。由于性能优化的考虑，VictoriaMetrics会将指定的 `start..end` 时间范围舍入到天的粒度。如果您需要在给定时间范围内获取精确的 Label 集合，请将查询发送到[/api/v1/query](https://docs.victoriametrics.com/keyConcepts.html#instant-query)或[/api/v1/query_range](https://docs.victoriametrics.com/keyConcepts.html#range-query)。
-+ VictoriaMetrics在[/api/v1/series](https://docs.victoriametrics.com/url-examples.html#apiv1series)中接受`limit`查询参数，用于限制返回的条目数量。例如，对`/api/v1/series?limit=5`的查询将最多返回5个 series，并忽略其余的时间序列。如果提供的`limit`值超过了相应的命令行参数`-search.maxSeries`的值，则会使用命令行中指定的限制。
++ VictoriaMetrics在[/api/v1/series](https://docs.victoriametrics.com/url-examples.html#apiv1series)中接受`limit`查询参数，用于限制返回的条目数量。例如，对`/api/v1/series?limit=5`的查询将最多返回5个 series，并忽略其余的时间序列。如果提供的`limit`值超过了相应的启动参数`-search.maxSeries`的值，则会使用命令行中指定的限制。
 + 此外，VictoriaMetrics还提供了以下接口：
     - `/vmui` - 基本的 Web UI 界面，阅读[这些文档](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#vmui)。 
     - `/api/v1/series/count` - 返回数据库中 time series 的总数量。注意：

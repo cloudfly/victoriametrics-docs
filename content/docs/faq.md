@@ -11,7 +11,7 @@ weight: 100
 
 1. 数据库中存储的时间序列总数增加。
 
-2. 倒排索引（存储在`<storageDataPath>/indexdb`）的大小增加，因为倒排索引包含了每个标签至少有一个摄入样本的所有时间序列的条目。
+2. 倒排索引（存储在`<storageDataPath>/indexdb`）的大小增加，因为倒排索引包含了每个标签至少有一个写入样本的所有时间序列的条目。
 
 3. 查询跨多天时变慢。
 
@@ -34,7 +34,7 @@ weight: 100
 VictoriaMetrics在内存中维护了一个缓存，用于将[活跃时间序列](https://www.victoriametrics.com.cn/victoriametrics/faq#what-is-an-active-time-series)映射为内部系列ID。缓存的大小取决于主机系统中可用的VictoriaMetrics内存。如果所有活跃时间序列的信息无法适应缓存，则VictoriaMetrics需要在每个进入样本时从磁盘上读取和解压缩不在缓存中的时间序列信息。这个操作比缓存查找要慢得多，因此这种插入被称为`慢写入`。官方仪表板上出现大量慢写入表示当前活跃时间序列数量存在内存不足问题。这种情况通常会导致数据摄取严重减慢，并显著增加磁盘IO和CPU使用率。解决方法是增加更多内存或减少活跃时间序列的数量。Cardinality Explorer可以帮助定位高数量活跃时间序列的来源。
 
 ## 如何限制 VictoriaMetrics 组件的内存 {#how-to-limit-memory-usage}
-所有的VictoriaMetrics组件都提供了命令行参数来控制内部缓冲区和缓存的大小：`-memory.allowedPercent` 和 `-memory.allowedBytes`（在任何一个VictoriaMetrics组件中使用`-help `查看这些参数的描述）。这些限制不考虑可能需要用于处理传入查询的额外内存。硬限制只能通过操作系统通过[cgroups](https://en.wikipedia.org/wiki/Cgroups)、[Docker](https://docs.docker.com/config/containers/resource_constraints)或[Kubernetes](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers)来强制执行。
+所有的VictoriaMetrics组件都提供了启动参数来控制内部缓冲区和缓存的大小：`-memory.allowedPercent` 和 `-memory.allowedBytes`（在任何一个VictoriaMetrics组件中使用`-help `查看这些参数的描述）。这些限制不考虑可能需要用于处理传入查询的额外内存。硬限制只能通过操作系统通过[cgroups](https://en.wikipedia.org/wiki/Cgroups)、[Docker](https://docs.docker.com/config/containers/resource_constraints)或[Kubernetes](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers)来强制执行。
 
 根据以下文档，可以调整VictoriaMetrics组件的内存使用情况：
 

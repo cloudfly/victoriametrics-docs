@@ -50,7 +50,7 @@ weight: 1
 VictoriaMetrics 默认使用 8428 端口处理 [Prometheus 查询请求]({{< relref "../query/http.md#single-prometheus" >}})。建议为 VictoriaMetrics 搭建[监控]({{< relref "single.md#metrics" >}})。
 
 ### 环境变量
-所有的 VictoriaMetrics 组件都支持在命令行参数中使用语法`%{ENV_VAR}`引用环境变量。比如，
+所有的 VictoriaMetrics 组件都支持在启动参数中使用语法`%{ENV_VAR}`引用环境变量。比如，
 
 在 VictoriaMetrics 启动时，如果环境变量中存在`METRICS_AUTH_KEY=top-secret`，那么`-metricsAuthKey=%{METRICS_AUTH_KEY}`就会自动转换成`metricsAuthKey=top-secret`。这个转换是 VictoriaMetrics 自动做的。
 
@@ -144,31 +144,84 @@ ROOT_IMAGE=scratch make package-victoria-metrics
 + [Helm charts for VictoriaMetrics](https://github.com/VictoriaMetrics/helm-charts)
 + [Kubernetes operator for VictoriaMetrics](https://github.com/VictoriaMetrics/operator)
 
-可以在单个主机上手动设置一个玩具集群。在这种情况下，每个集群组件 - vminsert、vmselect 和 vmstorage - 必须使用 `-httpListenAddr` 命令行参数指定不同的端口。此参数指定用于接受用于[监控](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#monitoring)和[Profiling](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#profiling) http 请求的 http 地址。`vmstorage` 节点必须具有以下附加命令行参数的不同值，以防止资源使用冲突：
+可以在单个主机上手动设置一个玩具集群。在这种情况下，每个集群组件 - vminsert、vmselect 和 vmstorage - 必须使用 `-httpListenAddr` 启动参数指定不同的端口。此参数指定用于接受用于[监控](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#monitoring)和[Profiling](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#profiling) http 请求的 http 地址。`vmstorage` 节点必须具有以下附加启动参数的不同值，以防止资源使用冲突：
 
 + `-storageDataPath` - 每个 `vmstorage` 实例都不行有一个专用的数据存储路径。
 + `-vminsertAddr` - 每个 `vmstorage` 实例必须监听一个 tcp 地址，用来接受 vminsert 发送过来的数据。
 + `-vmselectAddr` - 每个 `vmstorage` 实例必须监听一个 tcp 地址，用来处理 vmselect 发送过来的查询请求。
 
+
+### 二进制
+集群版本的编译二进制文件可在[发布页面](https://github.com/VictoriaMetrics/VictoriaMetrics/releases)的 assets 部分中找到。另请参阅包含单词“集群”的档案。
+
+集群版本的 Docker 镜像可在此处找到：
+
++ `vminsert` - [https://hub.docker.com/r/victoriametrics/vminsert/tags](https://hub.docker.com/r/victoriametrics/vminsert/tags)
++ `vmselect` - [https://hub.docker.com/r/victoriametrics/vmselect/tags](https://hub.docker.com/r/victoriametrics/vmselect/tags)
++ `vmstorage` - [https://hub.docker.com/r/victoriametrics/vmstorage/tags](https://hub.docker.com/r/victoriametrics/vmstorage/tags)
+
+### 构建
+集群版本的源代码可在[cluster分支](https://github.com/VictoriaMetrics/VictoriaMetrics/tree/cluster)中获取。
+
+#### 生产环境构建
+无需在主机系统上安装 Go，因为二进制文件是在 [Go 的官方 docker 容器](https://hub.docker.com/_/golang)内构建的。这允许可重现的构建。因此，[安装 docker](https://docs.docker.com/install/) 并运行以下命令：
+
+
+```plain
+make vminsert-prod vmselect-prod vmstorage-prod
+```
+
+生产二进制文件内置于静态链接二进制文件中。它们被放入带有 `-prod` 后缀的 `bin` 文件夹中：
+
+
+```plain
+$ make vminsert-prod vmselect-prod vmstorage-prod
+$ ls -1 bin
+vminsert-prod
+vmselect-prod
+vmstorage-prod
+```
+
+#### 开发环境构建
+1. [安装Go](https://golang.org/doc/install)，最低支持版本是 Go1.18。
+2. 从[仓库根目录](https://github.com/VictoriaMetrics/VictoriaMetrics)运行 `make`。它应该构建 `vmstorage`、`vmselect` 和 `vminsert` 二进制文件并将它们放入 bin 文件夹中。
+
+#### 构建 docker 镜像
+执行 `make package`命令，会在本地构建下面几个 docker 镜像：
+
++ `victoriametrics/vminsert:<PKG_TAG>`
++ `victoriametrics/vmselect:<PKG_TAG>`
++ `victoriametrics/vmstorage:<PKG_TAG>`
+
+`<PKG_TAG>` 是根据[仓库中的源码](https://github.com/VictoriaMetrics/VictoriaMetrics)自动生产的 image tag。`<PKG_TAG>` 可以使用环境变量来指定，比如：`PKG_TAG=foobar make package`.
+
+默认情况下，为了提高可调试性，image 是在 [alpine image](https://hub.docker.com/_/scratch) 之上构建的。可以通过`ROOT_IMAGE`环境变量设置，在任何其他基础镜像之上构建镜像。例如，以下命令在[临时镜像](https://hub.docker.com/_/scratch)之上构建镜像：
+
+
+```sh
+ROOT_IMAGE=scratch make package
+```
+
+
 ### 环境变量
-所有的 VictoriaMetrics 组件都可以在命令行参数中使用`%{ENV_VAR}`语法来引用环境变量。比如，如果 VictoriaMetrics 启动的时候存在环境变量`METRICS_AUTH_KEY=top-secret` ，那么`-metricsAuthKey=%{METRICS_AUTH_KEY}` 参数会自动转换成 `-metricsAuthKey=top-secret`。这个转换是 VictoriaMetrics 内部自己完成的。
+所有的 VictoriaMetrics 组件都可以在启动参数中使用`%{ENV_VAR}`语法来引用环境变量。比如，如果 VictoriaMetrics 启动的时候存在环境变量`METRICS_AUTH_KEY=top-secret` ，那么`-metricsAuthKey=%{METRICS_AUTH_KEY}` 参数会自动转换成 `-metricsAuthKey=top-secret`。这个转换是 VictoriaMetrics 内部自己完成的。
 
 VictoriaMetrics 在启动的时候会递归式的对`%{ENV_VAR}` 进行环境变量引用转换。比如，当存在环境变量 `BAR=a%{BAZ}` 和 `BAZ=bc`时，`FOO=%{BAR}` 环境变量会被转换为 `FOO=abc` 。
 
 所有的 VictoriaMetrics 组件都支持通过上述的环境变量方式来设置参数，前提是：
 
 + 必须使用`-envflag.enable` 参数开启该特性。
-+ 命令行参数中的 `.` 必须用下划线`_`替换 (比如 `-insert.maxQueueDuration <duration>` 对应的环境变量是 `insert_maxQueueDuration=<duration>`)。
++ 启动参数中的 `.` 必须用下划线`_`替换 (比如 `-insert.maxQueueDuration <duration>` 对应的环境变量是 `insert_maxQueueDuration=<duration>`)。
 + 对于可重复的指定的参数，可用逗号`,`分隔符进行链接。 (比如 `-storageNode <nodeA> -storageNode <nodeB>` 对应的环境变量是 `storageNode=<nodeA>,<nodeB>`)。
 + 可以使用 `-envflag.prefix` 参数来指定环境变量前缀，例如使用了 `-envflag.prefix=VM_`参数，那么环境变量名就都必须以 `VM_` 开头。
 
 ### vmstorage 自动发现
-只有企业版支持`vminsert `和` vmselect `对` vmstorage`实例自动服务发现，开源版的话需要进行二次开发。
+只有企业版支持`vminsert`和` vmselect`对`vmstorage`实例自动服务发现，开源版的话需要进行二次开发。
 
 VictoriaMetrics 的代码质量很高，所以二次开发也比较简单。只需要参考[netstorage.Init](https://github.com/VictoriaMetrics/VictoriaMetrics/blob/cluster/app/vminsert/netstorage/netstorage.go#L507)实现即可，仅有 2 行代码。这里给出一个代码实现参考：
 
 
-```go
+```go {filename=netstorage.go}
 // ResetStorageNodes initializing new storageNodes by using new addrs, and replace the old global storageNodes
 func ResetStorageNodes(addrs []string, hashSeed uint64) {
 	if len(addrs) == 0 {
@@ -188,3 +241,9 @@ func ResetStorageNodes(addrs []string, hashSeed uint64) {
 ```
 
 自己实现发现实例列表的库，在库里面调用该`ResetStorageNodes`方法即可。
+
+### Helm
+Helm图表简化了在Kubernetes中管理VictoriaMetrics集群版本的过程。它可在[helm-charts](https://github.com/VictoriaMetrics/helm-charts)仓库中获得。
+
+### Kubernetes operator
+[K8s operator](https://github.com/VictoriaMetrics/operator) 简化了在Kubernetes中管理VictoriaMetrics组件的过程。
