@@ -1,0 +1,8 @@
+{
+	"triggerTaskOnSave.selectedTask": "hugo:relref",
+	"triggerTaskOnSave.tasks": {
+        "hugo:relref": [
+            "*.md",
+        ],
+    }
+}

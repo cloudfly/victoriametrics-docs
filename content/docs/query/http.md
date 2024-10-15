@@ -212,6 +212,17 @@ VictoriaMetrics 支持下面这些 [Prometheus 查询 API](https://prometheus.io
 {{< /tabs >}}
 
 
+### /admin/tenants
+
+列出在给定时间范围内已提取数据的租户，仅集群版支持该 API 。
+
+```
+http://<vmselect>:8481/admin/tenants?start=...&end=...`
+```
+
+`start` 和 `end` 参数是可选的。默认返回 VictoriaMetrics 集群中至少包含一条数据的租户列表。
+
+
 ### [/api/v1/targets](https://prometheus.io/docs/prometheus/latest/querying/api/#targets)
 
 更多详情看[这些文档](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-scrape-prometheus-exporters-such-as-node-exporter)。
@@ -225,7 +236,7 @@ VictoriaMetrics支持Graphite协议的数据摄入——详见[这些文档](htt
 
 所有Graphite处理程序都可以使用`/graphite`前缀。例如，`/graphite/metrics/find`和`/metrics/find`都应该有效。
 
-VictoriaMetrics支持`__graphite__`伪标签，用于在[MetricsQL](./metricsql/_index.md)中使用与Graphite兼容的过滤器过滤时间序列。详见[这些文档](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#selecting-graphite-metrics)。
+VictoriaMetrics支持`__graphite__`伪标签，用于在[MetricsQL]({{< relref "./metricsql/_index.md" >}})中使用与Graphite兼容的过滤器过滤时间序列。详见[这些文档](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#selecting-graphite-metrics)。
 
 ### Render API {#graphite-render}
 VictoriaMetrics在`/render` url 上支持[Graphite Render API](https://graphite.readthedocs.io/en/stable/render_api.html)子集，Grafana中的Graphite数据源会使用这一功能。在Grafana中配置[Graphite数据源](https://grafana.com/docs/grafana/latest/datasources/graphite/)时，必须将`Storage-Step` HTTP请求头设置为VictoriaMetrics中存储的Graphite数据点之间的步长。例如，`Storage-Step: 10s`表示VictoriaMetrics中存储的Graphite数据点之间相隔10秒。
