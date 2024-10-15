@@ -18,7 +18,7 @@ MetricsQL 除了实现了 PromQL 的所有功能，还额外增加了下面的�
 这些特性可以在 [VictoriaMetrics playground](https://play.victoriametrics.com/select/accounting/1/6a716b0f-38bc-4856-90ce-448fd713e3fe/prometheus/graph/) 进行验证，也可以在你自己的 [VictoriaMetrics 实例]({{< relref "../../quickstart.md" >}})上验证。
 
 
-### 兼容 Graphite 的过滤器
+### 兼容 Graphite 的过滤器 {#graphite-filter}
 
 支持兼容 Graphite 过滤器的写法，比如`{__graphite__="foo.*.bar"}`。VictoriaMetrics 支持使用`__graphite__`伪 Label 从 VictoriaMetrics 中使用兼容 Graphite 的过滤器查询时序数据。比如，`{__graphite__="foo.*.bar"}`等同于`{__name__=~"foo[.][^.]*[.]bar"}`，但它的性能更高并且很容易使用。更多内容请阅读 [Graphite 模糊匹配](https://graphite.readthedocs.io/en/latest/render_api.html#paths-and-wildcards)。因此可在 Grafana 中 VictoriaMetrics 可以作为 Graphite 数据源。
 
