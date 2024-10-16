@@ -1,5 +1,6 @@
 ---
 title: PromQL 新手入门
+description: PromQL 语法教学，它是使用 MetricsQL 的基础
 weight: 3
 ---
 
@@ -14,7 +15,7 @@ weight: 3
 node_network_receive_bytes_total
 ```
 
-这个名称源自于[node_exporter指标](https://github.com/prometheus/node_exporter)，它包含了在各种网络接口上接收的字节数。这样一个简单的查询可能会返回具有相同名称但带有不同 Label Set 的多个 Timeseries。例如，上面的查询可能会返回以下 `device` Label 等于`eth0`、`eth1`和`eth2`的 Timeseries：
+这个名称源自于[node_exporter指标](https://github.com/prometheus/node_exporter)，它包含了在各种网络接口上接收的字节数。这样一个简单的查询可能会返回具有相同名称但带有不同 Label Set 的多个 Timeseries。例如，上面的查询可能会返回以下`device`Label 等于`eth0`、`eth1`和`eth2`的 Timeseries：
 
 ```
 node_network_receive_bytes_total{device="eth0"}
@@ -58,13 +59,13 @@ FROM (
 node_network_receive_bytes_total{device="eth1"}
 ```
 
-如果你想要查询除了 `eth1` 的所有 timeseries，只需要把语句里的`=`换成`!=`就可以：
+如果你想要查询除了`eth1`的所有 timeseries，只需要把语句里的`=`换成`!=`就可以：
 
 ```
 node_network_receive_bytes_total{device!="eth1"}
 ```
 
-如何选择`device`以 `eth` 开头的所有 timeseries 呢？只需要使用正则表达式：
+如何选择`device`以`eth`开头的所有 timeseries 呢？只需要使用正则表达式：
 
 ```
 node_network_receive_bytes_total{device=~"eth.+"}
@@ -72,7 +73,7 @@ node_network_receive_bytes_total{device=~"eth.+"}
 
 这个正则过滤器支持 [Go 语言](https://golang.org/pkg/regexp/)（RE2）支持的所有写法。
 
-要查询所有`device`不以 `eth` 开头的 timeseries，则只需要把 `=~` 替换为 `!~`：
+要查询所有`device`不以`eth`开头的 timeseries，则只需要把`=~`替换为`!~`：
 
 ```
 node_network_receive_bytes_total{device!~"eth.+"}
@@ -87,14 +88,14 @@ node_network_receive_bytes_total{instance="node42:9100", device=~"eth.+"}
 
 这些 Label 过滤器之间是与运算关系。意思是『返回即匹配这个过滤器，又匹配那个过滤器的数据』。
 
-那如果实现或运算逻辑呢？当前的 PromQL 是不支持或运算的，但大多数场景是可以通过正则表达式来解决的。举个例子，下面的查询语句就会返回 `device` 是 `eth1` 或 `lo` 的 timeseries。
+那如果实现或运算逻辑呢？当前的 PromQL 是不支持或运算的，但大多数场景是可以通过正则表达式来解决的。举个例子，下面的查询语句就会返回`device`是`eth1`或`lo`的 timeseries。
 
 ```
 node_network_receive_bytes_total{device=~"eth1|lo"}
 ```
 
 ## 对 Metric 名称使用正则过滤
-有时我们可能需要同时返回多个监控指标。Metric 名称本质上也是一个普通的 Label 的值，其 Label 名是`__name__`。所以可以通过对 Metric 名使用正则的方式，来过滤出多个指标名的数据。举个例子，下面的查询语句会返回 `node_network_receive_bytes_total` 和`node_network_transmit_bytes_total`两个指标的 timeseries 数据：
+有时我们可能需要同时返回多个监控指标。Metric 名称本质上也是一个普通的 Label 的值，其 Label 名是`__name__`。所以可以通过对 Metric 名使用正则的方式，来过滤出多个指标名的数据。举个例子，下面的查询语句会返回`node_network_receive_bytes_total`和`node_network_transmit_bytes_total`两个指标的 timeseries 数据：
 
 ```
 {__name__=~"node_network_(receive|transmit)_bytes_total"}
@@ -115,7 +116,7 @@ The following query would return points where the current GC overhead exceeds ho
 go_memstats_gc_cpu_fraction > 1.5 * (go_memstats_gc_cpu_fraction offset 1h)
 ```
 
-运算符 `>` 和 `*` 在下面会有介绍。
+运算符`>`和`*`在下面会有介绍。
 
 ## 计算速率
 细心的读者会注意到上面的查询语句在 [Grafana](http://docs.grafana.org/features/datasources/prometheus/) 上绘制的线条都是下面这样递增的样式：
@@ -132,7 +133,7 @@ rate(node_network_receive_bytes_total[5m])
 
 ![rate(counter[5m])](promql-demo-2.png)
 
-查询语句中的 `[5m]` 是什么意思呢？这是一个代表 `5m`（5分钟）时间区间。在这个场景中，在计算每个时间点的每秒平均增长率时， 会往回看`5m`的数据，即最近5分钟的每秒平均增长。每个数据点的计算公式可以简化为`(Vcurr-Vprev)/(Tcurr-Tprev)`，`Vcurr` 代表当前时间`Tcurr`上的数值，`Vprev` 代表在时间`Tprev` 上的数值，其中`Tprev=Tcurr-5m`。
+查询语句中的`[5m]`是什么意思呢？这是一个代表`5m`（5分钟）时间区间。在这个场景中，在计算每个时间点的每秒平均增长率时， 会往回看`5m`的数据，即最近5分钟的每秒平均增长。每个数据点的计算公式可以简化为`(Vcurr-Vprev)/(Tcurr-Tprev)`，`Vcurr`代表当前时间`Tcurr`上的数值，`Vprev`代表在时间`Tprev`上的数值，其中`Tprev=Tcurr-5m`。
 
 如果这看起来太复杂，那么就记住，这个时间区间越大，监控图就会约平滑；而更小的时间区间会让监控图变得更加跳跃（抖动）。VictoriaMetrics 对 PromQL 进行了扩展，这个时间区间`[d]`可以省略不写，缺省情况下就是2个数据点之间的间隔（通过`step`参数指定的），而`step`的默认缺省值是`5m`。
 
@@ -227,7 +228,7 @@ Gauge 是随时可能上下波动的时间序列。 例如，内存使用情况�
 min_over_time(node_memory_MemFree_bytes[5m])
 ```
 
-VictoriaMetrics 为 PromQL 增添了 [rollup_*]({{< relref "./functions/rollup.md#rollup" >}}) 函数，当处理 Gauge 时，它会自动返回 `min`, `max` 和 `avg` 值，例如:
+VictoriaMetrics 为 PromQL 增添了 [rollup_*]({{< relref "./functions/rollup.md#rollup" >}}) 函数，当处理 Gauge 时，它会自动返回`min`, `max`和`avg`值，例如:
 
 ```
 rollup(node_memory_MemFree_bytes)
@@ -252,7 +253,7 @@ VictoriaMetrics 提供了[更丰富的而方便的 Label 改写方法]({{< relre
 + [label_value]({{< relref "./functions/label.md#label_value" >}}) — 将规定 Label 的 Value 转换为数字，作为 Value 返回。
 
 ## 一个查询返回多个结果
-有时候我们需要使用一个 PromQl 语句查询多个时间序列结果。可以使用 [or](https://prometheus.io/docs/prometheus/latest/querying/operators/#logical-set-binary-operators) 操作符。比如，下面的语句将会返回名为 `metric1`、`metric2` 和 `metric3` 的时序数据结果：
+有时候我们需要使用一个 PromQl 语句查询多个时间序列结果。可以使用 [or](https://prometheus.io/docs/prometheus/latest/querying/operators/#logical-set-binary-operators) 操作符。比如，下面的语句将会返回名为`metric1`、`metric2`和`metric3`的时序数据结果：
 
 ```
 metric1 or metric2 or metric3
@@ -279,7 +280,7 @@ PromQL 是一种简单但功能强大的时间序列数据库查询语言。 它
 
 + 本文没有提及很多[函数](https://prometheus.io/docs/prometheus/latest/querying/functions/)和[逻辑运算符](https://prometheus.io/docs/prometheus/latest/querying/operators/#logical-set-binary-operators) 。
 + 本文没有包含[子查询](https://medium.com/@valyala/prometheus-subqueries-in-victoriametrics-9b1492b720b3)内容。
-+ 本文没有包含查询模板(通过 `CTE` or [WITH templates](https://victoriametrics.com/promql/expand-with-exprs)), 它可以大大简化复杂的 PromQL 语句。
++ 本文没有包含查询模板(通过`CTE`or [WITH templates](https://victoriametrics.com/promql/expand-with-exprs)), 它可以大大简化复杂的 PromQL 语句。
 + 本味没有提及很多 VictoriaMetrics 所支持的 [MetricsQL]({{< relref "./functions/label.md" >}}) 诸多有用特性。
 
 我建议可以通过这个[备忘单](https://promlabs.com/promql-cheat-sheet/)来学习 PromQL。

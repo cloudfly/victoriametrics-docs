@@ -1,5 +1,6 @@
 ---
 title: 写入 API
+description: VictoriaMetrics 的数据写入 API 文档说明和样例，方便进行日常参考。
 weight: 10
 ---
 
@@ -360,14 +361,6 @@ curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST htt
 
 ### V1 Format
 
-单机版：
-
-```sh
-```
-集群版：
-
-```sh
-```
 
 {{< tabs items="单机版,集群版" >}}
   {{< tab >}}

@@ -1,5 +1,6 @@
 ---
 title: "日常运维"
+description: 介绍 VictoriaMetrics 日常运维中一些常见问题的解法。比如处理机器故障，一机多盘，集群扩容等。
 weight: 20
 ---
 
@@ -70,7 +71,7 @@ curl 'http://localhost:8442/internal/force_merge?partition_prefix=2022_01'
 删除历史数据是最直接的。
 
 1. 先 stop 掉 vmstorage 组件。
-2. 删除 `$DATA/data/{big,small}/YYYY_MM` 目录。
+2. 删除`$DATA/data/{big,small}/YYYY_MM`目录。
 3. 启动 vmstorage。
 
 ### 只有一个 partition ?

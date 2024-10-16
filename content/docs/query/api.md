@@ -1,13 +1,14 @@
 ---
 title: 查询 API
+description: VictoriaMetrics 的数据查询 API 接口文档说明和样例，方便进行日常参考。
 weight: 5
 ---
 
 同[写入API]({{< relref "../write/api.md" >}})一样，集群版本和单机版的查询API主要区别是数据的查询是由独立组件完成的，并有多租户的支持。
-集群版的 URL 格式为 `http://<vmselect>:8481/select/<accountID>/prometheus/<suffix>`, 其中:
+集群版的 URL 格式为`http://<vmselect>:8481/select/<accountID>/prometheus/<suffix>`, 其中:
 
-- `<accountID>` 是一个任意32位数字，用来标识查询的空间（即租户），详见[这里]({{< relref "../write/api.md" >}})。
-- `<suffix>` 见下面。
+- `<accountID>`是一个任意32位数字，用来标识查询的空间（即租户），详见[这里]({{< relref "../write/api.md" >}})。
+- `<suffix>`见下面。
 
 ## 导出数据 {#export}
 
@@ -15,7 +16,7 @@ weight: 5
 
 导出 JSON line 格式的原始数据，更多信息看[这篇文章](https://medium.com/@valyala/analyzing-prometheus-data-with-external-tools-5f3e5e147639)。
 
-导出的数据可以使用另外一个接口 `api/v1/import/csv` 导入到 VictoriaMetrics。
+导出的数据可以使用另外一个接口`api/v1/import/csv`导入到 VictoriaMetrics。
 
 {{< tabs items="单机版,集群版" >}}
   {{< tab >}}
@@ -66,7 +67,7 @@ wget -O- -q 'http://your_victoriametrics_instance:8428/api/v1/series/count' | jq
 
 ### /api/v1/export/csv
 
-导出 CSV 格式原始数据。它可以使用另外一个接口 `api/v1/import/csv` 导入到 VictoriaMetrics。
+导出 CSV 格式原始数据。它可以使用另外一个接口`api/v1/import/csv`导入到 VictoriaMetrics。
 
 {{< tabs items="单机版,集群版" >}}
   {{< tab >}}
@@ -185,12 +186,12 @@ VictoriaMetrics 在`/api/v1/status/tsdb`接口以类似于 Prometheus 的方式�
 该接口支持以下可选查询参数：
 
 - `topN=N`：这里`N`表示返回统计值最大的信息，默认`N=10`，即返回top10的统计信息数据。
-- `date=YYYY-MM-DD`：这里`YYYY-MM-DD`表示用于统计哪天的数据。默认统计当天的数据，传入`date=1970-01-01` 表示统计全局的数据。
+- `date=YYYY-MM-DD`：这里`YYYY-MM-DD`表示用于统计哪天的数据。默认统计当天的数据，传入`date=1970-01-01`表示统计全局的数据。
 - `focusLabel=LABEL_NAME`：在返回数据中的`seriesCountByFocusLabelValue`字段中，计算给定`LABEL_NAME`中包含 timeseries 最多的 Label 值集合。
 - `match[]=SELECTOR`：这里`SELECTOR`用来限定统计目标，只有匹配了该过滤器的 timeseries 才会被统计，默认统计所有的 timeseries。
 - `extra_label=LABEL=VALUE`：使用`LABEL=VALUE`过滤出要统计的目标timeseries。
 
-在[集群版]({{< relref "../ops/cluster.md" >}})中，每个`vmstorage`独立跟踪存储的时间序列。`vmselect` 通过 `/api/v1/status/tsdb` API 从每个 `vmstorage` 节点请求统计信息，并通过对每个时间序列的统计信息求和来合并结果。
+在[集群版]({{< relref "../ops/cluster.md" >}})中，每个`vmstorage`独立跟踪存储的时间序列。`vmselect`通过`/api/v1/status/tsdb`API 从每个`vmstorage`节点请求统计信息，并通过对每个时间序列的统计信息求和来合并结果。
 当同一时间序列的样本由于[复制]({{< relref "../ops/cluster.md#replication" >}})或[重路由]({{< relref "../ops/cluster.md#cluster-available" >}})分布在多个`vmstorage`节点上时，这可能会导致值膨胀。
 比如你的集群是3副本，统计值大概率是写入数据量的3倍。
 
@@ -255,7 +256,7 @@ VictoriaMetrics 在`/api/v1/status/tsdb`接口以类似于 Prometheus 的方式�
 http://<vmselect>:8481/admin/tenants?start=...&end=...`
 ```
 
-`start` 和 `end` 参数是可选的。默认返回 VictoriaMetrics 集群中至少包含一条数据的租户列表。
+`start`和`end`参数是可选的。默认返回 VictoriaMetrics 集群中至少包含一条数据的租户列表。
 
 
 ## Graphite
@@ -279,10 +280,10 @@ VictoriaMetrics在`/render`url 上只支持了一部分，Grafana 中的 Graphit
 #### [/metrics/index.json](https://graphite-api.readthedocs.io/en/latest/api.html#metrics-index-json)
 returns 所有的 names.
 
-VictoriaMetrics `/metrics/find` 和 `/metrics/expand`接口上支持以下额外的参数:
+VictoriaMetrics `/metrics/find`和`/metrics/expand`接口上支持以下额外的参数:
 
-+ `label` - 用于选择任意标签值。默认情况下，`label=__name__`，即选择度量名称。
-+ `delimiter` - 用于在度量名称层次结构中使用不同的分隔符。例如，`/metrics/find?delimiter=``&query=node``*` 将返回所有以`node_`开头的度量名称前缀。默认情况下，`delimiter=.`。
++ `label`- 用于选择任意标签值。默认情况下，`label=__name__`，即选择度量名称。
++ `delimiter`- 用于在度量名称层次结构中使用不同的分隔符。例如，`/metrics/find?delimiter=``&query=node``*`将返回所有以`node_`开头的度量名称前缀。默认情况下，`delimiter=.`。
 
 ### [Tags API](https://graphite.readthedocs.io/en/stable/tags.html) {#graphite-tags}
 
@@ -297,16 +298,16 @@ VictoriaMetrics `/metrics/find` 和 `/metrics/expand`接口上支持以下额外
 返回 tag 名称列表.
 
 #### [/tags/{tag_name}](https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags)
-返回指定 `<tag_name>`的值列表.
+返回指定`<tag_name>`的值列表.
 
 #### [/tags/findSeries](https://graphite.readthedocs.io/en/stable/tags.html#exploring-tags)
 返回匹配`expr`的 series.
 
 #### [/tags/autoComplete/tags](https://graphite.readthedocs.io/en/stable/tags.html#auto-complete-support)
-返回匹配 `tagPrefix` 和/或 `expr`的tag名称列表。
+返回匹配`tagPrefix`和/或`expr`的tag名称列表。
 
 #### [/tags/autoComplete/values](https://graphite.readthedocs.io/en/stable/tags.html#auto-complete-support)
-返回匹配 `valuePrefix` 和/或 `expr` tag值列表。
+返回匹配`valuePrefix`和/或`expr`tag值列表。
 
 #### [/tags/delSeries](https://graphite.readthedocs.io/en/stable/tags.html#removing-series-from-the-tagdb)
 

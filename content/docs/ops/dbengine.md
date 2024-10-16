@@ -1,5 +1,6 @@
 ---
 title: 存储引擎
+description: 介绍 VictoriaMetrics 存储引擎相关的一些知识
 weight: 30
 ---
 
@@ -9,17 +10,17 @@ VictoriaMetrics将接收的数据缓存在内存中，最多一秒钟。然后�
 
 将内存部分持久化到磁盘时，它们被保存在`<-storageDataPath>/data/small/YYYY_MM/`文件夹下的`part`目录中，其中`YYYY_MM`是所保存数据的月份分区。例如，`2022_11`是包含来`自2022年11月`[原始样本]({{< relref "../concepts.md#samples" >}})的部分所属的分区。每个分区目录都包含一个`parts.json`文件，其中列出了该分区中实际存在的部分。
 
-每个 `part` 目录还包含一个`metadata.json`文件，其中包含以下字段：
+每个`part`目录还包含一个`metadata.json`文件，其中包含以下字段：
 
-+ `RowsCount` - 存储在零件中的原始样本数量。
-+ `BlocksCount` - 存储在该部分中的块数量（有关块的详细信息请参见下文）。
-+ `MinTimestamp`和`MaxTimestamp` - 存储在该部分中原始样本的最小和最大时间戳。
-+ `MinTimestamp` and `MaxTimestamp` - minimum and maximum timestamps across raw samples stored in the part
-+ `MinDedupInterval` - 给定部分应用的[去重间隔]({{< relref "./cluster.md#deduplidate" >}})。
++ `RowsCount`- 存储在零件中的原始样本数量。
++ `BlocksCount`- 存储在该部分中的块数量（有关块的详细信息请参见下文）。
++ `MinTimestamp`和`MaxTimestamp`- 存储在该部分中原始样本的最小和最大时间戳。
++ `MinTimestamp`and `MaxTimestamp`- minimum and maximum timestamps across raw samples stored in the part
++ `MinDedupInterval`- 给定部分应用的[去重间隔]({{< relref "./cluster.md#deduplidate" >}})。
 
-每个 part 由按内部时间序列ID（也称为`TSID`）排序的 `block` 组成。每个 `block` 包含最多`8K`个原始样本，这些样本属于单个时间序列。每个 `block` 中的原始样本按照时间戳进行排序。同一时间序列的块按第一个样本的时间戳进行排序。所有块的时间戳和值以[压缩形式](https://faun.pub/victoriametrics-achieving-better-compression-for-time-series-data-than-gorilla-317bc1f95932)存储在 `part` 目录下的单独文件中 - `timestamps.bin`和`values.bin`。
+每个 part 由按内部时间序列ID（也称为`TSID`）排序的`block`组成。每个`block`包含最多`8K`个原始样本，这些样本属于单个时间序列。每个`block`中的原始样本按照时间戳进行排序。同一时间序列的块按第一个样本的时间戳进行排序。所有块的时间戳和值以[压缩形式](https://faun.pub/victoriametrics-achieving-better-compression-for-time-series-data-than-gorilla-317bc1f95932)存储在`part`目录下的单独文件中 - `timestamps.bin`和`values.bin`。
 
-`part` 目录还包含`index.bin`和`metaindex.bin`文件 - 这些文件包含了快速块查找的索引，这些块属于给定的`TSID`并覆盖给定的时间范围。
+`part`目录还包含`index.bin`和`metaindex.bin`文件 - 这些文件包含了快速块查找的索引，这些块属于给定的`TSID`并覆盖给定的时间范围。
 
 部分会周期性地在后台合并成更大的part。后台合并提供以下好处：
 

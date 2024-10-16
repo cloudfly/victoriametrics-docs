@@ -1,23 +1,24 @@
 ---
 title: 快速开始
+description: 用简短的内容和操作让一个用户快速的运行起 VictoriaMetrics 服务，并使用它完成基础的监控任务。
 weight: 2
 ---
 
 ## 如何安装
 VictoriaMetrics 有 2 种发布形式：
 
-+ [单机版本]({{< relref "ops/single.md" >}}) - ALL-IN-ONE 的二进制形式，非常易于使用和维护。可完美地垂直扩展，并且轻松处理百万级的QPS写入。
-+ [集群版本]({{< relref "ops/cluster" >}}) - 一套组件，可用于构建水平可扩展集群。
++ [单机版本]({{< relref "ops/single.md" >}}) - ALL-IN-ONE 的二进制形式，非常易于使用和维护。可以垂直扩展，并轻松处理百万级的 QPS 写入。
++ [集群版本]({{< relref "ops/cluster" >}}) - 一套组件，可用于构建水平可扩展的集群。
 
 ### 单机版
-使用下面的命令下载最新版本的 VictoriaMetrics Docker 镜像，然后使用`8482`端口运行，并将数据存储在当前目录中的 `victoria-metrics-data` 目录下。
+使用下面的命令下载最新版本的 VictoriaMetrics Docker 镜像，然后使用`8482`端口运行，并将数据存储在当前目录中的`victoria-metrics-data`目录下。
 
 ```shell
 docker pull victoriametrics/victoria-metrics:latest
 docker run -it --rm -v `pwd`/victoria-metrics-data:/victoria-metrics-data -p 8428:8428 victoriametrics/victoria-metrics:latest
 ```
 
-用浏览器打开[`http://localhost:8428`](http://localhost:8428/)然后阅读[这些文档]({{< relref "ops/single.md#operation" >}})。
+用浏览器打开[`http://localhost:8428`](http://localhost:8428/)然后阅读[这些文档]({{< relref "./ops/single.md#operation" >}})。
 
 ### 集群版
 下面的命令 clone 最新版本的 VictoriaMetrics 仓库，然后使用命令`make docker-cluster-up`启动 Docker 容器。更多的自定义启动项可以通过编辑[`docker-compose-cluster.yml`](https://github.com/VictoriaMetrics/VictoriaMetrics/blob/master/deployment/docker/docker-compose-cluster.yml)实现。
@@ -28,59 +29,33 @@ git clone https://github.com/VictoriaMetrics/VictoriaMetrics && cd VictoriaMetri
 make docker-cluster-up
 ```
 
-更多详情[请看这个文档](https://github.com/VictoriaMetrics/VictoriaMetrics/tree/master/deployment/docker#readme)和[集群安装文档]({{< relref "ops/cluster#operation" >}})
+更多详情[请看这个文档](https://github.com/VictoriaMetrics/VictoriaMetrics/tree/master/deployment/docker#readme)和[集群安装文档]({{< relref "ops/deploy.md#cluster" >}})
 
 ## 数据写入
 
 VictoriaMetrics 支持常见的多种数据协议写入，包括 prometheus remote write、influxdb、opentsdb 等等。
 
 ### InfluxDB {#influxdb}
-写入接口`/influx/write` 或 `/influx/api/v2/write`。
+写入接口`/influx/write`或`/influx/api/v2/write`。
 ```bash
 curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST 'http://localhost:8428/influx/api/v2/write'
 ```
-使用`/api/v1/export`接口查询写入内容会返回如下数据：
+使用`/api/v1/export`接口查询刚写入的数据，返回内容如下：
 ```bash
+# command
+curl -G 'http://localhost:8428/api/v1/export' -d 'match={__name__=~"measurement.*"}'
+# response
 {"metric":{"__name__":"measurement_field1","tag1":"value1","tag2":"value2"},"values":[123],"timestamps":[1695902762311]}
 {"metric":{"__name__":"measurement_field2","tag1":"value1","tag2":"value2"},"values":[1.23],"timestamps":[1695902762311]}
 ```
 
-### OpenTSDB
-需要在运行 VictoriaMetrics 时候使用`-opentsdbHTTPListenAddr`参数来开启针对 OpenTSDB 协议的 HTTP 写入接口`/api/put`。例如，下面的命令将 OpenTSDB 的 HTTP 写入接口开在`4242`端口上：
+{{% doc-extra-label "/influx/write" %}}
 
-```bash
-/path/to/victoria-metrics-prod -opentsdbHTTPListenAddr=:4242
-```
+### Prometheus Text Format
 
-使用下面的命令可写入单条数据：
+VictoriaMetrics 通过`/prometheus/api/v1/import`接口来接收 [Prometheus exposition text format](https://github.com/prometheus/docs/blob/master/content/docs/instrumenting/exposition_formats.md#text-based-format) 数据，以及接收 [Pushgateway 协议](https://github.com/prometheus/pushgateway#url)的数据
 
-```bash
-curl -H 'Content-Type: application/json' -d '{"metric":"x.y.z","value":45.34,"tags":{"t1":"v1","t2":"v2"}}' http://localhost:4242/api/put
-```
-写入多条数据：
-```bash
-curl -H 'Content-Type: application/json' -d '[{"metric":"foo","value":45.34},{"metric":"bar","value":43}]' http://localhost:4242/api/put
-```
-
-使用`/api/v1/export`接口来查看刚刚写入的数据：
-```bash
-# command
-curl -G 'http://localhost:8428/api/v1/export' -d 'match[]=x.y.z' -d 'match[]=foo' -d 'match[]=bar'
-# response
-{"metric":{"__name__":"foo"},"values":[45.34],"timestamps":[1566464846000]}
-{"metric":{"__name__":"bar"},"values":[43],"timestamps":[1566464846000]}
-{"metric":{"__name__":"x.y.z","t1":"v1","t2":"v2"},"values":[45.34],"timestamps":[1566464763000]}
-```
-
-{{% doc-extra-label "/api/put" %}}
-
-更多数据写入详情，请[参考这里]({{< relref "./write/api.md" >}})。
-
-### Prometheus Exposition Format
-
-VictoriaMetrics 通过`/prometheus/api/v1/import`接口来接收 [Prometheus exposition format](https://github.com/prometheus/docs/blob/master/content/docs/instrumenting/exposition_formats.md#text-based-format)数据，以及接收 [Pushgateway 协议](https://github.com/prometheus/pushgateway#url)的数据
-
-比如下面一行命令将 Prometheus Exposition Format 的指标数据写入到 VictoriaMetrics：
+比如下面一行命令将 Prometheus Exposition Text Format 的指标数据写入到 VictoriaMetrics：
 
 ```bash
 curl -d 'foo{bar="baz"} 123' -X POST 'http://localhost:8428/prometheus/api/v1/import/prometheus'
@@ -95,17 +70,22 @@ curl -G 'http://localhost:8428/api/v1/export' -d 'match={__name__=~"foo"}'
 {"metric":{"__name__":"foo","bar":"baz"},"values":[123],"timestamps":[1594370496905]}
 ```
 
-下面的命令模拟 [pushgateway 写入协议](https://github.com/prometheus/pushgateway#url)，将一条metric带上`{job="my_app",instance="host123"}` Label 写入
+下面的命令模拟 [pushgateway 写入协议](https://github.com/prometheus/pushgateway#url)，将一条 metric 带上`{job="my_app",instance="host123"}`Label 写入
 
 ```bash
 curl -d 'metric{label="abc"} 123' -X POST 'http://localhost:8428/api/v1/import/prometheus/metrics/job/my_app/instance/host123'
+```
+
+`/api/v1/export`接口将返回如下数据：
+```json
+{"metric":{"__name__":"metric","job":"my_app","instance":"host123","label":"abc"},"values":[123],"timestamps":[1729084141050]}
 ```
 
 ### Prometheus Remote Write
 
 VictoriaMetrics 在`/prometheus/api/v1/write`或`/prometheus`接口上接收处理 [Prometheus Remote Write](https://prometheus.io/docs/specs/remote_write_spec/) 协议写入的数据。
 
-可以在 Prometheus 的配置文件中（通常是在`/etc/prometheus/prometheus.yml`中）配置上 remote_write 地址，它就会将数据发送给 VictoriaMetrics:
+可以在 Prometheus 的配置文件中（通常是在`/etc/prometheus/prometheus.yml`中）配置上`remote_write`地址，它就会将数据发送给 VictoriaMetrics:
 ```yaml
 remote_write:
   - url: http://<victoriametrics-addr>:8428/prometheus/api/v1/write
@@ -121,7 +101,7 @@ VictoriaMetrics 提供了 HTTP 接口来处理查询请求。这些接口会被�
 
 我们可以使用上面提到的`/api/v1/export`将原始写入数据导出查看，但这通常仅用于问题排查，而非正式使用。
 
-大多数情况我们都是使用 [MetricsQL]({{< relref "query/metricsql" >}}) 来查询数据。 这是用来在 VictoriaMetrics 上查询数据的一种查询语言。 一个类 [PromQL](https://prometheus.io/docs/prometheus/latest/querying/basics) 的查询语言，但它拥有很多强大的处理函数和特性来处理时序数据。
+大多数情况我们都是使用 [MetricsQL]({{< relref "query/metricsql" >}}) 来查询数据。 它是用来在 VictoriaMetrics 上查询数据的一种查询语言。一个类 [PromQL](https://prometheus.io/docs/prometheus/latest/querying/basics) 的查询语言，但它扩展了很多强大的处理函数和特性来处理时序数据。
 
 ### Instant Query
 
@@ -212,14 +192,11 @@ curl "http://localhost:8428/api/v1/query_range?query=measurement_field1&step=1m&
 
 ## 监控告警
 
-
-
-
 ### 监控 {#monitoring}
 
 每个 VictoriaMetrics 组件都会在`/metrics`接口上暴露自己的 Prometheus 格式指标，其中包含有关性能和健康状态的各种详细信息。这些指标可以通过`vmagent`或`Prometheus`进行抓取。
 
-对于单机版，当`-selfScrapeInterval`启动参数设置为大于`0`时，它会自动抓取自己的`/metrics`并存储。例如，`-selfScrapeInterval=10s`将标识每10秒一次的自动抓取`/metrics`数据并存储。 更多内容[参见这里]({{< relref "ops/single.md#metrics" >}})。
+对于单机版，当`-selfScrapeInterval`启动参数设置为大于`0`时，它会自动抓取自己的`/metrics`并存储。例如，`-selfScrapeInterval=10s`表示每`10`秒一次的自动抓取`/metrics`数据并存储。更多内容[参见这里]({{< relref "ops/single.md#metrics" >}})。
 
 
 VictoriaMetrics 团队为核心组件准备了一系列的 [Grafana Dashboard](https://grafana.com/orgs/victoriametrics/dashboards)。每个 Dashboard 中都包含很多有用的信息和提示。建议使用安装这些 Dashboard 并保持更新。
@@ -241,7 +218,7 @@ VictoriaMetrics 团队为核心组件准备了一系列的 [Grafana Dashboard](h
 ### 容量规划
 请阅读[集群版]({{< relref "ops/cluster#capacity" >}})和[单机版]({{< relref "ops/single.md#capacity" >}})文档中的容量规划部分。
 
-容量规划需要依赖于[监控](#monitoring)，所以你应该首先配置下监控。搞清楚资源使用情况以及VictoriaMetrics的性能的前提是，需要知道[活跃时序系列]({{< relref "faq.md#what-is-active-timeseries" >}})，[高流失率]({{< relref "faq.md#what-is-high-churn-rate" >}})，[基数]({{< relref "faq.md#what-is-high-cadinality" >}})，[慢写入]({{< relref "faq.md#what-is-slow-insert" >}})这些基础技术概念，他们都会在 [Grafana Dashboard](https://grafana.com/orgs/victoriametrics/dashboards) 中呈现。
+容量规划需要依赖于[监控](#monitoring)，所以你应该首先配置下监控。搞清楚 VictoriaMetrics 在你所用的机型上的资源使用情况，在进行性能调优和容量规划。 但这些前提是，你需要知道[活跃时序系列]({{< relref "faq.md#what-is-active-timeseries" >}})，[高流失率]({{< relref "faq.md#what-is-high-churn-rate" >}})，[基数]({{< relref "faq.md#what-is-high-cadinality" >}})，[慢写入]({{< relref "faq.md#what-is-slow-insert" >}})这些基础技术概念，这些关键指标都会在 [Grafana Dashboard](https://grafana.com/orgs/victoriametrics/dashboards) 中呈现。
 
 ### 数据安全
 建议阅读下面几篇内容：
@@ -254,12 +231,8 @@ VictoriaMetrics 团队为核心组件准备了一系列的 [Grafana Dashboard](h
 为了避免资源使用过度或性能下降，必须设置限制：
 
 + [资源使用限制]({{< relref "faq.md#how-to-limit-memory-usage" >}})
-+ [基数限制]({{< relref "ops/single.md#cadinality-limit" >}})
++ [基数限制]({{< relref "ops/single.md#cadinality" >}})
 
 ### 安全建议
 + [单机版安全建议]({{< relref "ops/single.md#security" >}})
 + [集群版安全建议]({{< relref "ops/cluster#security" >}})
-
-
-然后再阅读 [Prometheus](https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben#prometheus-setup) 和 [Grafana 配置](https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben#grafana-setup)文档。
-

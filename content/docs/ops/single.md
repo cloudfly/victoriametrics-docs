@@ -1,5 +1,6 @@
 ---
 title: 单机版本
+description: VictoriaMetrics 单机版本的相关功能介绍。主要包含 VictoriaMetrics 的通用存储能力，比如保存时间、备份、去重机制等等
 weight: 5
 ---
 
@@ -26,7 +27,7 @@ VictoriaMetrics 的容量与可用资源呈线性关系。所需的 CPU 和 RAM 
 
 + 为了降低突发流量峰值期间，内存溢出（OOM）导致系统崩溃和减速的概率，建议保留`50%`的空闲 RAM。
 + 为了降低突发流量期间，系统性能降低的可能性，将`50%`的空闲 CPU 用于分配。
-+ 至少保留 `-storageDataPath` 启动参数指定的目录中 [20% 的可用存储空间](#storage)。详见[此处](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#list-of-command-line-flags)`-storage.minFreeDiskSpaceBytes` 启动参数说明。
++ 至少保留`-storageDataPath`启动参数指定的目录中 [20% 的可用存储空间](#storage)。详见[此处](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#list-of-command-line-flags)`-storage.minFreeDiskSpaceBytes`启动参数说明。
 
 参见[资源使用限制](#limitation)。
 
@@ -40,7 +41,7 @@ VictoriaMetrics 的容量与可用资源呈线性关系。所需的 CPU 和 RAM 
 
 `part`所覆盖的时间范围不受保存期限限制。一个数据`part`可以涵盖几小时或几天的数据。因此，只有当完全超出配置保留期时才能删除一个`part`。
 
-给定的保留期（`-retentionPeriod`）对应的最大磁盘空间使用量将是`-retentionPeriod` + 1 个月。例如，如果 `-retentionPeriod` 设置为`1`，则一月份的数据将在3月1日被删除。
+给定的保留期（`-retentionPeriod`）对应的最大磁盘空间使用量将是`-retentionPeriod`+ 1 个月。例如，如果`-retentionPeriod`设置为`1`，则一月份的数据将在3月1日被删除。
 
 在现有数据上延长保留期是安全的。如果将保留期（`-retentionPeriod`）设置为比之前更低的值，则超过保存时间外的数据最终将被删除。
 
@@ -50,20 +51,20 @@ VictoriaMetrics不支持无限保存时间，但您可以指定一个任意长�
 
 默认情况下，VictoriaMetrics 针对典型业务场景进行了优化，以最大化利用资源。某些业务场景可能需要细粒度的资源使用限制。在这些情况下，以下启动参数可能会有用：
 
-+ `-memory.allowedPercent` 和 `-memory.allowedBytes`：限制 VictoriaMetrics 内部缓存使用的内存大小。请注意，VictoriaMetrics 可能会使用更多的内存，因为这些参数不限制每个查询执行时所需的额外内存。
++ `-memory.allowedPercent`和`-memory.allowedBytes`：限制 VictoriaMetrics 内部缓存使用的内存大小。请注意，VictoriaMetrics 可能会使用更多的内存，因为这些参数不限制每个查询执行时所需的额外内存。
 + `-search.maxMemoryPerQuery`：限制用于处理单个查询的内存用量。需要更多内存的查询将被拒绝。查询大量数据的重查询可能会略微超过每个查询的内存限制。并行的查询的总内存限制可以估计为`-search.maxMemoryPerQuery * -search.maxConcurrentRequests`。
 + `-search.maxUniqueTimeseries`：限制单次查询允许检索并处理的唯一时间序列的数量。VictoriaMetrics 在内存中保留有关每个查询检索到的时间序列的一些元信息，并花费一些CPU时间来处理检索的时间序列。这意味着单个查询可以使用的最大内存使用量和CPU使用量与`-search.maxUniqueTimeseries`成比例。
 + `-search.maxQueryDuration`：限制单个查询的最大执行时间。如果查询超过给定的时间，就会取消。这可以避免意外的重度查询对CPU和内存过度消耗。
-+ `-search.maxConcurrentRequests`：限制 VictoriaMetrics 可以处理的并发请求数量。更多的并发请求通常意味着更大的内存使用量。例如，如果单个查询在执行过程中需要`100 MiB`的额外内存，则`100`个并发查询可能就需要`100 * 100 MiB = 10 GiB` 的额外内存。因此，在达到并发限制时，最好限制并发查询的数量，并让新进来的查询请求排队。VictoriaMetrics提供了`-search.maxQueueDuration`启动参数来限制查询排队的最长等待时间。另请参阅`-search.maxMemoryPerQuery`启动参数。
++ `-search.maxConcurrentRequests`：限制 VictoriaMetrics 可以处理的并发请求数量。更多的并发请求通常意味着更大的内存使用量。例如，如果单个查询在执行过程中需要`100 MiB`的额外内存，则`100`个并发查询可能就需要`100 * 100 MiB = 10 GiB`的额外内存。因此，在达到并发限制时，最好限制并发查询的数量，并让新进来的查询请求排队。VictoriaMetrics提供了`-search.maxQueueDuration`启动参数来限制查询排队的最长等待时间。另请参阅`-search.maxMemoryPerQuery`启动参数。
 + `-search.maxSamplesPerSeries`：每个查询可以处理的原始样本数量。VictoriaMetrics 在查询期间按顺序处理每个检索的时间序列的原始样本。它将所选时间范围内每个原始样本解压缩到内存中，然后应用给定的[Rullup函数]({{< relref "../query/metricsql/functions/rollup.md" >}})。当查询在包含数亿条原始样本需要计算时，`-search.maxSamplesPerSeries`启动参数可以限制它对内存的消耗。
 + `-search.maxSamplesPerQuery`：限制单个查询可以处理的原始样本数量。这样可以限制重查询的CPU使用率，`-search.maxSamplesPerSeries`限制的是每个 timeseries，该参数限制的是一个查询中所有 timeseries 的原始样本总量。
 + `-search.maxPointsPerTimeseries`：限制每个[Range Query]({{< relref "../query/_index.md#range-query" >}})返回的数据点数。
 + `-search.maxPointsSubqueryPerTimeseries`：限制在子查询评估过程中，每个子查询语句结果中的数据点总数。
-+ `-search.maxSeriesPerAggrFunc` 限制在单个查询中由[MetricsQL聚合函数]({{< relref "../query/metricsql/functions/aggregation.md" >}})生成的时间序列数量。
-+ `-search.maxSeries` 限制从[/api/v1/series]({{< relref "../query/http.md#apiv1series" >}})返回的时间序列数量。这个接口主要被 Grafana 用于实现 Metric 名称、Label 名称和 Label 值的自动提示。当数据库包含大量唯一时间序列时，对该接口的查询可能会消耗大量的CPU时间和内存，因为存在[高频率变化]({{< relref "../faq.md#what-is-high-churn-rate" >}})。在这种情况下，将`-search.maxSeries`设置为较低的值有助于限制CPU和内存使用。
-+ `-search.maxTagKeys` 限制从[/api/v1/labels]({{< relref "../query/http.md#apiv1labels" >}})返回的项目数量。此接口主要用于 Grafana 自动实现 Label 名称提示。当数据库包含大量唯一时间序列时，对此接口的查询可能会消耗大量的CPU时间和内存，因为存在[高频率变化]({{< relref "../faq.md#what-is-high-churn-rate" >}})。在这种情况下，将`-search.maxTagKeys`设置为较低值有助于限制CPU和内存使用。
-+ `-search.maxTagValues` 限制从[/api/v1/label/.../values]({{< relref "../query/http.md#apiv1labelnamevalues" >}})返回的项目数量。此接口主要用于 Grafana 实现自动提示 Label 值。由于[高频率更改]({{< relref "../faq.md#what-is-high-churn-rate" >}})，当数据库包含大量唯一时间序列时，对该接口的查询可能会消耗大量CPU时间和内存。在这种情况下，将`-search.maxTagValues`设置为较低的值有助于限制CPU和内存使用。
-+ `-search.maxTagValueSuffixesPerSearch` 限制了从`/metrics/find`端点返回的条目数量。请参阅[Graphite Metrics API使用文档](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#graphite-metrics-api-usage)。
++ `-search.maxSeriesPerAggrFunc`限制在单个查询中由[MetricsQL聚合函数]({{< relref "../query/metricsql/functions/aggregation.md" >}})生成的时间序列数量。
++ `-search.maxSeries`限制从[/api/v1/series]({{< relref "../query/api.md#apiv1series" >}})返回的时间序列数量。这个接口主要被 Grafana 用于实现 Metric 名称、Label 名称和 Label 值的自动提示。当数据库包含大量唯一时间序列时，对该接口的查询可能会消耗大量的CPU时间和内存，因为存在[高频率变化]({{< relref "../faq.md#what-is-high-churn-rate" >}})。在这种情况下，将`-search.maxSeries`设置为较低的值有助于限制CPU和内存使用。
++ `-search.maxTagKeys`限制从[/api/v1/labels]({{< relref "../query/api.md#apiv1labels" >}})返回的项目数量。此接口主要用于 Grafana 自动实现 Label 名称提示。当数据库包含大量唯一时间序列时，对此接口的查询可能会消耗大量的CPU时间和内存，因为存在[高频率变化]({{< relref "../faq.md#what-is-high-churn-rate" >}})。在这种情况下，将`-search.maxTagKeys`设置为较低值有助于限制CPU和内存使用。
++ `-search.maxTagValues`限制从[/api/v1/label/.../values]({{< relref "../query/api.md#apiv1labelnamevalues" >}})返回的项目数量。此接口主要用于 Grafana 实现自动提示 Label 值。由于[高频率更改]({{< relref "../faq.md#what-is-high-churn-rate" >}})，当数据库包含大量唯一时间序列时，对该接口的查询可能会消耗大量CPU时间和内存。在这种情况下，将`-search.maxTagValues`设置为较低的值有助于限制CPU和内存使用。
++ `-search.maxTagValueSuffixesPerSearch`限制了从`/metrics/find`端点返回的条目数量。请参阅[Graphite Metrics API使用文档](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#graphite-metrics-api-usage)。
 
 参见 [基数限制](#cardinality) and [容量规划](#capacity).
 
@@ -72,7 +73,7 @@ VictoriaMetrics不支持无限保存时间，但您可以指定一个任意长�
 #### 数据双发
 
 + 在不同的数据中心（available zone）安装多个 VictoriaMetrics 实例。
-+ 将这些实例的地址通过 `-remoteWrite.url` 启动参数传递给 [vmagent](https://docs.victoriametrics.com/vmagent.html)。
++ 将这些实例的地址通过`-remoteWrite.url`启动参数传递给 [vmagent](https://docs.victoriametrics.com/vmagent.html)。
 
 
 ```sh
@@ -115,11 +116,11 @@ VictoriaMetrics在`/metrics`页面以Prometheus公开格式导出内部指标。
 
 官方提供了适用于[单机版](https://grafana.com/grafana/dashboards/10229-victoriametrics/)和[集群版](https://grafana.com/grafana/dashboards/11176-victoriametrics-cluster/) VictoriaMetrics 的 Grafana 仪表板。还可以查看由社区创建的适用于[集群 VictoriaMetrics 的替代仪表板](https://grafana.com/grafana/dashboards/11831)。
 
-仪表板上的图表包含有用的提示 - 将鼠标悬停在每个图表左上角的 `i` 图标上以阅读它。
+仪表板上的图表包含有用的提示 - 将鼠标悬停在每个图表左上角的`i`图标上以阅读它。
 
 我们建议通过[vmalert]({{< relref "../components/vmalert.md" >}})或Prometheus设置警报。
 
-VictoriaMetrics 在`/api/v1/status/active_queries` 接口中展示当前正在执行的查询以及它们的运行时间。在 `/api/v1/status/top_queries` 接口展示执行时间最长的查询语句。
+VictoriaMetrics 在`/api/v1/status/active_queries`接口中展示当前正在执行的查询以及它们的运行时间。在`/api/v1/status/top_queries`接口展示执行时间最长的查询语句。
 
 参见 [VictoriaMetrics Monitoring](https://victoriametrics.com/blog/victoriametrics-monitoring/) 和 [问题排查]({{< relref "./operation.md#troubleshooting" >}}).
 
@@ -128,9 +129,9 @@ VictoriaMetrics 在`/api/v1/status/active_queries` 接口中展示当前正在�
 
 以下启动参数与从 VictoriaMetrics 组件推送指标相关：
 
-+ `-pushmetrics.url`: Push 的目标 URL 地址。比如， `-pushmetrics.url=http://victoria-metrics:8428/api/v1/import/prometheus` 表示把内部指标 Push 到 `/api/v1/import/prometheus` 中，参见[这个文档]({{< relref "../write/api.md#prometheus" >}})。 `-pushmetrics.url` 参数可以被指定多次。这种情况下 metrics 会被 Push 到所有目标 URL 地址上。URL 中也可以包含上 Basic Auth 信息，格式是`http://user:pass@hostname/api/v1/import/prometheus`。Metrics 是以压缩的形式被 Push 到 `-pushmetrics.url` 中的，请求头中带有`Content-Encoding: gzip` 。这可以减少 Push 所需的网络带宽。
-+ `-pushmetrics.extraLabel` - 在把 metrics 数据 Push 到`-pushmetrics.url`之前追加一些 Label 。每一个Label都是用`label="value"`的格式指定。启动参数 `-pushmetrics.extraLabel` 也是可以被多次指定的。这种情况下会将指定的多个Label 全都追加到 metrics 数据中，再 Push 给 `-pushmetrics.url`地址。
-+ `-pushmetrics.interval` - Push 动作的间隔，默认是 10 秒一次。
++ `-pushmetrics.url`: Push 的目标 URL 地址。比如， `-pushmetrics.url=http://victoria-metrics:8428/api/v1/import/prometheus`表示把内部指标 Push 到`/api/v1/import/prometheus`中，参见[这个文档]({{< relref "../write/api.md#prometheus" >}})。 `-pushmetrics.url`参数可以被指定多次。这种情况下 metrics 会被 Push 到所有目标 URL 地址上。URL 中也可以包含上 Basic Auth 信息，格式是`http://user:pass@hostname/api/v1/import/prometheus`。Metrics 是以压缩的形式被 Push 到`-pushmetrics.url`中的，请求头中带有`Content-Encoding: gzip`。这可以减少 Push 所需的网络带宽。
++ `-pushmetrics.extraLabel`- 在把 metrics 数据 Push 到`-pushmetrics.url`之前追加一些 Label 。每一个Label都是用`label="value"`的格式指定。启动参数`-pushmetrics.extraLabel`也是可以被多次指定的。这种情况下会将指定的多个Label 全都追加到 metrics 数据中，再 Push 给`-pushmetrics.url`地址。
++ `-pushmetrics.interval`- Push 动作的间隔，默认是 10 秒一次。
 
 例如，以下命令指示 VictoriaMetrics 将`/metrics`里的指标推送到`https://maas.victoriametrics.com/api/v1/import/prometheus`，并使用`user:pass`基本身份验证。在将指标发送到远程存储之前，会添加`instance="foobar"`和`job="vm"`标签给所有的指标：
 
@@ -163,14 +164,14 @@ VictoriaMetrics 可以为存储在`-storageDataPath`目录下的所有数据创�
 
 快照是在`<-storageDataPath>/snapshots`目录下创建的，其中`<-storageDataPath>`是启动参数。可以随时使用[vmbackup]({{< relref "../components/vmbackup.md" >}})将快照归档到外部存储中用于备份。
 
-- `http://<victoriametrics-addr>:8428/snapshot/list` 接口包含了可用快照列表。
-- `http://<victoriametrics-addr>:8428/snapshot/delete?snapshot=<snapshot-name>` 则可删除 `<snapshot-name>` 快照.
-- `http://<victoriametrics-addr>:8428/snapshot/delete_all` 可删除所有快照。
+- `http://<victoriametrics-addr>:8428/snapshot/list`接口包含了可用快照列表。
+- `http://<victoriametrics-addr>:8428/snapshot/delete?snapshot=<snapshot-name>`则可删除`<snapshot-name>`快照.
+- `http://<victoriametrics-addr>:8428/snapshot/delete_all`可删除所有快照。
 
 从快照中恢复数据的步骤：
 
-1. 使用命令 `kill -INT`停掉 VictoriaMetrics。
-2. 使用 [vmrestore]({{< relref "../components/vmrestore.md" >}}) 将快照内容恢复到 `-storageDataPath` 参数指定的目录。
+1. 使用命令`kill -INT`停掉 VictoriaMetrics。
+2. 使用 [vmrestore]({{< relref "../components/vmrestore.md" >}}) 将快照内容恢复到`-storageDataPath`参数指定的目录。
 3. 启动 VictoriaMetrics.
 
 ### 如何删除 Timeseries
@@ -202,7 +203,7 @@ VictoriaMetrics 通过[多种写入方法]({{< relref "../write/api.md" >}})将�
 
 建议在写入历史数据时，使用`-search.disableCache`启动参数禁用查询缓存，因为缓存假设数据都是实时写入的，历史数据是不变的。补写完成后再打开缓存，可以让`vmselect`缓存最新的历史数据块。
 
-另一种解决方案是在补写完成后查询[/internal/resetRollupResultCache]({{< relref "../query/http.md#internalresetRollupResultCache" >}})接口，触发重置缓存。
+另一种解决方案是在补写完成后查询[/internal/resetRollupResultCache]({{< relref "../query/api.md#internalresetRollupResultCache" >}})接口，触发重置缓存。
 
 ### 数据更新
 
@@ -220,11 +221,11 @@ VictoriaMetrics每个时间序列在每个`-dedup.minScrapeInterval`离散间隔
 
 如果启用了降采样功能，则`-dedup.minScrapeInterval=D`等效于`-downsampling.period=0s:D`。因此可以同时使用去重和[降采样](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#downsampling)而不会出现问题。
 
-建议将 `-dedup.minScrapeInterval` 的推荐值设置为 Prometheus 配置文件中 `scrape_interval` 的值。建议所有抓取目标都使用统一的抓取间隔，请参阅详细信息[文章](https://www.robustperception.io/keep-it-simple-scrape_interval-id)。
+建议将`-dedup.minScrapeInterval`的推荐值设置为 Prometheus 配置文件中`scrape_interval`的值。建议所有抓取目标都使用统一的抓取间隔，请参阅详细信息[文章](https://www.robustperception.io/keep-it-simple-scrape_interval-id)。
 
-通过去重操作可以减少磁盘空间占用量，特别是当多个配置完全相同的 vmagent 或 Prometheus 实例以 HA 对形式写入数据到同一个 VictoriaMetrics 实例时更加有效。这些 vmagent 或 Prometheus 实例必须在其配置文件中具有相同的`external_labels` 部分，以便将数据写入同一个时间序列。另请参阅[如何设置多个 vmagent 实例来抓取相同目标](https://docs.victoriametrics.com/vmagent.html#scraping-big-number-of-targets)。
+通过去重操作可以减少磁盘空间占用量，特别是当多个配置完全相同的 vmagent 或 Prometheus 实例以 HA 对形式写入数据到同一个 VictoriaMetrics 实例时更加有效。这些 vmagent 或 Prometheus 实例必须在其配置文件中具有相同的`external_labels`部分，以便将数据写入同一个时间序列。另请参阅[如何设置多个 vmagent 实例来抓取相同目标](https://docs.victoriametrics.com/vmagent.html#scraping-big-number-of-targets)。
 
-建议为每个不同的 vmagent HA 对实例传递不同的 `-promscrape.cluster.name `值，这样去重操作就会一致地保留一个 vmagent 实例的样本，并从其他 `vmagent` 实例中删除重复样本。请参阅[详细文档](https://docs.victoriametrics.com/vmagent.html#high-availability)了解更多信息。
+建议为每个不同的 vmagent HA 对实例传递不同的`-promscrape.cluster.name `值，这样去重操作就会一致地保留一个 vmagent 实例的样本，并从其他`vmagent`实例中删除重复样本。请参阅[详细文档](https://docs.victoriametrics.com/vmagent.html#high-availability)了解更多信息。
 
 ### 多租户 {#tenant}
 
@@ -261,7 +262,7 @@ VictoriaMetrics 支持对所有接收到的指标进行与 Prometheus 兼容的�
 - target_label: cluster
   replacement: dev
 
-# Drop the metric (or scrape target) with `{__meta_kubernetes_pod_container_init="true"}` label.
+# Drop the metric (or scrape target) with `{__meta_kubernetes_pod_container_init="true"}`label.
 - action: drop
   source_labels: [__meta_kubernetes_pod_container_init]
   regex: true
@@ -280,17 +281,17 @@ VictoriaMetrics 使用各种内部缓存。这些缓存在组件被优雅关闭�
 
 如果需要在下次启动时删除此类缓存。可以通过以下方式完成：
 
-+ 在 VictoriaMetrics 停止后手动删除 `<-storageDataPath>/cache` 目录。
++ 在 VictoriaMetrics 停止后手动删除`<-storageDataPath>/cache`目录。
 + 在重新启动 VictoriaMetrics 之前将`reset_cache_on_startup`文件放置在`<-storageDataPath>/cache`目录中。 在这种情况下，VictoriaMetrics 将自动在下次启动时删除所有缓存。有关详细信息，请参阅此[issue](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/1447)。
 
 ### Cache 调整
 VictoriaMetrics 使用各种内存缓存来提升数据写入和查询性能。每种类型的缓存都在`/metrics`下暴露如下指标：
 
-+ `vm_cache_size_bytes` - 实际的 cache 大小
-+ `vm_cache_size_max_bytes` - cache 最大限制 limit
-+ `vm_cache_requests_total` - cache 的请求数
-+ `vm_cache_misses_total` - cache miss 的数量
-+ `vm_cache_entries` - cache 中的实体数
++ `vm_cache_size_bytes`- 实际的 cache 大小
++ `vm_cache_size_max_bytes`- cache 最大限制 limit
++ `vm_cache_requests_total`- cache 的请求数
++ `vm_cache_misses_total`- cache miss 的数量
++ `vm_cache_entries`- cache 中的实体数
 
 单机版和集群版的 Grafana 仪表板都包含了缓存部分，其中将缓存指标的可视化。面板显示了每种类型缓存的当前内存使用情况，以及缓存命中率。如果命中率接近100%，则表示缓存效率已经非常高，不需要进行任何调整。在故障排除部分的面板"`Cache usage %`"显示了按类型使用的缓存大小与允许大小之间的百分比。如果百分比低于100%，则无需进一步调整。
 
@@ -304,26 +305,26 @@ VictoriaMetrics 使用各种内存缓存来提升数据写入和查询性能。�
 
 默认情况下，VictoriaMetrics 不限制存储的时间序列数量。可以通过设置以下启动参数来强制执行限制：
 
-+ `-storage.maxHourlySeries` - 限制了在最后一个小时内可以添加的时间序列数量。对于限制[活动时间序列]({{< relref "../faq.md#what-is-an-active-time-series" >}})的数量非常有用。
-+ `-storage.maxDailySeries` - 限制了最后一天可以添加的时间序列数量。对于限制每日[流失率]({{< relref "../faq.md#what-is-high-churn-rate" >}})非常有用。
++ `-storage.maxHourlySeries`- 限制了在最后一个小时内可以添加的时间序列数量。对于限制[活动时间序列]({{< relref "../faq.md#what-is-an-active-time-series" >}})的数量非常有用。
++ `-storage.maxDailySeries`- 限制了最后一天可以添加的时间序列数量。对于限制每日[流失率]({{< relref "../faq.md#what-is-high-churn-rate" >}})非常有用。
 
 可以同时设置这两个限制。如果达到任何一个限制，那么新时间序列的输入样本将被丢弃。被丢弃的系列样本会以`WARN`级别记录在日志中。
 
 超出限制的情况可以通过以下指标进行监控：
 
-+ `vm_hourly_series_limit_rows_dropped_total` - 由于超过每小时限制的唯一时间序列数量，被丢弃指标数量。
-+ `vm_hourly_series_limit_max_series` - 小时级限制，通过`-storage.maxHourlySeries`启动参数设置的值。
++ `vm_hourly_series_limit_rows_dropped_total`- 由于超过每小时限制的唯一时间序列数量，被丢弃指标数量。
++ `vm_hourly_series_limit_max_series`- 小时级限制，通过`-storage.maxHourlySeries`启动参数设置的值。
 
-`vm_hourly_series_limit_current_series` - 过去一小时内 timeseries 的数量。当过去一小时内 timeseries 的数量超过 `-storage.maxHourlySeries` 的`90%`时，以下查询可能会有用于告警：
+`vm_hourly_series_limit_current_series`- 过去一小时内 timeseries 的数量。当过去一小时内 timeseries 的数量超过`-storage.maxHourlySeries`的`90%`时，以下查询可能会有用于告警：
 
 ```plain
 vm_hourly_series_limit_current_series / vm_hourly_series_limit_max_series > 0.9
 ```
 
-+ `vm_daily_series_limit_rows_dropped_total` - 由于超过每日唯一时间序列数量限制，被丢弃指标数量。
-+ `vm_daily_series_limit_max_series` - 天级别 timeseries 限制，通过`-storage.maxDailySeries`启动参数设置的值。
++ `vm_daily_series_limit_rows_dropped_total`- 由于超过每日唯一时间序列数量限制，被丢弃指标数量。
++ `vm_daily_series_limit_max_series`- 天级别 timeseries 限制，通过`-storage.maxDailySeries`启动参数设置的值。
 
-`vm_daily_series_limit_current_series` - 在过去的一天中，timeseries 数量。当 timeseires 在过去的一天内超过 `-storage.maxDailySeries` 的`90%`时，以下查询可能会有用于告警：
+`vm_daily_series_limit_current_series`- 在过去的一天中，timeseries 数量。当 timeseires 在过去的一天内超过`-storage.maxDailySeries`的`90%`时，以下查询可能会有用于告警：
 
 ```plain
 vm_daily_series_limit_current_series / vm_daily_series_limit_max_series > 0.9
@@ -397,8 +398,8 @@ curl http://localhost:8428/api/v1/query_range -d 'query=2*rand()' -d 'start=-1h'
 
 [VMUI]({{< relref "../components/vmui.md" >}}) 提供了一个 UI 界面:
 
-+ 对于 query 追踪 - 只需要选中 `Trace query` 复选框，然后重新跑一下查询语句就可以得到执行 Trace。
-+ 对于探索自定义追踪 - 进入 `Trace analyzer` 页面，然后上传或粘贴 trace 的 JSON 数据信息。
++ 对于 query 追踪 - 只需要选中`Trace query`复选框，然后重新跑一下查询语句就可以得到执行 Trace。
++ 对于探索自定义追踪 - 进入`Trace analyzer`页面，然后上传或粘贴 trace 的 JSON 数据信息。
 
 ### 安全 {#security}
 一般安全建议：
@@ -409,16 +410,16 @@ curl http://localhost:8428/api/v1/query_range -d 'query=2*rand()' -d 'start=-1h'
 
 VictoriaMetrics 提供了下面这些安全相关的启动参数：
 
-+ `-tls`, `-tlsCertFile` and `-tlsKeyFile` 用来开启 HTTPS.
-+ `-httpAuth.username` and `-httpAuth.password` 使用 [HTTP Basic Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) 来保护所有的 HTTP 接口。
-+ `-deleteAuthKey` 用来保护 `/api/v1/admin/tsdb/delete_series` 接口。参见 [how to delete time series](https://docs.victoriametrics.com/#how-to-delete-time-series).
-+ `-snapshotAuthKey` 用来保护 `/snapshot*` 一系列接口。参见 [how to work with snapshots](https://docs.victoriametrics.com/#how-to-work-with-snapshots).
-+ `-forceMergeAuthKey` 用来保护 `/internal/force_merge` 接口。参见 [force merge docs](https://docs.victoriametrics.com/#forced-merge).
-+ `-search.resetCacheAuthKey` 用来保护 `/internal/resetRollupResultCache` 接口。 更多详情参见 [backfilling](https://docs.victoriametrics.com/#backfilling)。
-+ `-configAuthKey` 用来保护 `/config` 接口，因为它可能包含一些敏感的信息，比如密码。
-+ `-flagsAuthKey` 用来保护 `/flags` 接口。
-+ `-pprofAuthKey` 用来保护 `/debug/pprof/*` 接口，这是用来做性能分析的 [profiling](https://docs.victoriametrics.com/#profiling)。
-+ `-denyQueryTracing` 用来禁用 [query tracing](https://docs.victoriametrics.com/#query-tracing).
++ `-tls`, `-tlsCertFile`and `-tlsKeyFile`用来开启 HTTPS.
++ `-httpAuth.username`and `-httpAuth.password`使用 [HTTP Basic Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) 来保护所有的 HTTP 接口。
++ `-deleteAuthKey`用来保护`/api/v1/admin/tsdb/delete_series`接口。参见 [how to delete time series](https://docs.victoriametrics.com/#how-to-delete-time-series).
++ `-snapshotAuthKey`用来保护`/snapshot*`一系列接口。参见 [how to work with snapshots](https://docs.victoriametrics.com/#how-to-work-with-snapshots).
++ `-forceMergeAuthKey`用来保护`/internal/force_merge`接口。参见 [force merge docs](https://docs.victoriametrics.com/#forced-merge).
++ `-search.resetCacheAuthKey`用来保护`/internal/resetRollupResultCache`接口。 更多详情参见 [backfilling](https://docs.victoriametrics.com/#backfilling)。
++ `-configAuthKey`用来保护`/config`接口，因为它可能包含一些敏感的信息，比如密码。
++ `-flagsAuthKey`用来保护`/flags`接口。
++ `-pprofAuthKey`用来保护`/debug/pprof/*`接口，这是用来做性能分析的 [profiling](https://docs.victoriametrics.com/#profiling)。
++ `-denyQueryTracing`用来禁用 [query tracing](https://docs.victoriametrics.com/#query-tracing).
 
 明确设置用于使用 Graphite 和 OpenTSDB 格式进行数据写入的TCP和UDP端口的内部接口。例如，将`-graphiteListenAddr=:2003`替换为`-graphiteListenAddr=<internal_iface_ip>:2003`。这样可以防止来自不受信任的网络接口的意外请求。
 
@@ -439,7 +440,7 @@ VictoriaMetrics 提供了下面这些安全相关的启动参数：
 + 如果 VictoriaMetrics 由于磁盘错误导致某些部分损坏而无法工作，则只需删除带有损坏部分的目录即可。在 VictoriaMetrics 未运行时，安全地删除`<-storageDataPath>/data/{big,small}/YYYY_MM`目录下的子目录可以恢复VictoriaMetrics，但会丢失已存储在被删除损坏部分中的数据。将来将创建vmrecover工具以自动从此类错误中恢复。
 + 如果您在图表上看到断点，请尝试通过向`/internal/resetRollupResultCache`发送请求来重置缓存。如果这样可以消除图表上的空白断点间隙，则很可能是将早于`-search.cacheTimestampOffset`时间戳的数据更新了。
 + 如果您从 InfluxDB 或 TimescaleDB 切换过来，可能需要设置`-search.setLookbackToStep`启动参数。这将抑制 VictoriaMetrics 使用的默认间隙填充算法-默认情况下，它假设每个时间序列是连续的而不是离散的，因此会用固定间隔填补真实样本之间的空白。
-+ 通过[/api/v1/status/tsdb]({{< relref "../query/http.md#apiv1statustsdb-tsdb-stats" >}})接口可以确定导致高基数或高流失率的指标和标签。
++ 通过[/api/v1/status/tsdb]({{< relref "../query/api.md#apiv1statustsdb-tsdb-stats" >}})接口可以确定导致高基数或高流失率的指标和标签。
 + 如果要在 VictoriaMetrics 中记录新时间序列，请传递`-logNewSeries`启动参数。
 + VictoriaMetrics 通过`-maxLabelsPerTimeseries`启动参数限制每个度量指标的标签数量。这可以防止写入具有太多标签的指标。建议监视`vm_metrics_with_dropped_labels_total`指标以确定是否需要根据线上情况调整`-maxLabelsPerTimeseries`。
 + 如果您在 VictoriaMetrics 中存储 Graphite 指标（如`foo.bar.baz`），则可以使用`{__graphite__="foo.*.baz"}`过滤器选择此类指标。详细信息请参阅[相关文档]({{< relref "../query/metricsql/_index.md#graphite-filter" >}})。

@@ -1,5 +1,6 @@
 ---
 title: 核心概念
+description: 介绍监控指标领域的一些基本概念，有助于对 VictoriaMetrics 进行更深入的了解；无论是使用还是维护一个监控系统，这些基本概念都开发者而言都是必须的。
 weight: 1
 ---
 
@@ -20,7 +21,7 @@ Metric 最常见的用途包括：
 
 ## Metric 结构
 
-### `__name__` (指标名)
+### `__name__`(指标名)
 
 让我们从一个例子开始。为了追踪我们的应用程序处理了多少请求，我们将定义一个名为`requests_total`的指标。
 
@@ -60,7 +61,9 @@ Labels可以自动附加到通过vmagent或Prometheus采集的 [timeseries](#tim
 
 ### Timeseries（时间序列） {#timeseries}
 
-一个指标名称和其 Label 的组合定义了一个 timeseries。例如，`requests_total{path="/", code="200"}` 和` requests_total{path="/", code="403"}` 是两个不同的 timeseries，因为它们在`code`标签上有不同的值。
+一个指标名称和其 Label 的组合定义了一个 timeseries，也可直接叫成 series。
+
+例如，`requests_total{path="/", code="200"}`和`requests_total{path="/", code="403"}`是两个不同的 timeseries，因为它们在`code`标签上有不同的值。
 
 唯一时间序列的数量对数据库资源用量产生影响。详细信息请参阅[什么是活跃时间序列]({{< relref "faq.md#what-is-active-timeseries" >}})以及[什么是高流失率]({{< relref "faq.md#what-is-high-churn-rate" >}})。
 
@@ -77,9 +80,9 @@ Labels可以自动附加到通过vmagent或Prometheus采集的 [timeseries](#tim
 requests_total{path="/", code="200"} 123 4567890
 ```
 
-+ `requests_total{path="/", code="200"}` 用于标识给定样本的相关 timeseries。 
-+ `123` 是一个样本值。 
-+ `4567890` 是可选的样本时间戳。如果缺失，则数据被存储到VictoriaMetrics中时使用数据库的当前时间戳。
++ `requests_total{path="/", code="200"}`用于标识给定样本的相关 timeseries。 
++ `123`是一个样本值。 
++ `4567890`是可选的样本时间戳。如果缺失，则数据被存储到VictoriaMetrics中时使用数据库的当前时间戳。
 
 ### Timeseries resolution（时间序列粒度） {#resolution}
 分辨率是 [timeseries](#timeseries) 的 [samples](#samples) 之间的最小间隔。考虑以下示例：
@@ -104,35 +107,35 @@ requests_total{path="/", code="200"} 123 4567890
 在 VictoriaMetrics 内部，并 metric type 的概念。此概念存在是为了帮助用户理解度量是如何测量的。有四种常见的度量类型。
 
 ### Counter（计数器）
-`Counter` 是一种用于统计某些事件的发生次数的 Metric。它的值是累加的，随着时间增加或保持不变，在一般情况下不会减少。唯一的例外是当计数器重置为零时，例如`计数器重置`。当暴露 Counter 指标的服务重新启动时，可能会发生`计数器重置`。因此，`Counter`指标显示了自服务启动以来观察到的事件数量。
+`Counter`是一种用于统计某些事件的发生次数的 Metric。它的值是累加的，随着时间增加或保持不变，在一般情况下不会减少。唯一的例外是当计数器重置为零时，例如`计数器重置`。当暴露 Counter 指标的服务重新启动时，可能会发生`计数器重置`。因此，`Counter`指标显示了自服务启动以来观察到的事件数量。
 
 在编程中，Counter 是一个变量，在每次发生某个事件时递增其值。
 
 ![](counter.png)
 
-`vm_http_requests_total` 是一个典型的 Counter 示例。上面图表的解释是，时间序列 `vm_http_requests_total{instance="localhost:8428", job="victoriametrics", path="api/v1/query_range"}` 在下午1点38分到1点39分之间迅速变化，然后在1点41分之前没有任何变化。
+`vm_http_requests_total`是一个典型的 Counter 示例。上面图表的解释是，时间序列`vm_http_requests_total{instance="localhost:8428", job="victoriametrics", path="api/v1/query_range"}`在下午1点38分到1点39分之间迅速变化，然后在1点41分之前没有任何变化。
 
 `Counter`用于测量事件数量，例如请求、错误、日志、消息等。与计数器一起使用最常见的 [MetricsQL]({{< relref "query/metricsql" >}}) 函数有：
 
-+ `rate` - 计算指标每秒平均变化速度。例如，`rate(requests_total)` 显示平均每秒服务多少个请求；
-+ `increase` - 计算给定时间段内指标的增长情况，时间段由方括号中指定。例如，`increase(requests_total[1h])` 显示过去一小时内服务的请求数量。
++ `rate`- 计算指标每秒平均变化速度。例如，`rate(requests_total)`显示平均每秒服务多少个请求；
++ `increase`- 计算给定时间段内指标的增长情况，时间段由方括号中指定。例如，`increase(requests_total[1h])`显示过去一小时内服务的请求数量。
 
-Counter 可以具有小数值。例如，`request_duration_seconds_sum` 计数器可能会对所有请求的持续时间进行求和。每个持续时间可能以秒为单位具有小数值，如`0.5` 秒。因此所有请求持续时间的累积总和也可能是小数。
+Counter 可以具有小数值。例如，`request_duration_seconds_sum`计数器可能会对所有请求的持续时间进行求和。每个持续时间可能以秒为单位具有小数值，如`0.5`秒。因此所有请求持续时间的累积总和也可能是小数。
 
-建议在 `Counter` 指标名称中添加 `_total`、`_sum` 或 `_count` 后缀，这样人们就可以轻松区分这些指标与其他类型的指标。
+建议在`Counter`指标名称中添加`_total`、`_sum`或`_count`后缀，这样人们就可以轻松区分这些指标与其他类型的指标。
 
 ### Gauge（仪表）
 Gauge 用于测量可以上下变化的值：
 
 ![](gauge.png)
 
-图表上的度量指标 `process_resident_memory_anon_bytes` 显示了应用程序在每个给定时间点的内存使用情况。它经常变化，上下波动，显示进程如何分配和释放内存。在编程中，`gauge` 是一个变量，你可以将其设置为随着变化而改变的特定值。
+图表上的度量指标`process_resident_memory_anon_bytes`显示了应用程序在每个给定时间点的内存使用情况。它经常变化，上下波动，显示进程如何分配和释放内存。在编程中，`gauge`是一个变量，你可以将其设置为随着变化而改变的特定值。
 
-以下是 `gauge` 的使用场景：
+以下是`gauge`的使用场景：
 
 + 测量温度、内存使用情况、磁盘使用情况等；
-+ 存储某个过程的状态。例如，如果配置重新加载成功，则可以将 gauge `config_reloaded_successful` 设置为 `1`；如果配置重新加载失败，则设置为 `0`；
-+ 存储事件发生时的时间戳。例如，`config_last_reload_success_timestamp_seconds` 可以存储最后一次成功配置重新加载的时间戳。
++ 存储某个过程的状态。例如，如果配置重新加载成功，则可以将 gauge `config_reloaded_successful`设置为`1`；如果配置重新加载失败，则设置为`0`；
++ 存储事件发生时的时间戳。例如，`config_last_reload_success_timestamp_seconds`可以存储最后一次成功配置重新加载的时间戳。
 
 与 gauges 最常用的 [MetricsQL]({{< relref "query/metricsql" >}}) 函数是聚合函数和滚动函数。
 
@@ -152,9 +155,9 @@ vm_rows_read_per_query_sum 15582
 vm_rows_read_per_query_count 11
 ```
 
-其中 `vm_rows_read_per_query_bucket{vmrange="4.084e+02...4.642e+02"} 2` 这一行表示自上次VictoriaMetrics启动以来，vmrange的值在`(408.4 - 464.2]`区间的查询有2个。
+其中`vm_rows_read_per_query_bucket{vmrange="4.084e+02...4.642e+02"} 2`这一行表示自上次VictoriaMetrics启动以来，vmrange的值在`(408.4 - 464.2]`区间的查询有2个。
 
-以 `_bucket` 后缀结尾的计数器可以使用 `histogram_quantile` 函数估算观测测量值的任意百分位数。例如，以下查询返回在过去一小时内每个查询读取的行数的估算第99百分位数（见方括号中的 1h）：
+以`_bucket`后缀结尾的计数器可以使用`histogram_quantile`函数估算观测测量值的任意百分位数。例如，以下查询返回在过去一小时内每个查询读取的行数的估算第99百分位数（见方括号中的 1h）：
 
 ```sql
 histogram_quantile(0.99, sum(increase(vm_rows_read_per_query_bucket[1h])) by (vmrange))
@@ -162,11 +165,11 @@ histogram_quantile(0.99, sum(increase(vm_rows_read_per_query_bucket[1h])) by (vm
 
 这个查询的执行逻辑如下：
 
-+ 增加`(vm_rows_read_per_query_bucket[1h])` 计算每个桶每个实例在过去一小时内的事件数量。
-+ `sum(...)` 按 `(vmrange)` 计算相同 `vmrange` 值的每个实例桶的事件总数。
-+ `histogram_quantile(0.99, ...)` 在步骤 2 返回的 `vmrange` 桶上计算第 99 百分位数。
++ 增加`(vm_rows_read_per_query_bucket[1h])`计算每个桶每个实例在过去一小时内的事件数量。
++ `sum(...)`按`(vmrange)`计算相同`vmrange`值的每个实例桶的事件总数。
++ `histogram_quantile(0.99, ...)`在步骤 2 返回的`vmrange`桶上计算第 99 百分位数。
 
-histogram 类型还暴露了额外两个附加计数器，以 `_sum` 和 `_count` 后缀结尾。
+histogram 类型还暴露了额外两个附加计数器，以`_sum`和`_count`后缀结尾。
 
 `vm_rows_read_per_query_sum`是所有观测到的测量值的总和，例如自上次VictoriaMetrics启动以来由所有查询服务的行数之和。
 
@@ -234,7 +237,7 @@ Summary 的可视化非常直观：
 
 这种方法使得 Summary 更易于使用，但与 Histogram 相比也存在显著的限制：
 
-+ 无法计算多个 Summary 指标的分位数，例如 `sum(go_gc_duration_seconds{quantile="0.75"})`、`avg(go_gc_duration_seconds{quantile="0.75"})` 或 `max(go_gc_duration_seconds{quantile="0.75"})` 不会返回从应用程序的多个实例收集到的 `go_gc_duration_seconds` 指标的预期第75百分位数。有关详细信息，请[参阅本文](https://latencytipoftheday.blogspot.de/2014/06/latencytipoftheday-you-cant-average.html)。
++ 无法计算多个 Summary 指标的分位数，例如`sum(go_gc_duration_seconds{quantile="0.75"})`、`avg(go_gc_duration_seconds{quantile="0.75"})`或`max(go_gc_duration_seconds{quantile="0.75"})`不会返回从应用程序的多个实例收集到的`go_gc_duration_seconds`指标的预期第75百分位数。有关详细信息，请[参阅本文](https://latencytipoftheday.blogspot.de/2014/06/latencytipoftheday-you-cant-average.html)。
 + 无法计算除已经预先计算过的分位数之外的其他分位数。
 + 无法针对在任意时间范围内收集到的测量值计算分位数。通常，Summary 分位数是在固定时间范围内（如最近5分钟）计算出来的。
 
