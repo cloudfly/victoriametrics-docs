@@ -1,8 +1,14 @@
 html {
-	font-size: 14px;
+  font-size: 14px;
 }
 
 code {
-	margin-left: 4px;
-	margin-right: 4px;
+  margin-left: 4px;
+  margin-right: 4px;
+}
+
+img.hx-block,
+img.hx-hidden {
+	width: 32px !important;
+	height: 32px !important;
 }
