@@ -72,7 +72,7 @@ curl -G 'http://localhost:8428/api/v1/export' -d 'match[]=x.y.z' -d 'match[]=foo
 {"metric":{"__name__":"x.y.z","t1":"v1","t2":"v2"},"values":[45.34],"timestamps":[1566464763000]}
 ```
 
-可在写入 URL `/api/put` 加上`extra_label`参数为所有写入数据注入额外的 Label。比如使用`/api/put?extra_label=foo=bar`URL写数据，系统会为每条写入的 Metric 数据追加`{foo="bar"}`Label
+{{% doc-extra-label "/api/put" %}}
 
 更多数据写入详情，请[参考这里]({{< relref "./write/api.md" >}})。
 

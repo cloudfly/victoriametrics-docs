@@ -1,0 +1,4 @@
+<p>
+可在写入 URL <code>{{ .Get 0 }}</code> 加上<code>extra_label</code>参数为所有写入数据注入额外的 Label。
+比如使用<code>{{ .Get 0 }}?extra_label=foo=bar</code>URL写数据，系统会为每条写入的 Metric 数据追加<code>{foo="bar"}</code>Label
+</p>

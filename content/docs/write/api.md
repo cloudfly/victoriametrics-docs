@@ -335,7 +335,7 @@ provider:
 
 VictoriaMetrics 会根据 DataDog 指标命名建议，自动对通过 DataDog 协议写入的数据进行指标名称转换。 如果您需要接受不经过转换的指标名称，则向 VictoriaMetrics 传递`-datadog.sanitizeMetricName=false`参数。 
 
-通过在url中增加`extra_label=name=value`参数，可以向所有写入的时间序列数据添加额外 Label。 例如，`/datadog/api/v2/series?extra_label=foo=bar`将为所有写入的数据添加`{foo="bar"}`标签。 
+{{< doc-extra-label "/datadog/api/v2/series" >}}
 
 DataDog agent 会将配置的Label发送到未注明的地址 - `/datadog/intake`。 VictoriaMetrics 尚不支持该接口。 这导致无法将配置的标记添加到发送到 VictoriaMetrics 的 DataDog agent 数据中。解决方法是在运行每个 DataDog agent 的同时运行一个 sidecar vmagent，该 agent 必须使用`DD_DD_URL=http://localhost:8429/datadog`环境变量运行。 必须通过`-remoteWrite.label`参数使用所需的标签配置 sidecar vmagent，并且必须将带有已添加标签的传入数据转发到通过 `-remoteWrite.url`参数指定的集中式 VictoriaMetrics。
 
@@ -429,7 +429,7 @@ curl -G 'http://localhost:8428/api/v1/export' -d 'match={__name__=~"measurement_
 
 注意 InfluxDB Line Protocol 期望的时间戳是纳秒级，而 VictoriaMetrics 是以毫秒的精度存储。系统允许使用秒、微妙或纳秒的精度写入数据，VictoriaMetrics 会自动转换成毫秒精度存储。
 
-通过在url中增加`extra_label=name=value`参数，可以向所有写入的时间序列数据添加额外 Label。 例如，`/write?extra_label=foo=bar`将为所有写入的数据添加`{foo="bar"}`标签。 
+{{< doc-extra-label "/write" >}}
 
 一些 Telegraf 的插件如 fluentd, Juniper/open-nti 或 Juniper/jitmon 会发送`SHOW DATABASES`查询到`/query`来获取数据库名字列表，并期望返回结果中包含特定的数据库名。可以将逗号分割的多个数据库名作为`-influx.databaseNames`参数。
 
