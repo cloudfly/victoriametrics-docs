@@ -14,17 +14,25 @@ weight: 20
 
 1. 在新的机器上启动并运行新的`vmstorage`实例。
 2. 为所有 vmselect 组件的`-storageNode`启动参数追加新的`vmstorage`实例地址。
-3. 为所有 vminsert 组件的`-storageNode`启动参数追加新的`vmstorage`实例地址。
+3. 为一到两个 vminsert 组件的`-storageNode`启动参数追加新的`vmstorage`实例地址，重启后观察整个集群 timeseries 数量指标，此时集群会出现一定性能下降。
+4. 等待整个集群趋于平稳后，升级重启剩余的`vminsert`组件，期间如果出现了集群抖动，需要暂缓升级步骤，等待集群平稳。
+5. 若集群短期无法回稳，要么等待更长时间（最多2个小时），要么直接回滚。
 
 **上述的`2,3`步骤一定不能反**，如果新 vmstorage 只在 vminsert 里，vmselect 里没有，那么写入到新 vmstorage 实例的数据会被无法查到，直到 vmselect 组件上也追加上这个新实例。
 
-## 有效利用一机多盘 
+升级`vminsert`之所以需要缓慢重启，是因为`storageNode`列表变化会导致部分 timeseries 存储位置发生变化，比如之前存储在`A`Node上，重启后存储在`B`Node上。  
+`B`节点上瞬间出现大量新 timeseries 时，会严重影响其性能，而且如果达到了`-storage.maxHourlySeries`或`-storage.maxDailySeries`限制，节点`B`可能会拒绝接收迁移过来的新 timeseries。
 
-vminsert 对传输的`-storageNode`地址列表采用一致性 hash 算法进行数据路由。而其多副本的策略，每个`vmstorage`地址，都会将自己的数据赋值给后面相邻的2个`vmstorage`实例。
+因此，我们只升级一到两个 vminsert 实例，先让少量的请求进行偏移，让发生迁移的 timeseries 在新的 Storage Node 创建出来 index（创建 index 是很吃资源的），再升级剩余的 vminsert。
 
-比如，`-storageNode`的参数值是`a,b,c,d`，而副本数`-replicaFactor`是`2`。那么`a`复制给`b`，`b`复制给`c`，`c`复制给`d`，`d`复制给`a`。这里的复制操作是在 vminsert 里完成的，每个 vmstorage 实例并不感知副本的存在（更多SN架构细节[见文档]({{< relref "./cluster.md#arch" >}})）。
+## 集群版有效利用一机多盘 
 
-因此我们可以在一个机器上，针对每个磁盘启动一个`vmstorage`实例，同时在`-storageNode`参数中，尽可能让同机器的 vmstorage 不相邻；不相邻的目的是避免一条数据的多个副本，都落在了同一台机器上的 vmstorage 实例上。
+vminsert 对传输的`-storageNode`地址列表采用一致性 hash 算法进行数据路由。而其多副本的策略是，每个`vmstorage`地址都会将自己的数据复制给后面相邻的2个`vmstorage`实例。
+
+比如，`-storageNode`的参数值是`a,b,c,d`，而副本数`-replicationFactor`是`2`。那么`a`复制给`b`，`b`复制给`c`，`c`复制给`d`，`d`复制给`a`。这里的复制操作是在 vminsert 里完成的，每个 vmstorage 实例并不感知副本的存在（更多SN架构细节[见文档]({{< relref "./cluster.md#arch" >}})）。
+
+因此我们可以在一个机器上，针对每个磁盘启动一个`vmstorage`实例，同时在`-storageNode`参数中，尽可能让同机器的 vmstorage 不相邻；不相邻的目的是避免一条数据的多个副本，都落在了同一台机器上的 vmstorage 实例上，
+进而导致当一台机器故障时，一些指标的多个副本集体消失。
 
 ## 如何处理机器故障
 
@@ -35,7 +43,12 @@ vminsert 对传输的`-storageNode`地址列表采用一致性 hash 算法进行
 1. 从所有 vmselect 组件的`-storageNode`启动参数删掉故障的`vmstorage`实例地址。
 1. 从所有 vminsert 组件的`-storageNode`启动参数删掉故障的`vmstorage`实例地址。
 
-至于数据备份恢复？如果你设置了多副本，那么大概率是不需要的。
+之所以优先摘除 vmselect 上的 Storage Node 是因为故障 Node 依然会被 vmselect 尝试查询，导致整个集群查询都变慢。
+
+而 vminsert 组件自带了摘除能力，一个 Storage Node 不可用或很慢时，`vminsert`内部与之对应的 write buffer 会填满，填满后会自动将其置为 notready，并忽略他。
+
+### 备份恢复？
+如果你设置了多副本，那么大概率是不需要的。
 
 因为故障机上的数据在它的(vminsert的`-storageNode`)相邻地址后面也有一份，而 vmselect 只要能够查到至少一份数据，就能返回正确结果。
 
@@ -90,7 +103,7 @@ curl 'http://localhost:8442/internal/force_merge?partition_prefix=2022_01'
 <font style="color:rgb(216,57,49);">因为删除 series 会带来额外很大的开销，让系统不稳定。而且它不会释放多少空间。</font>
 
 
-## Unexpected query results
+## 查询结果不符合预期
 --------------------------------------------------------------------------------------------------------------------------
 
 If you see unexpected or unreliable query results from VictoriaMetrics, then try the following steps:
@@ -230,7 +243,7 @@ There are the following solutions exist for improving performance of slow querie
 *   To increase evaluation interval for alerting and recording rules, so they are executed less frequently. For example, increasing `-evaluationInterval` command-line flag value at [vmalert](https://docs.victoriametrics.com/vmalert/) from `1m` to `2m` should reduce compute resource usage at VictoriaMetrics by 2x.
     
 
-## Out of memory 错误
+## OOM(Out of memory)
 
 There are the following most common sources of out of memory (aka OOM) crashes in VictoriaMetrics:
 
@@ -243,7 +256,7 @@ There are the following most common sources of out of memory (aka OOM) crashes i
 3.  Lack of free memory for processing workload spikes. If VictoriaMetrics components use almost all the available memory under the current workload, then it is recommended migrating to a host with bigger amounts of memory. This would protect from possible OOM crashes on workload spikes. It is recommended to have at least 50% of free memory for graceful handling of possible workload spikes. See [capacity planning for single-node VictoriaMetrics](https://docs.victoriametrics.com/#capacity-planning) and [capacity planning for cluster version of VictoriaMetrics](https://docs.victoriametrics.com/cluster-victoriametrics/#capacity-planning).
     
 
-## Cluster instability
+## 集群抖动
 
 VictoriaMetrics cluster may become unstable if there is no enough free resources (CPU, RAM, disk IO, network bandwidth) for processing the current workload.
 
@@ -259,20 +272,3 @@ The most common sources of cluster instability are:
     
 
 The obvious solution against VictoriaMetrics cluster instability is to make sure cluster components have enough free resources for graceful processing of the increased workload. See [capacity planning docs](https://docs.victoriametrics.com/cluster-victoriametrics/#capacity-planning) and [cluster resizing and scalability docs](https://docs.victoriametrics.com/cluster-victoriametrics/#cluster-resizing-and-scalability) for details.
-
-## 磁盘空间不够用
-
-If too much disk space is used by a [single-node VictoriaMetrics](https://docs.victoriametrics.com/) or by `vmstorage` component at [VictoriaMetrics cluster](https://docs.victoriametrics.com/cluster-victoriametrics/), then please check the following:
-
-*   Make sure that there are no old snapsots, since they can occupy disk space. See [how to work with snapshots](https://docs.victoriametrics.com/#how-to-work-with-snapshots) and [snapshot troubleshooting](https://docs.victoriametrics.com/#snapshot-troubleshooting).
-    
-*   Under normal conditions the size of `<-storageDataPath>/indexdb` folder must be smaller than the size of `<-storageDataPath>/data` folder, where `-storageDataPath` is the corresponding command-line flag value. This can be checked by the following query if [VictoriaMetrics monitoring](https://docs.victoriametrics.com/troubleshooting/?highlight=trouble#monitoring) is properly set up:
-    
-    ```
-    sum(vm\_data\_size\_bytes{type=~"indexdb/.+"}) without(type)   / sum(vm\_data\_size\_bytes{type=~"(storage|indexdb)/.+"}) without(type)
-    ```
-    
-    MetricsQLCopy
-    
-    If this query returns values bigger than 0.5, then it is likely there is a [high churn rate](https://docs.victoriametrics.com/faq/#what-is-high-churn-rate) issue, which results in excess disk space usage for both `indexdb` and `data` folders under `-storageDataPath` folder. The solution is to identify and fix the source of high churn rate with [cardinality explorer](https://docs.victoriametrics.com/#cardinality-explorer).
-    
