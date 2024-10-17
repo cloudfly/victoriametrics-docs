@@ -1,6 +1,6 @@
 baseURL: https://victoriametrics.com.cn/
 languageCode: zh-cn
-title: VicotiaMetrics 中文手册(WIP)
+title: VicotiaMetrics 中文手册
 
 module:
   imports:
