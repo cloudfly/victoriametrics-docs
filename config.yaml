@@ -72,4 +72,4 @@ params:
     default: system
     displayToggle: true
 
-  copyright: "© 2024 陈云飞."
+defaultContentLanguage: zh-cn
