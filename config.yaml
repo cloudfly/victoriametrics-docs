@@ -73,3 +73,7 @@ params:
     displayToggle: true
 
 defaultContentLanguage: zh-cn
+
+services:
+  googleAnalytics:
+    id: G-108477130
