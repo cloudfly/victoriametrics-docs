@@ -33,5 +33,5 @@ VictoriaMetrics 几乎彻底地把我从 5千万 QPS 的高压需求中解脱了
 ## 联系方式
 
 {{< cards >}}
-  {{< card link="/about" image="./wechat.jpg" title="微信" subtitle="加好友备注：VictoriaMetrics" >}}
+  {{< card link="/about" image="./wechat.jpg" title="加好友备注：VictoriaMetrics" subtitle="邮箱：chenyunfei.cs@gmail.com" >}}
 {{< /cards >}}
