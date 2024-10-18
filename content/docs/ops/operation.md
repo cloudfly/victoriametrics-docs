@@ -45,7 +45,7 @@ vminsert 对传输的`-storageNode`地址列表采用一致性 hash 算法进行
 
 之所以优先摘除 vmselect 上的 Storage Node 是因为故障 Node 依然会被 vmselect 尝试查询，导致整个集群查询都变慢。
 
-而 vminsert 组件自带了摘除能力，一个 Storage Node 不可用或很慢时，`vminsert`内部与之对应的 write buffer 会填满，填满后会自动将其置为 notready，并忽略他。
+而 vminsert 组件自带了摘除能力，一个 Storage Node 不可用或很慢时，`vminsert`内部与之对应的 write buffer 会填满，填满后会自动将其置为 notready，并忽略它，所以对集群性能上的影响不会太大。
 
 ### 备份恢复？
 如果你设置了多副本，那么大概率是不需要的。

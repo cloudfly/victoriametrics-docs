@@ -4,7 +4,9 @@ description: VictoriaMetrics 集群版本的相关功能介绍。比如多租户
 weight: 10
 ---
 
-## 架构概览 {#arch}
+## 集群规划
+
+### 架构概览 {#arch}
 VictoriaMetrics 集群版本由以下几个服务组成：
 
 + `vmstorage`- 存储原始数据，并返回在给定时间范围内针对给定 Label 筛选器查询的数据。
@@ -13,44 +15,9 @@ VictoriaMetrics 集群版本由以下几个服务组成：
 
 每项服务都可独立扩展，并可在最合适的硬件上运行。 `vmstorage`节点之间互不相识，互不通信，也不共享任何数据。 这是一种[SN架构](https://en.wikipedia.org/wiki/Shared-nothing_architecture) 。 它提高了集群的可用性，简化了集群维护和集群扩展。
 
-## 多租户 {#tenant}
-VictoriaMetrics集群支持多个隔离的租户（即命名空间）。租户通过`accountID`或`accountID:projectID`进行标识，这些标识符被置于请求URL中。详情请参阅[这些文档]({{< relref "../write/api.md" >}})。
-
-关于VictoriaMetrics中租户的一些事实：
-
-每个accountID和projectID均由一个任意的32位整数标识，范围为`[0..2^32)`。如果projectID缺失，则自动分配为0。预期其他关于租户的信息，如身份验证令牌、租户名称、限制、会计等，存储在一个独立的关系数据库中。该数据库必须由位于VictoriaMetrics集群前端的独立服务进行管理，例如[vmauth](https://docs.victoriametrics.com/vmauth.html)或[vmgateway](https://docs.victoriametrics.com/vmgateway.html)。如果您需要此类服务的协助，请联系我们。
-
-当第一个数据点被写入给定的租户时，租户会被自动创建。
-
-所有租户的数据均匀分布在可用的`vmstorage`节点之间。这保证了当不同租户拥有不同数量的数据和不同的查询负载时，`vmstorage`节点之间的负载也是均匀的。
-
-数据库的性能和资源使用情况并不取决于租户的数量，而主要取决于所有租户中活跃时间序列的总数。如果一个时间序列在过去的一小时中至少接收了一个样本，或者在过去的一小时中被查询访问过，那么它就被认为是活跃的。
-
-VictoriaMetrics不支持在单一请求中查询多个租户。
-
-已注册租户的列表可以通过`http://<vmselect>:8481/admin/tenants`URL获取。请参阅[这些文档]({{< relref "../write/api.md" >}})。
-
-VictoriaMetrics通过指标公开了各种按租户划分的统计数据——请参阅[这些文档](https://docs.victoriametrics.com/PerTenantStatistic.html)。
-
-也可以看下[通过 labels 实现多租户](#tenant-by-label)。
-
-### 通过 labels 实现多租户 {#tenant-by-label}
-`vminsert`可以从多个租户通过一个特殊的[多租户](#tenant)端点`http://vminsert:8480/insert/multitenant/<suffix>`接收数据，其中可以替换为从此列表中获取数据的任何受支持的`<suffix>`。在这种情况下，AccountID 和ProjectID是从传入样本的可选`vm_account_id`和`vm_project_id`标签中获取的。如果 vm_account_id 或 vm_project_id 标签缺失或无效，则相应的AccountID 或ProjectID 将设置为 0。在将样本转发到`vmstorage`之前，会自动从样本中删除这些Label。例如，如果将以下样本写入`http://vminsert:8480/insert/multitenant/prometheus/api/v1/write`：
 
 
-```plain
-http_requests_total{path="/foo",vm_account_id="42"} 12
-http_requests_total{path="/bar",vm_account_id="7",vm_project_id="9"} 34
-```
-
-然后`http_requests_total｛path=“/foo”｝12`将被存储在租户`accountID=42，projectID=0`中，而`http_requests_total{path=“/bar”｝34`将被存储到租户`accountID=7，projectID=9`中。
-
-`vm_account_id`和`vm_project_id`labels 是在通过`-rebelConfig`启动参数应用 [relabeling](https://docs.victoriametrics.com/relabeling.html) 集后提取的，因此可以在此阶段设置这些 label。
-
-安全提示：建议将对多租户端点的访问限制为仅限可信源，因为不可信源可能会通过向任意租户写入不需要的样本来破坏每个租户的数据。
-
-
-## 安全 {#security}
+### 安全 {#security}
 一般的安全建议：
 
 + 所有 VictoriaMetrics 集群组件都必须在受保护的私有网络中运行，并且不能被互联网等不受信任的网络直接访问。
@@ -61,100 +28,15 @@ http_requests_total{path="/bar",vm_account_id="7",vm_project_id="9"} 34
 
 参见 [集群版安全建议]({{< relref "./single.md#security" >}}) 以及 [网站的常规安全策略](https://victoriametrics.com/security/).
 
-## 监控 {#monitoring}
-所有集群组件均在`-httpListenAddr`启动参数中设置的 TCP 端口上的`/metrics`页面上以 Prometheus 兼容格式公开各种指标。默认情况下，使用以下 TCP 端口：
-
-+ `vminsert`- 8480
-+ `vmselect`- 8481
-+ `vmstorage`- 8482
-
-建议使用 [vmagent]({{< relref "../components/vmagent.md" >}}) 或 Prometheus 以从所有集群组件中抓取`/metrics`页面，这样就可以使用 VictoriaMetrics 集群的[官方 Grafana 大盘](https://grafana.com/grafana/dashboards/11176-victoriametrics-cluster/)或 [VictoriaMetrics 集群大盘](https://grafana.com/grafana/dashboards/11831)来监控和分析它们。这些仪表板上的图表包含有用的提示 - 将鼠标悬停在每个图表左上角的`i`图标上即可阅读。
-
-建议通过[此配置](https://github.com/VictoriaMetrics/VictoriaMetrics/blob/cluster/deployment/docker/alerts.yml)在 [vmalert](https://docs.victoriametrics.com/vmalert.html) 或 Prometheus 中设置告警。更多详细信息请参阅文章 [VictoriaMetrics 监控](https://victoriametrics.com/blog/victoriametrics-monitoring/)。
 
 ## 基数限制
-`vmstorage`实例可以通过下面的命令行来限制所有租户总共 series 的数量
+`vmstorage`实例同[单机版]({{< relref "./single.md#cardinality" >}})一样支持使用`-storage.maxHourlySeries`和`-storage.maxDailySeries`两个参数做基数限制。
 
-+ `-storage.maxHourlySeries`限制最近1小时的[活跃时间序列]({{< relref "../faq.md#what-is-an-active-time-series" >}})的数量。
-+ `-storage.maxDailySeries`限制最近一天的[活跃时间序列]({{< relref "../faq.md#what-is-an-active-time-series" >}})的数量。这个限制可以用于限制天级别的[高流失率]({{< relref "../faq.md#what-is-high-churn-rate" >}}).
+因为 VictoriaMetrics 集群采用的是 SN 架构，所以`vmstorage`是针对自身实例的全局限制，不分租户。  
+如果集群设置了副本数为`N`，即`-replicationFactor=N`，则整个集群的基 timeseries 总量会是真实数据的`N`倍。
 
-请注意，这些限制是针对集群中的每个 vmstorage 实例的。因此，如果集群有`N`个`vmstorage`节点，则整个集群级限制将比每个`vmstorage`限制大`N`倍。
+关于更多的基数限制可以看[这些文档]({{< relref "./single.md#cardinality" >}})。 
 
-关于更多的基数限制可以看[这些文档](#cardinality)。 
-
-## 问题排查
-请看[问题排查文档]({{< relref "../ops/operation.md#troubleshooting" >}})。
-
-## 只读模式
-当`-storageDataPath`指向的目录包含的可用空间少于`-storage.minFreeDiskSpaceBytes`时，vmstorage 节点会自动切换到只读模式。`vminsert`节点停止向此类节点发送数据，并开始将数据重新路由到剩余的 vmstorage 节点。
-
-当`vmstorage`进入只读模式时，它会将`http://vmstorage:8482/metrics`上的`vm_storage_is_read_only`指标设置为`1`。当`vmstorage`未处于只读模式时，该指标值为`0`。
-
-## vmstorage API接口
-
-查询和写入接口详见[查询API]({{< relref "../query/api.md" >}})和[写入API]({{< relref "../write/api.md" >}})。
-
-此外`vmstorage`组件在 8482 端口上提供了如下接口：
-- `/internal/force_merge`- 强制启动 vmstorage 实例的[数据合并压缩](https://docs.victoriametrics.com/#forced-merge)。
-- `/snapshot/create`- 创建[实例快照](https://medium.com/@valyala/how-victoriametrics-makes-instant-snapshots-for-multi-terabyte-time-series-data-e1f3fb0e0282)，可用于后台备份。快照在`<storageDataPath>/snapshots`文件夹中创建，其中`<storageDataPath>`是通过相应的启动参数指定。
-- `/snapshot/list`- 列出可用的快照。
-- `/snapshot/delete?snapshot=<id>`- 删除给定的快照。
-- `/snapshot/delete_all`- 删除所有快照。
-
-快照可以在每个`vmstorage`节点上独立创建。无需在`vmstorage`节点之间同步快照的创建。
-
-## 集群扩缩容 {#resize}
-集群的性能和容量有两种提升方式：
-
-+ 为先有的实例节点增加计算资源（CPU，内存，磁盘IO，磁盘空间，网络带宽），即垂直扩容。
-+ 为集群增加更多的实例节点，即水平扩容。
-
-一些扩容建议：
-
-+ 向现有`vmselect`节点添加更多 CPU 和 RAM 可提高重度查询的性能，这些查询会处理大量时间序列和大量原始样本。请[参阅本文](https://valyala.medium.com/how-to-optimize-promql-and-metricsql-queries-85a1b75bf986)，了解如何检测和优化重度查询。
-+ 添加更多`vmstorage`节点以增加集群可以处理的[活动时间序列]({{< relref "../faq.md#what-is-active-timeseries" >}})的数量。这还会提高[高流失率]({{< relref "../faq.md#what-is-high-churn-rate" >}})时间序列的查询性能。集群稳定性也会随着`vmstorage`节点数量的增加而提高，因为当某些 vmstorage 节点不可用时，活动`vmstorage`节点需要处理的额外工作负载较少。
-+ 向现有`vmstorage`节点添加更多 CPU 和 RAM 会增加集群可以处理的[活动时间序列]({{< relref "../faq.md#what-is-active-timeseries" >}})的数量。与向现有`vmstorage`节点添加更多 CPU 和 RAM 相比，添加更多`vmstorage`节点是更好的选择，因为`vmstorage`节点数量越多，集群稳定性就越高，并且会提高[高流失率]({{< relref "../faq.md#what-is-high-churn-rate" >}})时间序列的查询性能。
-+ 添加更多`vminsert`节点会增加最大可能的数据提取速度，因为提取的数据可能会在更多数量的`vminsert`节点之间分配。
-+ 添加更多`vmselect`节点会增加最大可能的查询率，因为传入的并发请求可能会在更多`vmselect`节点之间分配。
-
-新增`vmstorage`节点的步骤：
-
-1. 启动具有与集群中现有节点相同的`-retentionPeriod`的新`vmstorage`节点。
-2. 平滑启动 vmselect 节点，并在`-storageNode`参数中把`<new_vmstorage_host>`加上。
-3. 平滑启动 vminsert 节点，并在`-storageNode`参数中把`<new_vmstorage_host>`加上。
-
-## 升级集群节点
-所有节点类型 - `vminsert`、`vmselect`和`vmstorage`- 都可以通过启停进行更新。向相应进程发送`SIGINT`信号，等待其退出，然后使用新配置启动新版本。 
-
-存在以下集群更新/升级方法：
-
-### 无停机策略
-使用更新的配置/升级的二进制文件逐个重新启动集群中的每个节点。 
-
-建议按以下顺序重新启动节点：
-
-1. 重启`vmstorage`nodes.
-2. 重启`vminsert`nodes.
-3. 重启`vmselect`nodes.
-
-如果满足以下条件，此策略允许在不停机的情况下升级集群：
-
-+ 集群至少有两个及以上实例（每种类型都有`vminsert`、`vmselect`和`vmstorage`），因此当单个节点在重启期间暂时不可用时，其它实例可以继续接受新数据并处理传入请求。有关详细信息，请参阅[集群可用性](./#high-available)文档。
-+ 当任何类型的单个节点（`vminsert`、`vmselect`或`vmstorage`）在重启期间暂时不可用时，集群具有足够的计算资源（CPU、RAM、网络带宽、磁盘 IO）来处理当前工作负载。
-+ 更新后的的二进制文件与集群中的其余组件兼容。请参阅 [CHANGELOG](https://docs.victoriametrics.com/CHANGELOG.html) 了解不同版本之间的兼容性说明。 
-
-只要有一个条件不满足，则滚动重启可能会导致在升级期间集群不可用。在这种情况下，建议采用以下策略。
-
-### 最短停机策略
-1. 并发停止所有的`vminsert`和`vmselect`实例。
-2. 并发重启所有的`vmstorage`实例。
-3. 并发重启所有的`vminsert`和`vmselect`实例。
-
-执行上述步骤时，集群无法进行数据提取和查询。通过在上述每个步骤中并行重启集群节点，可以最大限度地减少停机时间。与无停机策略相比，最短停机时间策略具有以下优势：
-
-+ 当以前的版本与新版本不兼容时，它允许以最小的中断完成升级。
-+ 当集群没有足够的计算资源（CPU、RAM、磁盘 IO、网络带宽）进行滚动升级时，它允许以最小的中断完成版本升级。 
-+ 对于具有大量节点的集群或具有大量 vmstorage 节点的集群，它允许最短升级的持续时间，因为它需要很长时间才能平滑重启。
 
 ## 集群可用性 {#cluster-available}
 VictoriaMetrics 集群架构优先考虑可用性而不是数据一致性。这意味着，如果集群的某些组件暂时不可用，集群仍可用于数据提取和数据查询。 
@@ -177,7 +59,7 @@ vmselect 不会为返回原始数据点的 API 处理程序提供部分响应 - 
 
 数据副本可用于提高存储耐用性。有关详细信息，请参阅[这些文档](#replication)。
 
-## 容量规划 {#capacity}
+### 容量规划 {#capacity}
 根据我们的[案例研究](https://docs.victoriametrics.com/CaseStudies.html)，与竞争解决方案（Prometheus、Thanos、Cortex、TimescaleDB、InfluxDB、QuestDB、M3DB）相比，VictoriaMetrics 在生产工作负载上使用的 CPU、RAM 和存储空间更少。 
 
 每种节点类型（`vminsert`、`vmselect`和`vmstorage`）都可以在最合适的硬件上运行。集群容量随可用资源线性扩展。每种节点类型所需的 CPU 和 RAM 数量高度依赖于工作负载 - [活动时间序列]({{< relref "../faq.md#what-is-an-active-time-series" >}})的数量、[序列流失率]({{< relref "../faq.md#what-is-high-churn-rate" >}})、查询类型、查询 qps 等。建议为您的生产工作负载设置一个测试 VictoriaMetrics 集群，并迭代扩展每个节点的资源和每个节点类型的节点数量，直到集群稳定下来。建议为[集群设置监控](#monitoring)。它有助于确定集群设置中的瓶颈。还建议遵循[故障排除]({{< relref "../ops/operation.md#troubleshooting" >}})文档。 
@@ -202,7 +84,7 @@ VictoriaMetrics 集群的一些容量规划技巧：
 
 也可以参阅[资源使用限制文档](#limitation)。
 
-## 资源使用限制 {#limitation}
+### 资源使用限制 {#limitation}
 默认情况下，VictoriaMetrics 的集群组件会根据典型工作负载的最佳资源使用情况进行调整。某些工作负载可能需要细粒度的资源使用限制。在这种情况下，以下启动参数可能会有用：
 
 + `-memory.allowedPercent`和`-memory.allowedBytes`限制所有的 VictoriaMetrics 集群组件里的各种内部 cache 会使用的内存用量 —— `vminsert`, `vmselect`和`vmstorage`。请注意，VictoriaMetrics 组件可能会占用更多内存，因为这些参数并不限制其他地方消耗的内存，比如可能是查询请求消耗的。
@@ -225,14 +107,14 @@ VictoriaMetrics 集群的一些容量规划技巧：
 
 也可以参考[容量规划文档](#capacity)和[vmagent的基数显示器]({{< relref "../components/vmagent.md#cardinality-limiter" >}})。
 
-## 高可用 {#high-available}
+### 高可用 {#high-available}
 如果数据库在部分组件暂时不可用时仍能接收新数据并处理传入查询，则被认为是高可用的。VictoriaMetrics集群符合这一定义，请参阅[集群可用性文档](#cluster-available)。
 
 建议在具有高带宽、低延迟和低错误率的同一子网络中运行单个集群的所有组件，这可以提高集群的性能和可用性。不建议将单个集群的组件分布在多个可用区（AZ）中，因为跨AZ网络通常带宽较低、延迟较高、错误率也较高，相比之下，单个AZ内的网络表现更好。
 
 如果你需要跨多个AZ的设置，建议在每个AZ中运行独立的集群，并在这些集群前设置[vmagent]({{< relref "../components/vmagent.md" >}})，以便它能将传入数据复制到所有集群中，详情请参阅[相关文档]({{< relref "./single.md#high-available" >}})。此外，可以配置额外的 vmselect 节点，以便根据[这些文档](#multi-level)从多个集群中读取数据。
 
-## 多层联邦部署 {#multi-level}
+### 多层联邦部署 {#multi-level}
 当 vmselect 节点运行时带有`-clusternativeListenAddr`启动参数，它们可以被其他 vmselect 节点查询。例如，如果 vmselect 以`-clusternativeListenAddr=:8401`启动，那么它可以在 TCP 端口`8401`上接受来自其他vmselect 节点的查询，就像 vmstorage 节点一样。这允许 vmselect 节点进行链式连接，并构建多层集群拓扑。例如，顶层vmselect节点可以查询不同可用区（AZ）中的第二层vmselect节点，而第二层vmselect节点可以查询本地AZ中的vmstorage节点。
 
 当 vminsert 节点运行时带有`-clusternativeListenAddr`启动参数，它们可以接受来自其他 vminsert 节点的数据。例如，如果 vminsert 以`-clusternativeListenAddr=:8400`启动，那么它可以在 TCP 端口`8400`上接受来自其他vminsert 节点的数据，就像 vmstorage 节点一样。这允许 vminsert 节点进行链式连接，并构建多层集群拓扑。例如，顶层 vminsert 节点可以将数据复制到位于不同可用区（AZ）的第二层 vminsert 节点中，而第二层 vminsert 节点可以将数据分散到本地AZ中的 vmstorage 节点。
@@ -245,8 +127,7 @@ VictoriaMetrics 集群的一些容量规划技巧：
 当[vmagent]({{< relref "../components/vmagent.md" >}})以[多租户模式]({{< relref "../components/vmagent.md#multitenancy" >}})运行时，这些问题得到了解决。当特定AZ暂时不可用时，vmagent会缓冲必须发送到该AZ的数据。缓冲区存储在磁盘上。一旦AZ变得可用，缓冲的数据就会被发送到AZ。
 
 
-
-## 副本和数据安全 {#replication}
+### 副本和数据安全 {#replication}
 默认情况下，VictoriaMetrics 将复制工作转架到由`-storageDataPath`指定的底层存储上，如[Google计算引擎的持久磁盘](https://cloud.google.com/compute/docs/disks#pdspecs)，这保证了数据的持久性。如果出于某种原因无法使用多副本磁盘，VictoriaMetrics 支持应用级复制。
 
 通过向 vminsert 传递`-replicationFactor=N`启动参数可以启用复制，这让 vminsert 在`N`个不同的 vmstorage 节点上存储每个写入样本的`N`份副本。这保证了即使有最多`N-1`个 vmstorage 节点不可用，所有存储的数据仍然可用于查询。
@@ -261,16 +142,56 @@ VictoriaMetrics 以毫秒精度存储时间戳，因此在启用复制时必须�
 
 注意，复制会增加资源使用——CPU、RAM、磁盘空间、网络带宽——最多可达`-replicationFactor=N`倍，因为vminsert将N份写入数据存储到不同的vmstorage节点上，并且vmselect在查询期间需要去重从vmstorage节点获得的复制数据。因此，将复制工作卸载到由`-storageDataPath`指定的底层复制的持久存储上，如[Google计算引擎的持久磁盘](https://cloud.google.com/compute/docs/disks/#pdspecs)，这可以防止数据丢失和数据损坏，更加成本效益。它还提供持续的高性能，并且可以在不停机的情况下[调整大小](https://cloud.google.com/compute/docs/disks/add-persistent-disk)。基于HDD的持久磁盘应该足以满足大多数用例。建议在Kubernetes中使用耐用的复制持久卷。
 
-## 去重机制 {#deduplicate}
-VictoriaMetrics的集群版本支持数据去重，与单节点版本的方式相同。唯一的区别是，由于以下几点，相同的`-dedup.minScrapeInterval`启动参数值必须同时传递给`vmselect`和`vmstorage`节点：
+### 多租户 {#tenant}
+VictoriaMetrics集群支持多个隔离的租户（即命名空间）。租户通过`accountID`或`accountID:projectID`进行标识，这些标识符被置于请求URL中。详情请参阅[这些文档]({{< relref "../write/api.md" >}})。
 
-默认情况下，`vminsert`尝试将单个时间序列的所有样本路由到单个`vmstorage`节点。但在某些条件下，单个时间序列的样本可能会分布在多个`vmstorage`节点上：
+关于VictoriaMetrics中租户的一些事实：
 
-+ 当添加/移除`vmstorage`节点时。此时，部分时间序列的新样本将被路由到其他`vmstorage`节点；
-+ 当`vmstorage`节点暂时不可用（例如，在它们重启期间）。此时，新样本将被重新路由到剩余的可用`vmstorage`节点；
-+ 当`vmstorage`节点没有足够的能力处理传入的数据流时。此时，vminsert将新样本重新路由到其他`vmstorage`节点。
+每个accountID和projectID均由一个任意的32位整数标识，范围为`[0..2^32)`。如果projectID缺失，则自动分配为0。预期其他关于租户的信息，如身份验证令牌、租户名称、限制、会计等，存储在一个独立的关系数据库中。该数据库必须由位于VictoriaMetrics集群前端的独立服务进行管理，例如[vmauth](https://docs.victoriametrics.com/vmauth.html)或[vmgateway](https://docs.victoriametrics.com/vmgateway.html)。如果您需要此类服务的协助，请联系我们。
 
-## 备份 {#backup}
+当第一个数据点被写入给定的租户时，租户会被自动创建。
+
+所有租户的数据均匀分布在可用的`vmstorage`节点之间。这保证了当不同租户拥有不同数量的数据和不同的查询负载时，`vmstorage`节点之间的负载也是均匀的。
+
+数据库的性能和资源使用情况并不取决于租户的数量，而主要取决于所有租户中活跃时间序列的总数。如果一个时间序列在过去的一小时中至少接收了一个样本，或者在过去的一小时中被查询访问过，那么它就被认为是活跃的。
+
+VictoriaMetrics不支持在单一请求中查询多个租户。
+
+已注册租户的列表可以通过`http://<vmselect>:8481/admin/tenants`URL获取。请参阅[这些文档]({{< relref "../write/api.md" >}})。
+
+VictoriaMetrics通过指标公开了各种按租户划分的统计数据——请参阅[这些文档](https://docs.victoriametrics.com/PerTenantStatistic.html)。
+
+也可以看下[通过 labels 实现多租户](#tenant-by-label)。
+
+#### 通过 Labels 实现多租户 {#tenant-by-label}
+`vminsert`可以从多个租户通过一个特殊的[多租户](#tenant)端点`http://vminsert:8480/insert/multitenant/<suffix>`接收数据，其中可以替换为从此列表中获取数据的任何受支持的`<suffix>`。在这种情况下，AccountID 和ProjectID是从传入样本的可选`vm_account_id`和`vm_project_id`标签中获取的。如果 vm_account_id 或 vm_project_id 标签缺失或无效，则相应的AccountID 或ProjectID 将设置为 0。在将样本转发到`vmstorage`之前，会自动从样本中删除这些Label。例如，如果将以下样本写入`http://vminsert:8480/insert/multitenant/prometheus/api/v1/write`：
+
+
+```plain
+http_requests_total{path="/foo",vm_account_id="42"} 12
+http_requests_total{path="/bar",vm_account_id="7",vm_project_id="9"} 34
+```
+
+然后`http_requests_total｛path=“/foo”｝12`将被存储在租户`accountID=42，projectID=0`中，而`http_requests_total{path=“/bar”｝34`将被存储到租户`accountID=7，projectID=9`中。
+
+`vm_account_id`和`vm_project_id`labels 是在通过`-rebelConfig`启动参数应用 [relabeling](https://docs.victoriametrics.com/relabeling.html) 集后提取的，因此可以在此阶段设置这些 label。
+
+安全提示：建议将对多租户端点的访问限制为仅限可信源，因为不可信源可能会通过向任意租户写入不需要的样本来破坏每个租户的数据。
+
+## 集群维护
+
+## 监控 {#monitoring}
+所有集群组件均在`-httpListenAddr`启动参数中设置的 TCP 端口上的`/metrics`页面上以 Prometheus 兼容格式公开各种指标。默认情况下，使用以下 TCP 端口：
+
++ `vminsert`- 8480
++ `vmselect`- 8481
++ `vmstorage`- 8482
+
+建议使用 [vmagent]({{< relref "../components/vmagent.md" >}}) 或 Prometheus 以从所有集群组件中抓取`/metrics`页面，这样就可以使用 VictoriaMetrics 集群的[官方 Grafana 大盘](https://grafana.com/grafana/dashboards/11176-victoriametrics-cluster/)或 [VictoriaMetrics 集群大盘](https://grafana.com/grafana/dashboards/11831)来监控和分析它们。这些仪表板上的图表包含有用的提示 - 将鼠标悬停在每个图表左上角的`i`图标上即可阅读。
+
+建议通过[此配置](https://github.com/VictoriaMetrics/VictoriaMetrics/blob/cluster/deployment/docker/alerts.yml)在 [vmalert](https://docs.victoriametrics.com/vmalert.html) 或 Prometheus 中设置告警。更多详细信息请参阅文章 [VictoriaMetrics 监控](https://victoriametrics.com/blog/victoriametrics-monitoring/)。
+
+### 备份 {#backup}
 建议定期从[即时快照](https://medium.com/@valyala/how-victoriametrics-makes-instant-snapshots-for-multi-terabyte-time-series-data-e1f3fb0e0282)进行备份，以防止用户错误，如意外删除数据。
 
 创建备份时，必须对每个vmstorage节点执行以下步骤：
@@ -286,4 +207,93 @@ VictoriaMetrics的集群版本支持数据去重，与单节点版本的方式�
 1. `kill -INT`命令关停`vmstorage`。
 2. 使用 [vmrestore]({{< relref "../components/vmrestore.md" >}}) 将备份数据恢复到`-storageDataPath`指定的目录。
 3. 启动`vmstorage`节点.
+
+#### 升级集群节点
+所有节点类型 - `vminsert`、`vmselect`和`vmstorage`- 都可以通过启停进行更新。向相应进程发送`SIGINT`信号，等待其退出，然后使用新配置启动新版本。 
+
+存在以下集群更新/升级方法：
+
+#### 无停机策略
+使用更新的配置/升级的二进制文件逐个重新启动集群中的每个节点。 
+
+建议按以下顺序重新启动节点：
+
+1. 重启`vmstorage`nodes.
+2. 重启`vminsert`nodes.
+3. 重启`vmselect`nodes.
+
+如果满足以下条件，此策略允许在不停机的情况下升级集群：
+
++ 集群至少有两个及以上实例（每种类型都有`vminsert`、`vmselect`和`vmstorage`），因此当单个节点在重启期间暂时不可用时，其它实例可以继续接受新数据并处理传入请求。有关详细信息，请参阅[集群可用性](./#high-available)文档。
++ 当任何类型的单个节点（`vminsert`、`vmselect`或`vmstorage`）在重启期间暂时不可用时，集群具有足够的计算资源（CPU、RAM、网络带宽、磁盘 IO）来处理当前工作负载。
++ 更新后的的二进制文件与集群中的其余组件兼容。请参阅 [CHANGELOG](https://docs.victoriametrics.com/CHANGELOG.html) 了解不同版本之间的兼容性说明。 
+
+只要有一个条件不满足，则滚动重启可能会导致在升级期间集群不可用。在这种情况下，建议采用以下策略。
+
+#### 最短停机策略
+1. 并发停止所有的`vminsert`和`vmselect`实例。
+2. 并发重启所有的`vmstorage`实例。
+3. 并发重启所有的`vminsert`和`vmselect`实例。
+
+执行上述步骤时，集群无法进行数据提取和查询。通过在上述每个步骤中并行重启集群节点，可以最大限度地减少停机时间。与无停机策略相比，最短停机时间策略具有以下优势：
+
++ 当以前的版本与新版本不兼容时，它允许以最小的中断完成升级。
++ 当集群没有足够的计算资源（CPU、RAM、磁盘 IO、网络带宽）进行滚动升级时，它允许以最小的中断完成版本升级。 
++ 对于具有大量节点的集群或具有大量 vmstorage 节点的集群，它允许最短升级的持续时间，因为它需要很长时间才能平滑重启。
+
+### 集群扩缩容 {#resize}
+集群的性能和容量有两种提升方式：
+
++ 为先有的实例节点增加计算资源（CPU，内存，磁盘IO，磁盘空间，网络带宽），即垂直扩容。
++ 为集群增加更多的实例节点，即水平扩容。
+
+一些扩容建议：
+
++ 向现有`vmselect`节点添加更多 CPU 和 RAM 可提高重度查询的性能，这些查询会处理大量时间序列和大量原始样本。请[参阅本文](https://valyala.medium.com/how-to-optimize-promql-and-metricsql-queries-85a1b75bf986)，了解如何检测和优化重度查询。
++ 添加更多`vmstorage`节点以增加集群可以处理的[活动时间序列]({{< relref "../faq.md#what-is-active-timeseries" >}})的数量。这还会提高[高流失率]({{< relref "../faq.md#what-is-high-churn-rate" >}})时间序列的查询性能。集群稳定性也会随着`vmstorage`节点数量的增加而提高，因为当某些 vmstorage 节点不可用时，活动`vmstorage`节点需要处理的额外工作负载较少。
++ 向现有`vmstorage`节点添加更多 CPU 和 RAM 会增加集群可以处理的[活动时间序列]({{< relref "../faq.md#what-is-active-timeseries" >}})的数量。与向现有`vmstorage`节点添加更多 CPU 和 RAM 相比，添加更多`vmstorage`节点是更好的选择，因为`vmstorage`节点数量越多，集群稳定性就越高，并且会提高[高流失率]({{< relref "../faq.md#what-is-high-churn-rate" >}})时间序列的查询性能。
++ 添加更多`vminsert`节点会增加最大可能的数据提取速度，因为提取的数据可能会在更多数量的`vminsert`节点之间分配。
++ 添加更多`vmselect`节点会增加最大可能的查询率，因为传入的并发请求可能会在更多`vmselect`节点之间分配。
+
+新增`vmstorage`节点的步骤参见[这篇文档]({{< relref "./operation.md#resize" >}})：
+
+1. 启动具有与集群中现有节点相同的`-retentionPeriod`的新`vmstorage`节点。
+2. 平滑启动 vmselect 节点，并在`-storageNode`参数中把`<new_vmstorage_host>`加上。
+3. 平滑启动 vminsert 节点，并在`-storageNode`参数中把`<new_vmstorage_host>`加上。
+
+
+### 只读模式
+当`-storageDataPath`指向的目录包含的可用空间少于`-storage.minFreeDiskSpaceBytes`时，vmstorage 节点会自动切换到只读模式。`vminsert`节点停止向此类节点发送数据，并开始将数据重新路由到剩余的 vmstorage 节点。
+
+当`vmstorage`进入只读模式时，它会将`http://vmstorage:8482/metrics`上的`vm_storage_is_read_only`指标设置为`1`。当`vmstorage`未处于只读模式时，该指标值为`0`。
+
+
+
+## 其他
+
+### 数据维护
+
+集群的数据维护和单机版没有太多区别，只不过一些数据维护接口被放到了[vminsert]({{< relref "../write/api.md" >}})和[vmselect]({{< relref "../query/api.md" >}}) 组件中，更多内容可参考[该文档]({{< relref "./single.md#data-operation" >}})
+
+### vmstorage API接口
+
+查询和写入接口详见[查询API]({{< relref "../query/api.md" >}})和[写入API]({{< relref "../write/api.md" >}})。
+
+此外`vmstorage`组件在 8482 端口上提供了如下接口：
+- `/internal/force_merge`- 强制启动 vmstorage 实例的[数据合并压缩](https://docs.victoriametrics.com/#forced-merge)。
+- `/snapshot/create`- 创建[实例快照](https://medium.com/@valyala/how-victoriametrics-makes-instant-snapshots-for-multi-terabyte-time-series-data-e1f3fb0e0282)，可用于后台备份。快照在`<storageDataPath>/snapshots`文件夹中创建，其中`<storageDataPath>`是通过相应的启动参数指定。
+- `/snapshot/list`- 列出可用的快照。
+- `/snapshot/delete?snapshot=<id>`- 删除给定的快照。
+- `/snapshot/delete_all`- 删除所有快照。
+
+快照可以在每个`vmstorage`节点上独立创建。无需在`vmstorage`节点之间同步快照的创建。
+
+### 去重机制 {#deduplicate}
+VictoriaMetrics的集群版本支持数据去重，与单节点版本的方式相同。唯一的区别是，由于以下几点，相同的`-dedup.minScrapeInterval`启动参数值必须同时传递给`vmselect`和`vmstorage`节点：
+
+默认情况下，`vminsert`尝试将单个时间序列的所有样本路由到单个`vmstorage`节点。但在某些条件下，单个时间序列的样本可能会分布在多个`vmstorage`节点上：
+
++ 当添加/移除`vmstorage`节点时。此时，部分时间序列的新样本将被路由到其他`vmstorage`节点；
++ 当`vmstorage`节点暂时不可用（例如，在它们重启期间）。此时，新样本将被重新路由到剩余的可用`vmstorage`节点；
++ 当`vmstorage`节点没有足够的能力处理传入的数据流时。此时，vminsert将新样本重新路由到其他`vmstorage`节点。
 

@@ -153,7 +153,7 @@ VictoriaMetrics 在`/api/v1/status/active_queries`接口中展示当前正在执
 mkfs.ext4 ... -O 64bit,huge_file,extent -T huge
 ```
 
-## 数据运维 {#operation}
+## 数据运维 {#data-operation}
 ### 如何运用 snapshots {#snapshot}
 VictoriaMetrics 可以为存储在`-storageDataPath`目录下的所有数据创建[即时快照](https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben#how-to-work-with-snapshots)。访问`http://:8428/snapshot/create`就可以创建即时快照。该接口将返回以下JSON响应：
 
