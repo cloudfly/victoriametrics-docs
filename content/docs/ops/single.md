@@ -174,7 +174,7 @@ VictoriaMetrics 可以为存储在`-storageDataPath`目录下的所有数据创�
 2. 使用 [vmrestore]({{< relref "../components/vmrestore.md" >}}) 将快照内容恢复到`-storageDataPath`参数指定的目录。
 3. 启动 VictoriaMetrics.
 
-### 如何删除 Timeseries
+### 如何删除 Timeseries {#delete-timeseries}
 
 发送请求到`http://:8428/api/v1/admin/tsdb/delete_series`，其中`<timeseries_selector_for_delete>`可以包含任何用于删除指标的时间序列选择器。该
 
@@ -273,10 +273,9 @@ VictoriaMetrics 扩展了重新标注功能，例如 Graphite 风格的再标注
 可以在`http://victoriametrics:8428/metric-relabel-debug`页面或我们的[在线工具](https://play.victoriametrics.com/select/accounting/1/6a716b0f-38bc-4856-90ce-448fd713e3fe/prometheus/graph/#/relabeling)上调试 Relabel。有关更多详细信息，请参阅[这些文档]({{< relref "../components/vmagent.md#relabel-debug" >}})。
 
 
-
-
 ## 高级特性
-### Cache 清理
+
+### 清除 Cache {#cache-removal}
 VictoriaMetrics 使用各种内部缓存。这些缓存在组件被优雅关闭时（例如通过发送`SIGINT`信号停止VictoriaMetrics）存储到`<-storageDataPath>/cache`目录中。下次启动VictoriaMetrics时会读取这些缓存。
 
 如果需要在下次启动时删除此类缓存。可以通过以下方式完成：
@@ -284,7 +283,16 @@ VictoriaMetrics 使用各种内部缓存。这些缓存在组件被优雅关闭�
 + 在 VictoriaMetrics 停止后手动删除`<-storageDataPath>/cache`目录。
 + 在重新启动 VictoriaMetrics 之前将`reset_cache_on_startup`文件放置在`<-storageDataPath>/cache`目录中。 在这种情况下，VictoriaMetrics 将自动在下次启动时删除所有缓存。有关详细信息，请参阅此[issue](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/1447)。
 
+### Rollup 结果缓存
+
+VictoriaMetrics 默认缓存查询响应数据。这可以提供在`time`,`start`和`end`时间参数不断递增的场景下对`/api/v1/query`和`/api/v1/query_range`的重复查询性能。（比如，一个 Grafana 页面定时刷新，就是反复发送重复请求，其中只有`time`,`start`和`start`参数随着时间变化而更新）
+
+如果有历史数据补写到 DB 中，该缓存机制就会导致 VictoriaMetrics 返回不正确的结果。详情请参见[这些文档](#backfilling)。
+
+可以通过启动参数`-search.disableCache`禁用 VictoriaMetrics 的全局 rollup 缓存，也可以在请求`/api/v1/query`和`/api/v1/query_range`接口时带上`nocache=1`查询参数来禁用该缓存。。
+
 ### Cache 调整
+
 VictoriaMetrics 使用各种内存缓存来提升数据写入和查询性能。每种类型的缓存都在`/metrics`下暴露如下指标：
 
 + `vm_cache_size_bytes`- 实际的 cache 大小
@@ -298,7 +306,6 @@ VictoriaMetrics 使用各种内存缓存来提升数据写入和查询性能。�
 请注意，默认缓存大小已根据最实际的场景和运行环境进行了精心调整。只有在您理解其影响并且`vmstorage`具有足够空闲内存来容纳新的缓存大小时才需要更改默认启动。
 
 要覆盖默认值，请参阅带有`-storage.cacheSize`前缀的启动参数。可以在[此处](#flags)查看所有启动参数的完整描述。
-
 
 
 ### 基数限制 {#cardinality}
@@ -334,7 +341,7 @@ vm_daily_series_limit_current_series / vm_daily_series_limit_max_series > 0.9
 
 更多进阶内容参见 [vmagent 的基数限制]({{< relref "../components/vmagent.md#cardinality-limiter" >}})
 
-### Query 追踪
+### 查询追踪 {#trace}
 
 VictoriaMetrics支持查询追踪，可用于确定查询处理过程中的瓶颈。这类似于 Postgresql 的`EXPLAIN ANALYZE`。
 
@@ -415,7 +422,7 @@ VictoriaMetrics 提供了下面这些安全相关的启动参数：
 + `-deleteAuthKey`用来保护`/api/v1/admin/tsdb/delete_series`接口。参见 [how to delete time series](https://docs.victoriametrics.com/#how-to-delete-time-series).
 + `-snapshotAuthKey`用来保护`/snapshot*`一系列接口。参见 [how to work with snapshots](https://docs.victoriametrics.com/#how-to-work-with-snapshots).
 + `-forceMergeAuthKey`用来保护`/internal/force_merge`接口。参见 [force merge docs](https://docs.victoriametrics.com/#forced-merge).
-+ `-search.resetCacheAuthKey`用来保护`/internal/resetRollupResultCache`接口。 更多详情参见 [backfilling](https://docs.victoriametrics.com/#backfilling)。
++ `-search.resetCacheAuthKey`用来保护`/internal/resetRollupResultCache`接口。 更多详情参见 [backfilling](#backfilling)。
 + `-configAuthKey`用来保护`/config`接口，因为它可能包含一些敏感的信息，比如密码。
 + `-flagsAuthKey`用来保护`/flags`接口。
 + `-pprofAuthKey`用来保护`/debug/pprof/*`接口，这是用来做性能分析的 [profiling](https://docs.victoriametrics.com/#profiling)。

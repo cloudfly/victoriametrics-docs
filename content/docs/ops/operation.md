@@ -104,42 +104,37 @@ curl 'http://localhost:8442/internal/force_merge?partition_prefix=2022_01'
 
 
 ## 查询结果不符合预期
---------------------------------------------------------------------------------------------------------------------------
 
-If you see unexpected or unreliable query results from VictoriaMetrics, then try the following steps:
+如果你在 VictoriaMetrics 傻姑娘查询到了非预期的或不稳定的数据，尝试按照下面的步骤来解决：
 
-1.  Check whether simplified queries return unexpected results. For example, if the query looks like `sum(rate(http_requests_total[5m])) by (job)`, then check whether the following queries return expected results:
+1. 简化查询语句，检查内部子查询或指标的数据。比如，如果你的查询是`sum(rate(http_requests_total[5m])) by (job)`，那么就检查下面的这些语句是否符合预期。
+   有时是因为查询语句编写得有问题，才会导致非预期的计算结果。建议阅读下[MetricsQL文档]({{< relref "../query/metricsql/_index.md" >}})，特别是[子查询]({{< relref "../query/metricsql/_index.md#subquery" >}})和[rollup函数]({{< relref "../query/metricsql/functions/rollup.md" >}})部分。
     
-    Sometimes the query may be improperly constructed, so it returns unexpected results. It is recommended reading and understanding [MetricsQL docs](https://docs.victoriametrics.com/metricsql/), especially [subqueries](https://docs.victoriametrics.com/metricsql/#subqueries) and [rollup functions](https://docs.victoriametrics.com/metricsql/#rollup-functions) sections.
-    
+  * 删掉最外层的`sum`，执行`rate(http_requests_total[5m])`，因为聚合逻辑可能会隐藏掉一些缺失的 timeseries，数据中的缺点或异常点。如果该查询返回的数据太多了，就试试往语句里增加一些 Label 过滤器。比如可以使用`rate(http_requests_total{job="foo"}[5m])`精准定位下目标异常数据。如果还是太多，就再加一些过滤器，来缩小目标范围。
 
-*   Remove the outer `sum` and execute `rate(http_requests_total[5m])`, since aggregations could hide some missing series, gaps in data or anomalies in existing series. If this query returns too many time series, then try adding more specific label filters to it. For example, if you see that the original query returns unexpected results for the `job="foo"`, then use `rate(http_requests_total{job="foo"}[5m])` query. If this isn’t enough, then continue adding more specific label filters, so the resulting query returns manageable number of time series.
-    
-*   Remove the outer `rate` and execute `http_requests_total`. Additional label filters may be added here in order to reduce the number of returned series.
-    
+  * 删掉外层的`rate`，只查询`http_requests_total`。同上，如果返回的数据太多了，就往语句里增加一些 Label 过滤器。
 
-3.  If the simplest query continues returning unexpected / unreliable results, then try verifying correctness of raw unprocessed samples for this query via [/api/v1/export](https://docs.victoriametrics.com/#how-to-export-data-in-json-line-format) on the given `[start..end]` time range and check whether they are expected:
+
+2. 如果简化后语句，返回了非预期或者不稳定的结果，那么就尝试使用接口 [/api/v1/export]({{< relref "../query/api.md#apiv1export" >}}) 把`[start..end]`时间范围内的数据都导出来，然后排查下原始打点是否符合预期。:
     
+    ```sh {filename="单机"} 
+    curl http://victoriametrics:8428/api/v1/export -d 'match[]=http_requests_total' -d 'start=...' -d 'end=...'
     ```
-    single-node: curl http://victoriametrics:8428/api/v1/export -d 'match\[\]=http\_requests\_total' -d 'start=...' -d 'end=...' cluster: curl http://<vmselect>:8481/select/<tenantID>/prometheus/api/v1/export -d 'match\[\]=http\_requests\_total' -d 'start=...' -d 'end=...'
+
+    ```sh {filename="集群"} 
+    curl http://<vmselect>:8481/select/<tenantID>/prometheus/api/v1/export -d 'match[]=http_requests_total' -d 'start=...' -d 'end=...'
     ```
     
-    ShellCopy
+    请注意 [/api/v1/query]({{< relref "../query/_index.md#instant-query" >}}) and from [/api/v1/query_range]({{< relref "../query/_index.md#range-query" >}}) 返回的是计算后的数据，而不是 db 中存储的原始样本。更多详情看[这篇文档](https://prometheus.io/docs/prometheus/latest/querying/basics/#staleness)。
     
-    Note that responses returned from [/api/v1/query](https://docs.victoriametrics.com/keyconcepts/#instant-query) and from [/api/v1/query_range](https://docs.victoriametrics.com/keyconcepts/#range-query) contain evaluated data instead of raw samples stored in VictoriaMetrics. See [these docs](https://prometheus.io/docs/prometheus/latest/querying/basics/#staleness) for details.
+    如果你是从 InfluxDB 迁移过来的，需要在单机版或在集群版的`vmselet`组件上使用`-search.setLookbackToStep`启动参数，
+    更多详情看[这篇文档](https://docs.victoriametrics.com/guides/migrate-from-influx.html).
     
-    If you migrate from InfluxDB, then pass `-search.setLookbackToStep` command-line flag to single-node VictoriaMetrics or to `vmselect` in VictoriaMetrics cluster. See also [how to migrate from InfluxDB to VictoriaMetrics](https://docs.victoriametrics.com/guides/migrate-from-influx.html).
+3. 有时候结果缓存可能也会导致查询结果不符合预期，因为`vmselect`或`vmsingle`将某段时间的某些指标缓存在本地，但这个时间段的数据在缓存后又发生了新的写入，即数据更新了。尝试用`nocache=1`参数进行查询，看结果是否会符合预期。
     
-4.  Sometimes response caching may lead to unexpected results when samples with older timestamps are ingested into VictoriaMetrics (aka [backfilling](https://docs.victoriametrics.com/#backfilling)). Try disabling response cache and see whether this helps. This can be done in the following ways:
-    
-    If the problem was in the cache, try resetting it via [resetRollupCache handler](https://docs.victoriametrics.com/url-examples/#internalresetrollupresultcache).
-    
-
-*   By passing `-search.disableCache` command-line flag to a single-node VictoriaMetrics or to all the `vmselect` components if cluster version of VictoriaMetrics is used.
-    
-*   By passing `nocache=1` query arg to every request to `/api/v1/query` and `/api/v1/query_range`. If you use Grafana, then this query arg can be specified in `Custom Query Parameters` field at Prometheus datasource settings - see [these docs](https://grafana.com/docs/grafana/latest/datasources/prometheus/) for details.
-    
-
+    * 如果问题出现在 cache 上，那么就用[resetRollupCache]({{< relref "../query/api.md#resetrollupresultcache" >}})接口将缓存重置一下.
+    * 使用`-search.disableCache`启动参数让单机版 VictoriaMetrics 或集群版的`vmselect`组件禁用缓存机制。
+    * 使用`nocache=1`请求参数来请求`/api/v1/query`和 `/api/v1/query_range`。如果你在使用 Grafana，可以在 Prometheus 数据源设置里的`Custom Query Parameters`部分加上该参数。更多详情看[这篇文档](https://grafana.com/docs/grafana/latest/datasources/prometheus/)。
 6.  If you use cluster version of VictoriaMetrics, then it may return partial responses by default when some of `vmstorage` nodes are temporarily unavailable - see [cluster availability docs](https://docs.victoriametrics.com/cluster-victoriametrics/#cluster-availability) for details. If you want to prioritize query consistency over cluster availability, then you can pass `-search.denyPartialResponse` command-line flag to all the `vmselect` nodes. In this case VictoriaMetrics returns an error during querying if at least a single `vmstorage` node is unavailable. Another option is to pass `deny_partial_response=1` query arg to `/api/v1/query` and `/api/v1/query_range`. If you use Grafana, then this query arg can be specified in `Custom Query Parameters` field at Prometheus datasource settings - see [these docs](https://grafana.com/docs/grafana/latest/datasources/prometheus/) for details.
     
 7.  If you pass `-replicationFactor` command-line flag to `vmselect`, then it is recommended removing this flag from `vmselect`, since it may lead to incomplete responses when `vmstorage` nodes contain less than `-replicationFactor` copies of the requested data.
