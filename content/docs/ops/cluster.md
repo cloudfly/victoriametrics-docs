@@ -29,7 +29,7 @@ VictoriaMetrics 集群版本由以下几个服务组成：
 参见 [集群版安全建议]({{< relref "./single.md#security" >}}) 以及 [网站的常规安全策略](https://victoriametrics.com/security/).
 
 
-## 基数限制
+### 基数限制
 `vmstorage`实例同[单机版]({{< relref "./single.md#cardinality" >}})一样支持使用`-storage.maxHourlySeries`和`-storage.maxDailySeries`两个参数做基数限制。
 
 因为 VictoriaMetrics 集群采用的是 SN 架构，所以`vmstorage`是针对自身实例的全局限制，不分租户。  
@@ -38,7 +38,7 @@ VictoriaMetrics 集群版本由以下几个服务组成：
 关于更多的基数限制可以看[这些文档]({{< relref "./single.md#cardinality" >}})。 
 
 
-## 集群可用性 {#cluster-available}
+### 集群可用性 {#cluster-available}
 VictoriaMetrics 集群架构优先考虑可用性而不是数据一致性。这意味着，如果集群的某些组件暂时不可用，集群仍可用于数据提取和数据查询。 
 
 如果满足以下条件，VictoriaMetrics 集群将保持可用： 
@@ -266,8 +266,6 @@ http_requests_total{path="/bar",vm_account_id="7",vm_project_id="9"} 34
 当`-storageDataPath`指向的目录包含的可用空间少于`-storage.minFreeDiskSpaceBytes`时，vmstorage 节点会自动切换到只读模式。`vminsert`节点停止向此类节点发送数据，并开始将数据重新路由到剩余的 vmstorage 节点。
 
 当`vmstorage`进入只读模式时，它会将`http://vmstorage:8482/metrics`上的`vm_storage_is_read_only`指标设置为`1`。当`vmstorage`未处于只读模式时，该指标值为`0`。
-
-
 
 ## 其他
 
