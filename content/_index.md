@@ -1,5 +1,13 @@
 ---
 title: VictoriaMetrics 中文手册
+keywords:
+- victoriametrics
+- prometheus
+- opentelemetry
+- 可观测
+- 监控
+- 分布式
+description: VictoriaMetrics 中文文档手册，包含了 VictoriaMetrics 的运维和使用文档，以及可观测领域的经验分享
 layout: hextra-home
 ---
 
