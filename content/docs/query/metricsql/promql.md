@@ -281,7 +281,7 @@ PromQL 是一种简单但功能强大的时间序列数据库查询语言。 它
 + 本文没有提及很多[函数](https://prometheus.io/docs/prometheus/latest/querying/functions/)和[逻辑运算符](https://prometheus.io/docs/prometheus/latest/querying/operators/#logical-set-binary-operators) 。
 + 本文没有包含[子查询](https://medium.com/@valyala/prometheus-subqueries-in-victoriametrics-9b1492b720b3)内容。
 + 本文没有包含查询模板(通过`CTE`or [WITH templates](https://victoriametrics.com/promql/expand-with-exprs)), 它可以大大简化复杂的 PromQL 语句。
-+ 本味没有提及很多 VictoriaMetrics 所支持的 [MetricsQL]({{< relref "./functions/label.md" >}}) 诸多有用特性。
++ 本文没有提及很多 VictoriaMetrics 所支持的 [MetricsQL]({{< relref "./_index.md" >}}) 诸多有用特性。
 
 我建议可以通过这个[备忘单](https://promlabs.com/promql-cheat-sheet/)来学习 PromQL。
 

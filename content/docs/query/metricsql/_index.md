@@ -303,7 +303,7 @@ VictoriaMetrics 在开始计算之前，对传入的查询执行以下隐式转�
 - 如果方括号`[]`中的回溯窗口在内部 [rollup 函数]({{< relref "./functions/rollup.md" >}})中缺失，则会自动设置为以下值：
   - 对于传递给`/api/v1/query_range`或`/api/v1/query`的`step`值，所有 [rollup 函数]({{< relref "./functions/rollup.md" >}})（除了`default_rollup`和`rate`）都会使用该值。这个值在 Grafana 中被称为`$__interval`，在 MetricsQL 中被称为`1i`。例如，`avg_over_time(temperature)`会自动转换为`avg_over_time(temperature[1i])`。
   - 对于`max(step, scrape_interval)`，其中`scrape_interval`是`default_rollup`和`rate`函数的原始样本间隔。这可以避免当`step`小于`scrape_interval`时图表上出现意外的间隙。
-- 没有放在 rollup 函数内的所有过滤器，都会被自动放到`default_rollup`函数里。比如：
+- 没有使用 rollup 函数内的所有过滤器，都会被自动放到`default_rollup`函数里。比如：
   - `foo`被转换成`default_rollup(foo)`
   - `foo + bar`被转换成`default_rollup(foo) + default_rollup(bar)`
   - `count(up)`被转换成`count(default_rollup(up))`，因为`count`不是一个 rollup 函数，而是一个[聚合函数]({{< relref "./functions/aggregation.md" >}})
