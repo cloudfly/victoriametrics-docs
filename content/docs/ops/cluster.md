@@ -15,6 +15,10 @@ VictoriaMetrics 集群版本由以下几个服务组成：
 
 每项服务都可独立扩展，并可在最合适的硬件上运行。 `vmstorage`节点之间互不相识，互不通信，也不共享任何数据。 这是一种[SN架构](https://en.wikipedia.org/wiki/Shared-nothing_architecture) 。 它提高了集群的可用性，简化了集群维护和集群扩展。
 
+在`vminsert`和`vmselect`前面，我建议是加一层代理，用于用户认证，管控等。  
+`vmagent`用于数据采集，可以主动以 PULL 的模式采集业务组件指标，也可以让业务指标自己 [PUSH]({{< relref "../write/model.md#push" >}}) 进来；当业务组件采用 PUSH 时，也可以绕过`vmagent`直接 [PUSH]({{< relref "../write/model.md#pull" >}}) 到`vmauth`。
+
+![](./cluster-arch.png)
 
 
 ### 安全 {#security}
