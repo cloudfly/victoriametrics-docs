@@ -142,6 +142,22 @@ VictoriaMetrics 在`/api/v1/status/active_queries`接口中展示当前正在执
   -pushmetrics.extraLabel='job="vm"'
 ```
 
+### 不要使用 MQ（消息队列）
+
+消息队列几乎是大数据领域的默认组件选项。因为它性能强劲，可用性高，可以应对大数据量冲击；而且将数据生产端和消费端服务解耦；受到了很多架构师的青睐。
+
+但我强烈不建议在 VictoriaMetrics 前面再加一层 MQ 组件，此建议同样适用于大多数 TSDB。
+
+因为 MQ 消费延时是常见可接受的一种现象，但这种现象的出现会对 VictoriaMetrics 带来灾难。比如：
+
+1. 延时消费的数据对 VictoriaMetrics 来说是历史数据，属[补数据](#backfilling)场景，它会导致[Rollup Cache](#rollup)大量失效，进而导致整个 DB 的查询结果全部出错。
+2. VictoriaMetrics 内部有[每日索引]({{< relref "dbengine.md#indexdb" >}})来加快数据的写入和查询，该索引在UTC时间每日0点（中国时区早8点）进行一次更替刷新。  
+   如果延时恰好出现在这个时间点，可能导致很多索引在新一日的索引中是缺失的；当消费恢复后，大量历史数据涌入，诱发大批量索引创建，[写入速度会很慢]({{< relref "./operation.md#slow-insert" >}})，集群很可能会在高压中瘫痪。
+3. 数据延时修复后，追数据通常是一个漫长的过程。如果 VictoriaMetrics 的数据用于实时告警，那么在最新数据追上前，整个告警系统都是瘫痪不可用的，因为最新的数据一直在 MQ 里排队。
+
+总结上述现象的本质原因，是 **MQ 更多应用于离线数据分析场景，而 VictoriaMetrics 要解决的是实时在线场景，二者系统设计上的取舍不同，最好不要混在一个架构里**。
+
+
 ### 参数调整？
 + 不需要调整 VictoriaMetrics - 它使用合理的默认启动参数，这些参数会自动根据可用的 CPU 和 RAM 资源进行调整。 
 + 操作系统不需要调优 - VictoriaMetrics已经针对默认的操作系统设置进行了优化。唯一的选项是增加操作系统中[打开文件数量的限制](https://medium.com/@muhammadtriwibowo/set-permanently-ulimit-n-open-files-in-ubuntu-4d61064429a)。这个建议不仅适用于 VictoriaMetrics，也适用于任何处理大量 HTTP 连接并将数据存储在磁盘上的服务。 
@@ -283,7 +299,7 @@ VictoriaMetrics 使用各种内部缓存。这些缓存在组件被优雅关闭�
 + 在 VictoriaMetrics 停止后手动删除`<-storageDataPath>/cache`目录。
 + 在重新启动 VictoriaMetrics 之前将`reset_cache_on_startup`文件放置在`<-storageDataPath>/cache`目录中。 在这种情况下，VictoriaMetrics 将自动在下次启动时删除所有缓存。有关详细信息，请参阅此[issue](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/1447)。
 
-### Rollup 结果缓存
+### Rollup 结果缓存 {#rollup cache}
 
 VictoriaMetrics 默认缓存查询响应数据。这可以提供在`time`,`start`和`end`时间参数不断递增的场景下对`/api/v1/query`和`/api/v1/query_range`的重复查询性能。（比如，一个 Grafana 页面定时刷新，就是反复发送重复请求，其中只有`time`,`start`和`start`参数随着时间变化而更新）
 

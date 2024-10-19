@@ -143,7 +143,7 @@ curl 'http://localhost:8442/internal/force_merge?partition_prefix=2022_01'
 3. 如果上述步骤未能帮助识别意外查询结果的根本原因，请提交一个包含如何重现问题的详细信息的[issue](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/new)。与其在问题中分享截图，不如通过点击图表区域右上角的“导出查询”按钮，在 [VMUI]({{< relref "../components/vmui.md" >}}) 中分享查询和跟踪结果。
     
 
-## 数据写入变慢
+## 数据写入变慢 {#slow-insert}
 
 下面列举的这些原因，可能会导致数据写入变慢：
 
