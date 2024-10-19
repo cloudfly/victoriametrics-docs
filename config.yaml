@@ -1,6 +1,7 @@
 baseURL: https://victoriametrics.com.cn/
 languageCode: zh-cn
 title: VictoriaMetrics 中文手册
+description: "VictoriaMetrics 的中文文档手册，大部分内容翻译子官方文档；对文档内容进行了重新排版，更适合中国人的阅读习惯。仅保留了开源的内容，剔除了企业版相关内容。"
 
 module:
   imports:
