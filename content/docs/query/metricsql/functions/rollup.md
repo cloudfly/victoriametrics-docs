@@ -216,7 +216,7 @@ PromQL 也支持该函数。
 
 该函数通常应用于 [counters]({{< relref "concepts.md#counter" >}}).PromQL 也支持该函数。
 
-另请参阅 [increase_pure](#increase_pure), [increase_prometheus](#increase_prometheus) and [delta](#delta).
+{{< doc-see-other increase_pure increase_prometheus delta >}}
 
 ### increase_prometheus
 `increase_prometheus(series_selector[d])`计算给定的 [series_selector]({{< relref "concepts.md#filtering" >}}) 返回的时间序列在给定的回溯窗口`d`内样本值的增量。
@@ -227,14 +227,14 @@ PromQL 也支持该函数。
 
 该函数通常应用于 [counters]({{< relref "concepts.md#counter" >}}).
 
-另请参阅 [increase_pure](#increase_pure) 和 [increase](#increase).
+{{< doc-see-other increase_pure increase >}}
 
 ### increase_pure
 `increase_pure(series_selector[d])`的工作机制和 [increase](#increase) 一样，除了一种情况：它假定 [counters]({{< relref "concepts.md#counter" >}}) 总是从 0 开始计数，而 [increase](#increase) 在第一个值过大时会忽略掉它。
 
 该函数通常应用于  [counters]({{< relref "concepts.md#counter" >}}).
 
-另请参阅 [increase](#increas) 和 [increase_prometheus](#increase_prometheus).
+{{< doc-see-other increase increase_prometheus >}}
 
 ### increases_over_time
 `increases_over_time(series_selector[d])`计算给定的 [series_selector]({{< relref "concepts.md#filtering" >}}) 返回的时间序列在给定的回溯窗口`d`内出现增加的 [raw sample]({{< relref "concepts.md#raw-samples" >}}) 值的数量。
@@ -257,14 +257,14 @@ PromQL 也支持该函数。
 
 该函数通常应用于 [counters]({{< relref "concepts.md#counter" >}})，PromQL 也支持该函数。
 
-另请参阅 [rate](#rate) 和 [rollup_rate](#rollup_rate).
+{{< doc-see-other rate rollup_rate >}}
 
 ### lag
 `lag(series_selector[d])`返回给定的回溯窗口`d`内最后一个样本的时间与当前时间的间隔，以秒为单位。其针对 [series_selector]({{< relref "../basic.md#filtering" >}}) 查询返回的每个时间序列单独执行计算。
 
 {{< doc-keep-metric-name >}}
 
-另请参阅 [lifetime](#lifetime) 和 [duration_over_time](#duration_over_time).
+{{< doc-see-other lifetime duration_over_time >}}
 
 ### last_over_time
 `last_over_time(series_selector[d])`返回给定的 [series_selector]({{< relref "concepts.md#filtering" >}}) 返回的时间序列在给定的回溯窗口`d`内最后 1 个 [raw sample]({{< relref "concepts.md#raw-samples" >}})。
@@ -285,14 +285,14 @@ PromQL 也支持该函数。
 
 该函数通常应用于 [gauges]({{< relref "concepts.md#gauge" >}}).
 
-另请参阅 [mad](#mad), [range_mad](#range_mad) 和 [outlier_iqr_over_time](#outlier_iqr_over_time).
+{{< doc-see-other mad range_mad outlier_iqr_over_time >}}
 
 ### max_over_time
 `max_over_time(series_selector[d])`计算给定的 [series_selector]({{< relref "concepts.md#filtering" >}}) 返回的时间序列在给定的回溯窗口`d`内 [raw sample]({{< relref "concepts.md#raw-samples" >}})s 的最大值。
 
 该函数通常应用于 [gauges]({{< relref "concepts.md#gauge" >}})，PromQL 也支持该函数。
 
-另请参阅 [tmax_over_time](#tmax_over_time) 和 [min_over_time](#min_over_time).
+{{< doc-see-other tmax_over_time min_over_time >}}
 
 ### median_over_time
 `median_over_time(series_selector[d])`计算给定的 [series_selector]({{< relref "concepts.md#filtering" >}}) 返回的时间序列在给定的回溯窗口`d`内 [raw sample]({{< relref "concepts.md#raw-samples" >}})s 的中位数。
@@ -307,7 +307,7 @@ PromQL 也支持该函数。
 
 该函数通常应用于 [gauges]({{< relref "concepts.md#gauge" >}})，PromQL 也支持该函数。
 
-另请参阅 [tmin_over_time](#tmin_over_time) 和 [max_over_time](#max_over_time).
+{{< doc-see-other tmin_over_time max_over_time >}}
 
 ### mode_over_time
 `mode_over_time(series_selector[d])`计算给定的 [series_selector]({{< relref "concepts.md#filtering" >}}) 返回的时间序列在给定的回溯窗口`d`内 [raw sample]({{< relref "concepts.md#raw-samples" >}})s 的[高频值](https://en.wikipedia.org/wiki/Mode_(statistics))。它假定 [raw sample]({{< relref "concepts.md#raw-samples" >}}) 值都是离散的
@@ -370,7 +370,7 @@ PromQL 也支持该函数。
 
 PromQL 也支持该函数。
 
-另请参阅 [irate](#irate) 和 [rollup_rate](#rollup_rate).
+{{< doc-see-other irate rollup_rate >}}
 
 ### rate_over_sum
 `rate_over_sum(series_selector[d])`计算给定回溯窗口`d`中 [raw samples]({{< relref "concepts.md#raw-samples" >}}) 总和的每秒增量。该计算针对 [series_selector]({{< relref "../basic.md#filtering" >}}) 查询返回的每个时间序列单独执行计算。
@@ -391,7 +391,7 @@ PromQL 也支持该函数。
 ### rollup
 `rollup(series_selector[d])`对给定的回溯窗口`d`中的 [raw samples]({{< relref "concepts.md#raw-samples" >}}) 计算最小值、最大值和平均值，并在返回的时序数据中带上`rollup="min"`, `rollup="max"`和`rollup="avg"`Label。该计算针对 [series_selector]({{< relref "../basic.md#filtering" >}}) 查询返回的每个时间序列单独执行计算。
 
-支持第二个参数，是可选参数，可传入`"min"`, `"max"`或`"avg"`代表只计算一种值并且不需要追加额外的 rollup label。{{< doc-see-other label_match >}}
+支持第二个参数，是可选参数，可传入`"min"`, `"max"`或`"avg"`代表只计算一种值并且不需要追加额外的 rollup label。另请参阅 [label_match]({{< relref "./label.md#label_match" >}})
 
 该函数通常应用于  [gauges]({{< relref "concepts.md#gauge" >}}).
 
@@ -400,7 +400,7 @@ PromQL 也支持该函数。
 ### rollup_candlestick
 `rollup_candlestick(series_selector[d])`对给定的回溯窗口`d`中的 [raw samples]({{< relref "concepts.md#raw-samples" >}}) 使用 OHLC 计算`open`, `high`, `low`and `close`，并在返回的时序数据中带上`rollup="open"`, `rollup="high"`, `rollup="low"`and `rollup="close"`Label。该计算针对 [series_selector]({{< relref "../basic.md#filtering" >}}) 查询返回的每个时间序列单独执行计算。
 
-支持第二个参数，是可选参数，可传入`"open"`, `"high"`或`"low"`或`"close"`代表只计算一种值并且不需要追加额外的 rollup label。{{< doc-see-other label_match >}}
+支持第二个参数，是可选参数，可传入`"open"`, `"high"`或`"low"`或`"close"`代表只计算一种值并且不需要追加额外的 rollup label。另请参阅 [label_match]({{< relref "./label.md#label_match" >}})
 
 该函数通常应用于  [gauges]({{< relref "concepts.md#gauge" >}}).
 
@@ -416,38 +416,38 @@ PromQL 也支持该函数。
 ### rollup_deriv
 `rollup_deriv(series_selector[d]) `计算给定回溯窗口`d`上相邻 [raw samples]({{< relref "concepts.md#raw-samples" >}}) 之间的每秒导数，并返回计算出的差异的最小值、最大值和平均值，并在时间序列中附加`rollup="min"`、`rollup="max"`和`rollup="avg"`Label。计算是针对从给定 [series_selector]({{< relref "concepts.md#filtering" >}}) 返回的每个时间序列单独进行的。 
 
-可以传递可选的第二个参数`"min"`、`"max"`或`"avg"`来仅保留一个计算结果，并且不添加标签。{{< doc-see-other label_match >}}
+可以传递可选的第二个参数`"min"`、`"max"`或`"avg"`来仅保留一个计算结果，并且不添加标签。另请参阅 [label_match]({{< relref "./label.md#label_match" >}})
 
 {{< doc-keep-metric-name >}}
 
-另请参阅 [rollup](#rollup) 和 [rollup_rate](#rollup_rate).
+{{< doc-see-other rollup rollup_rate >}}
 
 ### rollup_increase
 `rollup_increase(series_selector[d]) `计算给定回溯窗口`d`上相邻 [raw samples]({{< relref "concepts.md#raw-samples" >}}) 之间的增加值，并返回计算出的差异的最小值、最大值和平均值，并在时间序列中附加`rollup="min"`、`rollup="max"`和`rollup="avg"`Label。计算是针对从给定 [series_selector]({{< relref "concepts.md#filtering" >}}) 返回的每个时间序列单独进行的。 
 
-可以传递可选的第二个参数`"min"`、`"max"`或`"avg"`来仅保留一个计算结果，并且不添加标签。{{< doc-see-other label_match >}}
+可以传递可选的第二个参数`"min"`、`"max"`或`"avg"`来仅保留一个计算结果，并且不添加标签。另请参阅 [label_match]({{< relref "./label.md#label_match" >}})
 
 {{< doc-keep-metric-name >}} {{< doc-see-other rollup_delta >}}
 
 该函数通常应用于  [counters]({{< relref "concepts.md#counter" >}}).
 
-另请参阅 [rollup](#rollup) 和 [rollup_rate](#rollup_rate).
+{{< doc-see-other rollup rollup_rate >}}
 
 ### rollup_rate
 `rollup_rate(series_selector[d]) `计算给定回溯窗口`d`上相邻 [raw samples]({{< relref "concepts.md#raw-samples" >}}) 之间的每秒变化量，并返回计算出的差异的最小值、最大值和平均值，并在时间序列中附加`rollup="min"`、`rollup="max"`和`rollup="avg"`Label。计算是针对从给定 [series_selector]({{< relref "concepts.md#filtering" >}}) 返回的每个时间序列单独进行的。 
 
-可以传递可选的第二个参数`"min"`、`"max"`或`"avg"`来仅保留一个计算结果，并且不添加标签。{{< doc-see-other label_match >}}
+可以传递可选的第二个参数`"min"`、`"max"`或`"avg"`来仅保留一个计算结果，并且不添加标签。另请参阅 [label_match]({{< relref "./label.md#label_match" >}})
 
 {{< doc-keep-metric-name >}}
 
 该函数通常应用于  [counters]({{< relref "concepts.md#counter" >}}).
 
-另请参阅 [rollup](#rollup) and [rollup_increase](#rollup_increase).
+{{< doc-see-other rollup rollup_increase >}}
 
 ### rollup_scrape_interval
 `rollup_scrape_interval(series_selector[d]) `计算给定回溯窗口`d`上相邻 [raw samples]({{< relref "concepts.md#raw-samples" >}}) 之间的间隔的秒数（通常是数据的采集间隔），并返回计算出的差异的最小值、最大值和平均值，并在时间序列中附加`rollup="min"`、`rollup="max"`和`rollup="avg"`Label。计算是针对从给定 [series_selector]({{< relref "concepts.md#filtering" >}}) 返回的每个时间序列单独进行的。 
 
-可以传递可选的第二个参数`"min"`、`"max"`或`"avg"`来仅保留一个计算结果，并且不添加标签。{{< doc-see-other label_match >}}
+可以传递可选的第二个参数`"min"`、`"max"`或`"avg"`来仅保留一个计算结果，并且不添加标签。另请参阅 [label_match]({{< relref "./label.md#label_match" >}})
 
 {{< doc-keep-metric-name >}} {{< doc-see-other scrape_interval >}}
 
@@ -467,7 +467,7 @@ PromQL 也支持该函数。
 
 该函数通常应用于  [gauges]({{< relref "concepts.md#gauge" >}}).
 
-另请参阅 [share_le_over_time](#share_le_over_time) and [count_gt_over_time](#count_gt_over_time).
+{{< doc-see-other share_le_over_time count_gt_over_time >}}
 
 ### share_le_over_time
 `share_le_over_time(series_selector[d], le)`返回给定回溯窗口`d`上小于`le`的原始样本的比例（范围在`[0...1]`之间）。该比例是针对从给定`series_selector`返回的每个时间序列独立计算的。
@@ -478,7 +478,7 @@ PromQL 也支持该函数。
 
 该函数通常应用于  [gauges]({{< relref "concepts.md#gauge" >}}).
 
-另请参阅 [share_gt_over_time](#share_gt_over_time) and [count_le_over_time](#count_le_over_time).
+{{< doc-see-other share_gt_over_time count_le_over_time >}}
 
 ### share_eq_over_time
 `share_eq_over_time(series_selector[d], eq)`返回给定回溯窗口`d`上等于`eq`的原始样本的比例（范围在`[0...1]`之间）。该比例是针对从给定`series_selector`返回的每个时间序列独立计算的。
@@ -518,7 +518,8 @@ PromQL 也支持该函数。
 
 该函数通常应用于  [gauges]({{< relref "concepts.md#gauge" >}}).
 
-另请参阅 [sum_over_time](#sum_over_time) 和 [count_eq_over_time](#count_eq_over_time).
+{{< doc-see-other sum_over_time count_eq_over_time >}}
+
 
 ### sum_gt_over_time
 `sum_gt_over_time(series_selector[d], gt)`针对`series_selector`返回的每条时间序列独立计算，算出给定回溯窗口`d`上大于`gt`的 [raw samples]({{< relref "concepts.md#raw-samples" >}}) 值的总和并返回。
@@ -527,7 +528,7 @@ PromQL 也支持该函数。
 
 该函数通常应用于  [gauges]({{< relref "concepts.md#gauge" >}}).
 
-另请参阅 [sum_over_time](#sum_over_time) 和 [count_gt_over_time](#count_gt_over_time).
+{{< doc-see-other sum_over_time count_gt_over_time >}}
 
 ### sum_le_over_time
 `sum_le_over_time(series_selector[d], le)`针对`series_selector`返回的每条时间序列独立计算，算出给定回溯窗口`d`上小于或等于`le`的 [raw samples]({{< relref "concepts.md#raw-samples" >}}) 值的总和并返回。
@@ -536,7 +537,7 @@ PromQL 也支持该函数。
 
 该函数通常应用于  [gauges]({{< relref "concepts.md#gauge" >}}).
 
-另请参阅 [sum_over_time](#sum_over_time) 和 [count_le_over_time](#count_le_over_time).
+{{< doc-see-other sum_over_time count_le_over_time >}}
 
 ### sum_over_time
 `sum_over_time(series_selector[d])`是一个汇总函数，它针对`series_selector`返回的每条时间序列独立计算，算出给定回溯窗口`d`上 [raw samples]({{< relref "concepts.md#raw-samples" >}}) 值的总和并返回。
@@ -561,7 +562,7 @@ PromQL 也支持该函数。
 
 PromQL 也支持该函数。
 
-另请参阅 [time](#time) 和 [now](#now).
+{{< doc-see-other time now >}}
 
 ### timestamp_with_name
 `timestamp_with_name(series_selector[d])`针对`series_selector`返回的每条时间序列独立计算，返回给定回溯窗口`d`上最后一个 [raw sample]({{< relref "concepts.md#raw-samples" >}}) 的时间戳（以秒为单位，精确到毫秒）。
@@ -612,5 +613,4 @@ PromQL 也支持该函数。
 
 该函数通常应用于  [gauges]({{< relref "concepts.md#gauge" >}}).
 
-另请参阅 [zscore](#zscore), [range_trim_zscore](#range_trim_zscore) and [outlier_iqr_over_time](#outlier_iqr_over_time).
-
+{{< doc-see-other zscore range_trim_zscore outlier_iqr_over_time >}}

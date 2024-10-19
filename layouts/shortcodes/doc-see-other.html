@@ -1,4 +1,13 @@
-<span>
-	另请参阅 
-	<a href="#{{ .Get 0 }}">{{ .Get 0 }}</a>。
-</span>
+<p>
+	另请参阅{{" "}}
+	{{- $lastIndex := math.Sub (len .Params)  1 -}}
+	{{- range $i, $link := .Params -}}
+		{{- if and (gt $i 0 ) (eq $i $lastIndex) -}}
+		{{" 和 "}}
+		{{- else if gt $i 0 -}}
+		，
+		{{- end -}}
+		<a href="#{{ $link }}">{{ $link }}</a>
+	{{- end -}}
+	。
+</p>
