@@ -131,39 +131,29 @@ curl 'http://localhost:8442/internal/force_merge?partition_prefix=2022_01'
     更多详情看[这篇文档](https://docs.victoriametrics.com/guides/migrate-from-influx.html).
     
 3. 有时候结果缓存可能也会导致查询结果不符合预期，因为`vmselect`或`vmsingle`将某段时间的某些指标缓存在本地，但这个时间段的数据在缓存后又发生了新的写入，即数据更新了。尝试用`nocache=1`参数进行查询，看结果是否会符合预期。
-    
     * 如果问题出现在 cache 上，那么就用[resetRollupCache]({{< relref "../query/api.md#resetrollupresultcache" >}})接口将缓存重置一下.
     * 使用`-search.disableCache`启动参数让单机版 VictoriaMetrics 或集群版的`vmselect`组件禁用缓存机制。
     * 使用`nocache=1`请求参数来请求`/api/v1/query`和 `/api/v1/query_range`。如果你在使用 Grafana，可以在 Prometheus 数据源设置里的`Custom Query Parameters`部分加上该参数。更多详情看[这篇文档](https://grafana.com/docs/grafana/latest/datasources/prometheus/)。
-6.  If you use cluster version of VictoriaMetrics, then it may return partial responses by default when some of `vmstorage` nodes are temporarily unavailable - see [cluster availability docs](https://docs.victoriametrics.com/cluster-victoriametrics/#cluster-availability) for details. If you want to prioritize query consistency over cluster availability, then you can pass `-search.denyPartialResponse` command-line flag to all the `vmselect` nodes. In this case VictoriaMetrics returns an error during querying if at least a single `vmstorage` node is unavailable. Another option is to pass `deny_partial_response=1` query arg to `/api/v1/query` and `/api/v1/query_range`. If you use Grafana, then this query arg can be specified in `Custom Query Parameters` field at Prometheus datasource settings - see [these docs](https://grafana.com/docs/grafana/latest/datasources/prometheus/) for details.
-    
-7.  If you pass `-replicationFactor` command-line flag to `vmselect`, then it is recommended removing this flag from `vmselect`, since it may lead to incomplete responses when `vmstorage` nodes contain less than `-replicationFactor` copies of the requested data.
-    
-8.  If you observe gaps when plotting time series try simplifying your query according to p2 and follow the list. If problem still remains, then it is likely caused by irregular intervals for metrics collection (network delays or targets unavailability on scrapes, irregular pushes, irregular timestamps). VictoriaMetrics automatically [fills the gaps](https://docs.victoriametrics.com/keyconcepts/#range-query) based on median interval between [data samples](https://docs.victoriametrics.com/keyconcepts/#raw-samples). This might work incorrect for irregular data as median will be skewed. In this case it is recommended to switch to the static interval for gaps filling by setting `-search.minStalenessInterval=5m` cmd-line flag (`5m` is the static interval used by Prometheus).
-    
-9.  If you observe recently written data is not immediately visible/queryable, then read more about [query latency](https://docs.victoriametrics.com/keyconcepts/#query-latency) behavior.
-    
-10.  Try upgrading to the [latest available version of VictoriaMetrics](https://github.com/VictoriaMetrics/VictoriaMetrics/releases/latest) and verifying whether the issue is fixed there.
-    
-11.  Try executing the query with `trace=1` query arg. This enables query tracing, which may contain useful information on why the query returns unexpected data. See [query tracing docs](https://docs.victoriametrics.com/#query-tracing) for details.
-    
-12.  Inspect command-line flags passed to VictoriaMetrics components. If you don’t understand clearly the purpose or the effect of some flags, then remove them from the list of flags passed to VictoriaMetrics components, because some command-line flags may change query results in unexpected ways when set to improper values. VictoriaMetrics is optimized for running with default flag values (e.g. when they aren’t set explicitly).
-    
-13.  If the steps above didn’t help identifying the root cause of unexpected query results, then [file a bugreport](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/new) with details on how to reproduce the issue. Instead of sharing screenshots in the issue, consider sharing query and [trace](https://docs.victoriametrics.com/#query-tracing) results in [VMUI](https://docs.victoriametrics.com/#vmui) by clicking on `Export query` button in top right corner of the graph area.
+3. 如果你使用 VictoriaMetrics 的集群版本，那么当某些 `vmstorage` 节点暂时不可用时，它可能默认返回部分响应——详情请参见[集群可用性文档]({{< relref "./cluster.md#cluster-available" >}})。如果你想优先保证查询的一致性而不是集群的可用性，那么可以向所有`vmselect`节点传递`-search.denyPartialResponse`启动参数。在这种情况下，只要有一个 `vmstorage` 节点不可用，VictoriaMetrics 就会在查询期间返回错误。另一种办法是向`/api/v1/query`和`/api/v1/query_range`传递`deny_partial_response=1`查询参数。如果你在使用 Grafana，可以在 Prometheus 数据源设置里的`Custom Query Parameters`部分加上该参数。更多详情看[这篇文档](https://grafana.com/docs/grafana/latest/datasources/prometheus/)
+3. 如果你向`vmselect`传递`-replicationFactor`启动参数，那么建议从`vmselect`中移除此参数，因为当`vmstorage`节点包含的请求数据副本少于`-replicationFactor`时，这可能导致响应不完整。
+3. 如果你发现最近写入的数据没有立即可见或可查询，请阅读更多关于[查询延迟]({{< relref "../query/_index.md#latency" >}})行为的内容。
+3. 尝试升级到最新版本的 VictoriaMetrics，并验证问题是否已解决。
+3. 尝试使用`trace=1`查询参数执行查询。这将启用查询跟踪，返回内容中可能包含关于查询返回意外数据的有用信息。详情请参见[查询跟踪文档]({{< relref "./single.md#trace" >}})。
+3. 检查传递给 VictoriaMetrics 组件的启动参数。如果你不清楚某些参数的用途或效果，请删掉。因为某些启动参数在设置不合理可能会以意想不到的方式改变查询结果。VictoriaMetrics 已针对默认参数值进行了优化，大部分场景不需要你调参。
+3. 如果上述步骤未能帮助识别意外查询结果的根本原因，请提交一个包含如何重现问题的详细信息的[issue](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/new)。与其在问题中分享截图，不如通过点击图表区域右上角的“导出查询”按钮，在 [VMUI]({{< relref "../components/vmui.md" >}}) 中分享查询和跟踪结果。
     
 
 ## 数据写入变慢
-----------------------------------------------------------------------------------------------------------------
 
-There are the following most commons reasons for slow data ingestion in VictoriaMetrics:
+下面列举的这些原因，可能会导致数据写入变慢：
 
-1.  Memory shortage for the given amounts of [active time series](https://docs.victoriametrics.com/faq/#what-is-an-active-time-series).
-    
-    VictoriaMetrics (or `vmstorage` in cluster version of VictoriaMetrics) maintains an in-memory cache for quick search for internal series ids per each incoming metric. This cache is named `storage/tsid`. VictoriaMetrics automatically determines the maximum size for this cache depending on the available memory on the host where VictoriaMetrics (or `vmstorage`) runs. If the cache size isn’t enough for holding all the entries for active time series, then VictoriaMetrics locates the needed data on disk, unpacks it, re-constructs the missing entry and puts it into the cache. This takes additional CPU time and disk read IO.
-    
-    The [official Grafana dashboards for VictoriaMetrics](https://docs.victoriametrics.com/#monitoring) contain `Slow inserts` graph, which shows the cache miss percentage for `storage/tsid` cache during data ingestion. If `slow inserts` graph shows values greater than 5% for more than 10 minutes, then it is likely the current number of [active time series](https://docs.victoriametrics.com/faq/#what-is-an-active-time-series) cannot fit the `storage/tsid` cache.
-    
-    There are the following solutions exist for this issue:
+1.  内存不足了，不足以支撑太多的[活跃时间序列]({{< relref "../faq.md#what-is-active-timeseries" >}}).
+
+    VictoriaMetrics（或 VictoriaMetrics 集群版本中的 `vmstorage`）维护一个内存缓存，用来快速搜索每个查询指标的内部TSID。这个缓存名为`storage/tsid`。VictoriaMetrics 会根据运行 VictoriaMetrics（或`vmstorage`）的主机上的可用内存自动限制此缓存用量。如果缓存大小不足以容纳所有活动时间序列的数据，那么 VictoriaMetrics 会在磁盘上加载目标索引块，并解压缩，重新构建索引条目并将放入缓存。这个过程会消耗额外的 CPU 时间和磁盘读取 IO。
+
+    VictoriaMetrics 的[官方 Grafana 仪表板]({{< relref "./cluster.md#monitoring" >}})包含一个 Slow inserts 图表，该图表显示数据写入期间`storage/tsid`缓存的缓存未命中百分比。如果 Slow inserts 图表在超过`10`分钟的时间内显示的值大于`5%`，那么很可能是当前的[活动时间序列](../faq.md#什么是what-is-active-timeseries)数量无法适应 `storage/tsid` 缓存。
+
+    这个问题有如下几个解决办法：
     
 
 *   To increase the available memory on the host where VictoriaMetrics runs until `slow inserts` percentage will become lower than 5%. If you run VictoriaMetrics cluster, then you need increasing total available memory at `vmstorage` nodes. This can be done in two ways: either to increase the available memory per each existing `vmstorage` node or to add more `vmstorage` nodes to the cluster.
