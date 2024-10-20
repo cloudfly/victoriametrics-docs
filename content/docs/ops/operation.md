@@ -105,25 +105,30 @@ curl 'http://localhost:8442/internal/force_merge?partition_prefix=2022_01'
 
 ## 查询结果不符合预期
 
-如果你在 VictoriaMetrics 傻姑娘查询到了非预期的或不稳定的数据，尝试按照下面的步骤来解决：
+如果你在 VictoriaMetrics 上查询到了非预期的或不稳定的数据，尝试按照下面的步骤来解决：
+
+很多时候是因为查询语句本身就有问题，才会导致非预期的计算结果。建议阅读下[MetricsQL文档]({{< relref "../query/metricsql/_index.md" >}})，特别是[子查询]({{< relref "../query/metricsql/_index.md#subquery" >}})和[rollup函数]({{< relref "../query/metricsql/functions/rollup.md" >}})部分。
 
 1. 简化查询语句，检查内部子查询或指标的数据。比如，如果你的查询是`sum(rate(http_requests_total[5m])) by (job)`，那么就检查下面的这些语句是否符合预期。
-   有时是因为查询语句编写得有问题，才会导致非预期的计算结果。建议阅读下[MetricsQL文档]({{< relref "../query/metricsql/_index.md" >}})，特别是[子查询]({{< relref "../query/metricsql/_index.md#subquery" >}})和[rollup函数]({{< relref "../query/metricsql/functions/rollup.md" >}})部分。
-    
-  * 删掉最外层的`sum`，执行`rate(http_requests_total[5m])`，因为聚合逻辑可能会隐藏掉一些缺失的 timeseries，数据中的缺点或异常点。如果该查询返回的数据太多了，就试试往语句里增加一些 Label 过滤器。比如可以使用`rate(http_requests_total{job="foo"}[5m])`精准定位下目标异常数据。如果还是太多，就再加一些过滤器，来缩小目标范围。
-
-  * 删掉外层的`rate`，只查询`http_requests_total`。同上，如果返回的数据太多了，就往语句里增加一些 Label 过滤器。
+    - 删掉最外层的`sum`，执行`rate(http_requests_total[5m])`，因为聚合逻辑可能会隐藏掉一些缺失的 timeseries，数据中的缺点或异常点。如果该查询返回的数据太多了，就试试往语句里增加一些 Label 过滤器。比如可以使用`rate(http_requests_total{job="foo"}[5m])`精准定位下目标异常数据。如果还是太多，就再加一些过滤器，来缩小目标范围。
+    - 删掉外层的`rate`，只查询`http_requests_total`。同上，如果返回的数据太多了，就往语句里增加一些 Label 过滤器。
 
 
 2. 如果简化后语句，返回了非预期或者不稳定的结果，那么就尝试使用接口 [/api/v1/export]({{< relref "../query/api.md#apiv1export" >}}) 把`[start..end]`时间范围内的数据都导出来，然后排查下原始打点是否符合预期。:
     
+    {{< tabs items="单机,集群" >}}
+    {{< tab >}}
     ```sh {filename="单机"} 
     curl http://victoriametrics:8428/api/v1/export -d 'match[]=http_requests_total' -d 'start=...' -d 'end=...'
     ```
-
+    {{< /tab >}}
+    {{< tab >}}
     ```sh {filename="集群"} 
     curl http://<vmselect>:8481/select/<tenantID>/prometheus/api/v1/export -d 'match[]=http_requests_total' -d 'start=...' -d 'end=...'
     ```
+    {{< /tab >}}
+    {{< /tabs >}}
+
     
     请注意 [/api/v1/query]({{< relref "../query/_index.md#instant-query" >}}) and from [/api/v1/query_range]({{< relref "../query/_index.md#range-query" >}}) 返回的是计算后的数据，而不是 db 中存储的原始样本。更多详情看[这篇文档](https://prometheus.io/docs/prometheus/latest/querying/basics/#staleness)。
     
