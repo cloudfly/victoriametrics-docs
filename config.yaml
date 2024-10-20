@@ -49,6 +49,7 @@ params:
     type: flexsearch
     flexsearch:
       index: content
+      tokenize: full
   highlight:
     copy:
       enable: true
