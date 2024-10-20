@@ -66,7 +66,7 @@ vmselect 不会为返回原始数据点的 API 处理程序提供部分响应 - 
 ### 容量规划 {#capacity}
 根据我们的[案例研究](https://docs.victoriametrics.com/CaseStudies.html)，与竞争解决方案（Prometheus、Thanos、Cortex、TimescaleDB、InfluxDB、QuestDB、M3DB）相比，VictoriaMetrics 在生产工作负载上使用的 CPU、RAM 和存储空间更少。 
 
-每种节点类型（`vminsert`、`vmselect`和`vmstorage`）都可以在最合适的硬件上运行。集群容量随可用资源线性扩展。每种节点类型所需的 CPU 和 RAM 数量高度依赖于工作负载 - [活动时间序列]({{< relref "../faq.md#what-is-an-active-time-series" >}})的数量、[序列流失率]({{< relref "../faq.md#what-is-high-churn-rate" >}})、查询类型、查询 qps 等。建议为您的生产工作负载设置一个测试 VictoriaMetrics 集群，并迭代扩展每个节点的资源和每个节点类型的节点数量，直到集群稳定下来。建议为[集群设置监控](#monitoring)。它有助于确定集群设置中的瓶颈。还建议遵循[故障排除]({{< relref "../ops/operation.md#troubleshooting" >}})文档。 
+每种节点类型（`vminsert`、`vmselect`和`vmstorage`）都可以在最合适的硬件上运行。集群容量随可用资源线性扩展。每种节点类型所需的 CPU 和 RAM 数量高度依赖于工作负载 - [活动时间序列]({{< relref "../faq.md#what-is-an-active-time-series" >}})的数量、[序列替换率]({{< relref "../faq.md#what-is-high-churn-rate" >}})、查询类型、查询 qps 等。建议为您的生产工作负载设置一个测试 VictoriaMetrics 集群，并迭代扩展每个节点的资源和每个节点类型的节点数量，直到集群稳定下来。建议为[集群设置监控](#monitoring)。它有助于确定集群设置中的瓶颈。还建议遵循[故障排除]({{< relref "../ops/operation.md#troubleshooting" >}})文档。 
 
 给定保留期所需的存储空间（保留期通过 vmstorage 上的`-retentionPeriod`启动参数设置）可以根据测试运行中的磁盘空间使用情况推断出来。例如，如果在生产工作负载上进行一天的测试运行后存储空间使用量为 10GB，那么在`-retentionPeriod=100d`（100 天保留期）的情况下，至少需要`10GB*100=1TB`的磁盘空间。可以使用 VictoriaMetrics 集群的[官方 Grafana 大盘](#monitoring)监控存储空间使用情况。
 
@@ -254,8 +254,8 @@ http_requests_total{path="/bar",vm_account_id="7",vm_project_id="9"} 34
 一些扩容建议：
 
 + 向现有`vmselect`节点添加更多 CPU 和 RAM 可提高重度查询的性能，这些查询会处理大量时间序列和大量原始样本。请[参阅本文](https://valyala.medium.com/how-to-optimize-promql-and-metricsql-queries-85a1b75bf986)，了解如何检测和优化重度查询。
-+ 添加更多`vmstorage`节点以增加集群可以处理的[活动时间序列]({{< relref "../faq.md#what-is-active-timeseries" >}})的数量。这还会提高[高流失率]({{< relref "../faq.md#what-is-high-churn-rate" >}})时间序列的查询性能。集群稳定性也会随着`vmstorage`节点数量的增加而提高，因为当某些 vmstorage 节点不可用时，活动`vmstorage`节点需要处理的额外工作负载较少。
-+ 向现有`vmstorage`节点添加更多 CPU 和 RAM 会增加集群可以处理的[活动时间序列]({{< relref "../faq.md#what-is-active-timeseries" >}})的数量。与向现有`vmstorage`节点添加更多 CPU 和 RAM 相比，添加更多`vmstorage`节点是更好的选择，因为`vmstorage`节点数量越多，集群稳定性就越高，并且会提高[高流失率]({{< relref "../faq.md#what-is-high-churn-rate" >}})时间序列的查询性能。
++ 添加更多`vmstorage`节点以增加集群可以处理的[活动时间序列]({{< relref "../faq.md#what-is-active-timeseries" >}})的数量。这还会提高[高替换率]({{< relref "../faq.md#what-is-high-churn-rate" >}})时间序列的查询性能。集群稳定性也会随着`vmstorage`节点数量的增加而提高，因为当某些 vmstorage 节点不可用时，活动`vmstorage`节点需要处理的额外工作负载较少。
++ 向现有`vmstorage`节点添加更多 CPU 和 RAM 会增加集群可以处理的[活动时间序列]({{< relref "../faq.md#what-is-active-timeseries" >}})的数量。与向现有`vmstorage`节点添加更多 CPU 和 RAM 相比，添加更多`vmstorage`节点是更好的选择，因为`vmstorage`节点数量越多，集群稳定性就越高，并且会提高[高替换率]({{< relref "../faq.md#what-is-high-churn-rate" >}})时间序列的查询性能。
 + 添加更多`vminsert`节点会增加最大可能的数据提取速度，因为提取的数据可能会在更多数量的`vminsert`节点之间分配。
 + 添加更多`vmselect`节点会增加最大可能的查询率，因为传入的并发请求可能会在更多`vmselect`节点之间分配。
 

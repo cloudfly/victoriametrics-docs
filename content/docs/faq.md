@@ -1,14 +1,14 @@
 ---
 title: FAQ
-decription: 运维 VictoriaMetrics 时经常为遇到的专业问题，比如高流失率、高基数、如何清理数据等等。
+decription: 运维 VictoriaMetrics 时经常为遇到的专业问题，比如高替换率、高基数、如何清理数据等等。
 weight: 100
 ---
 
 ## 什么是活跃时间序列?  {id="what-is-active-timeseries"}
 时间序列通过其名称和一组标签来唯一标识。例如，`temperature{city="NY",country="US"}`和`temperature{city="SF",country="US"}`是两个不同的序列，因为它们在城市标签上有所区别。如果一个时间序列在最近一小时内至少接收到一个新样本，则被视为活跃。
 
-## 高流失率是指什么？{#what-is-high-churn-rate}
-如果旧的时间序列以高频率被新的时间序列不断替换，那么这种状态被称为高流失率。高流失率会带来以下负面影响：
+## 高替换率是指什么？{#what-is-high-churn-rate}
+如果旧的时间序列以高频率被新的时间序列不断替换，那么这种状态被称为高替换率。高替换率会带来以下负面影响：
 
 1. 数据库中存储的时间序列总数增加。
 
@@ -16,7 +16,7 @@ weight: 100
 
 3. 查询跨多天时变慢。
 
-导致高流失率的主要原因是具有频繁更改值的度量标签。以下是一些示例：
+导致高替换率的主要原因是具有频繁更改值的度量标签。以下是一些示例：
 
 1. `queryid`，在`postgres_exporter`中每次查询都会更改。
 
@@ -26,7 +26,7 @@ weight: 100
 
 4. 经常更改的`hash`或`uuid`标签。
 
-解决高流失率问题需要识别和消除具有频繁更改值的标签。Cardinality explorer可以帮助确定这些标签。
+解决高替换率问题需要识别和消除具有频繁更改值的标签。Cardinality explorer可以帮助确定这些标签。
 
 ## 什么是高基数 {#what-is-high-cardinality}
 高基数通常意味着[活跃时间序列](https://www.victoriametrics.com.cn/victoriametrics/faq#what-is-an-active-time-series)的数量很多。高基数可能导致内存使用量增加和/或慢速插入的比例较高。高基数的来源通常是具有大量唯一值的标签，这些标签占了被摄取时间序列的很大比例。解决方案是通过基数探索器来识别和移除高基数的来源。

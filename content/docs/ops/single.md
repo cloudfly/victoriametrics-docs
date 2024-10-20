@@ -11,12 +11,12 @@ weight: 5
 
 VictoriaMetrics 在我们的[案例研究](https://docs.victoriametrics.com/CaseStudies.html)中表明，与其他解决方案（Prometheus、Thanos、Cortex、TimescaleDB、InfluxDB、QuestDB和M3DB）相比，在生产环境对CPU、RAM和存储空间的资源消耗都更少。
 
-VictoriaMetrics 的容量与可用资源呈线性关系。所需的 CPU 和 RAM 数量高度依赖于数据量 - [活跃时间序列]({{< relref "../faq.md#what-is-an-active-time-series" >}})的数量、指标[流失率]({{< relref "../faq.md#what-is-high-churn-rate" >}})、查询类型、查询每秒请求数等等。建议根据[故障排除](#troubleshooting)文档，为您的生产数据搭建一个测试 VictoriaMetrics，并反复地调整 CPU 和 RAM 资源，直到其稳定运行。根据我们的[案例研究](https://docs.victoriametrics.com/CaseStudies.html)，单机版 VictoriaMetrics 可以完美地处理以下生产数据量：
+VictoriaMetrics 的容量与可用资源呈线性关系。所需的 CPU 和 RAM 数量高度依赖于数据量 - [活跃时间序列]({{< relref "../faq.md#what-is-an-active-time-series" >}})的数量、指标[替换率]({{< relref "../faq.md#what-is-high-churn-rate" >}})、查询类型、查询每秒请求数等等。建议根据[故障排除](#troubleshooting)文档，为您的生产数据搭建一个测试 VictoriaMetrics，并反复地调整 CPU 和 RAM 资源，直到其稳定运行。根据我们的[案例研究](https://docs.victoriametrics.com/CaseStudies.html)，单机版 VictoriaMetrics 可以完美地处理以下生产数据量：
 
 + 写入速率: 150万/秒+ 的样本数。
 + 活跃 time series 总量: 5000万+
 + time series 总量: 50亿+
-+ Time series 流失率: 每天1.5亿+
++ Time series 替换率: 每天1.5亿+
 + 样本总数: 10万亿
 + 查询：200+ qps
 + 查询延时 (P99): 1 second
@@ -329,7 +329,7 @@ VictoriaMetrics 使用各种内存缓存来提升数据写入和查询性能。�
 默认情况下，VictoriaMetrics 不限制存储的时间序列数量。可以通过设置以下启动参数来强制执行限制：
 
 + `-storage.maxHourlySeries`- 限制了在最后一个小时内可以添加的时间序列数量。对于限制[活动时间序列]({{< relref "../faq.md#what-is-an-active-time-series" >}})的数量非常有用。
-+ `-storage.maxDailySeries`- 限制了最后一天可以添加的时间序列数量。对于限制每日[流失率]({{< relref "../faq.md#what-is-high-churn-rate" >}})非常有用。
++ `-storage.maxDailySeries`- 限制了最后一天可以添加的时间序列数量。对于限制每日[替换率]({{< relref "../faq.md#what-is-high-churn-rate" >}})非常有用。
 
 可以同时设置这两个限制。如果达到任何一个限制，那么新时间序列的输入样本将被丢弃。被丢弃的系列样本会以`WARN`级别记录在日志中。
 
@@ -463,7 +463,7 @@ VictoriaMetrics 提供了下面这些安全相关的启动参数：
 + 如果 VictoriaMetrics 由于磁盘错误导致某些部分损坏而无法工作，则只需删除带有损坏部分的目录即可。在 VictoriaMetrics 未运行时，安全地删除`<-storageDataPath>/data/{big,small}/YYYY_MM`目录下的子目录可以恢复VictoriaMetrics，但会丢失已存储在被删除损坏部分中的数据。将来将创建vmrecover工具以自动从此类错误中恢复。
 + 如果您在图表上看到断点，请尝试通过向`/internal/resetRollupResultCache`发送请求来重置缓存。如果这样可以消除图表上的空白断点间隙，则很可能是将早于`-search.cacheTimestampOffset`时间戳的数据更新了。
 + 如果您从 InfluxDB 或 TimescaleDB 切换过来，可能需要设置`-search.setLookbackToStep`启动参数。这将抑制 VictoriaMetrics 使用的默认间隙填充算法-默认情况下，它假设每个时间序列是连续的而不是离散的，因此会用固定间隔填补真实样本之间的空白。
-+ 通过[/api/v1/status/tsdb]({{< relref "../query/api.md#apiv1statustsdb-tsdb-stats" >}})接口可以确定导致高基数或高流失率的指标和标签。
++ 通过[/api/v1/status/tsdb]({{< relref "../query/api.md#apiv1statustsdb-tsdb-stats" >}})接口可以确定导致高基数或高替换率的指标和标签。
 + 如果要在 VictoriaMetrics 中记录新时间序列，请传递`-logNewSeries`启动参数。
 + VictoriaMetrics 通过`-maxLabelsPerTimeseries`启动参数限制每个度量指标的标签数量。这可以防止写入具有太多标签的指标。建议监视`vm_metrics_with_dropped_labels_total`指标以确定是否需要根据线上情况调整`-maxLabelsPerTimeseries`。
 + 如果您在 VictoriaMetrics 中存储 Graphite 指标（如`foo.bar.baz`），则可以使用`{__graphite__="foo.*.baz"}`过滤器选择此类指标。详细信息请参阅[相关文档]({{< relref "../query/metricsql/_index.md#graphite-filter" >}})。

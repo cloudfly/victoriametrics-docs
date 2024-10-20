@@ -218,7 +218,7 @@ VictoriaMetrics 团队为核心组件准备了一系列的 [Grafana Dashboard](h
 ### 容量规划
 请阅读[集群版]({{< relref "ops/cluster#capacity" >}})和[单机版]({{< relref "ops/single.md#capacity" >}})文档中的容量规划部分。
 
-容量规划需要依赖于[监控](#monitoring)，所以你应该首先配置下监控。搞清楚 VictoriaMetrics 在你所用的机型上的资源使用情况，在进行性能调优和容量规划。 但这些前提是，你需要知道[活跃时序系列]({{< relref "faq.md#what-is-active-timeseries" >}})，[高流失率]({{< relref "faq.md#what-is-high-churn-rate" >}})，[基数]({{< relref "faq.md#what-is-high-cadinality" >}})，[慢写入]({{< relref "faq.md#what-is-slow-insert" >}})这些基础技术概念，这些关键指标都会在 [Grafana Dashboard](https://grafana.com/orgs/victoriametrics/dashboards) 中呈现。
+容量规划需要依赖于[监控](#monitoring)，所以你应该首先配置下监控。搞清楚 VictoriaMetrics 在你所用的机型上的资源使用情况，在进行性能调优和容量规划。 但这些前提是，你需要知道[活跃时序系列]({{< relref "faq.md#what-is-active-timeseries" >}})，[高替换率]({{< relref "faq.md#what-is-high-churn-rate" >}})，[基数]({{< relref "faq.md#what-is-high-cadinality" >}})，[慢写入]({{< relref "faq.md#what-is-slow-insert" >}})这些基础技术概念，这些关键指标都会在 [Grafana Dashboard](https://grafana.com/orgs/victoriametrics/dashboards) 中呈现。
 
 ### 数据安全
 建议阅读下面几篇内容：

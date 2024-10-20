@@ -65,7 +65,7 @@ Labels可以自动附加到通过vmagent或Prometheus采集的 [timeseries](#tim
 
 例如，`requests_total{path="/", code="200"}`和`requests_total{path="/", code="403"}`是两个不同的 timeseries，因为它们在`code`标签上有不同的值。
 
-唯一时间序列的数量对数据库资源用量产生影响。详细信息请参阅[什么是活跃时间序列]({{< relref "faq.md#what-is-active-timeseries" >}})以及[什么是高流失率]({{< relref "faq.md#what-is-high-churn-rate" >}})。
+唯一时间序列的数量对数据库资源用量产生影响。详细信息请参阅[什么是活跃时间序列]({{< relref "faq.md#what-is-active-timeseries" >}})以及[什么是高替换率]({{< relref "faq.md#what-is-high-churn-rate" >}})。
 
 ### Cardinality（基数） {#cardinality}
 唯一时间序列的数量被称为基数。过多的唯一时间序列被称为[高基数]({{< relref "faq.md#what-is-high-cardinality" >}})。高基数可能导致在VictoriaMetrics中增加资源使用量。请参阅[这篇文档]({{< relref "faq.md#what-is-high-cardinality" >}})以获取更多详细信息。
