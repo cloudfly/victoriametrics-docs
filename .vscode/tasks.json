@@ -9,7 +9,10 @@
 		"label": "hugo:relref",
 		"type": "shell",
 		"isBackground": true,
-		"command": "perl -i -p -e 's/\\(([.\\/\\w-]+?.md(#[\\w-]+)?)\\)/({{< relref \"\\1\" >}})/g' ${file}"
+		"command": "perl -i -p -e 's/\\(([.\\/\\w-]+?.md(#[\\w-]+)?)\\)/({{< relref \"\\1\" >}})/g' ${file}",
+		"presentation": {
+			"reveal": "silent",
+		}
 	  }
 	]
   }
