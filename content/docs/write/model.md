@@ -1,6 +1,6 @@
 ---
 title: Push vs Pull
-description: 介绍监控系统领域常见的数据采集场景，Push 和 Pull 的区别。
+description: 介绍监控系统领域常见的数据采集场景，Push 和 Pull 的区别，以及针对不同的使用场景给出了 Push 和 Pull 模型的对比和选择建议。
 weight: 5
 ---
 
