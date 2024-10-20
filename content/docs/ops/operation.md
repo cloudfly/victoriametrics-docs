@@ -226,7 +226,7 @@ VictoriaMetrics 集群可能会在没有足够的可用资源（CPU、RAM、磁�
 
 集群不稳定的最常见原因有：
 
-- **突发流量波动**。例如，如果活动时间序列的数量增加了 2 倍，而集群没有足够的可用资源来处理增加的 timeseries，那么它可能会变得不稳定。VictoriaMetrics 提供了各种配置设置，可用于限制意外的突发流量。详情请参见[这些文档]({{< relref "./cluser.md#limitation" >}})。
+- **突发流量波动**。例如，如果活动时间序列的数量增加了 2 倍，而集群没有足够的可用资源来处理增加的 timeseries，那么它可能会变得不稳定。VictoriaMetrics 提供了各种配置设置，可用于限制意外的突发流量。详情请参见[这些文档]({{< relref "./cluster.md#limitation" >}})。
 - **各种维护任务**，如滚动升级或配置更改时的组件重启。例如，如果一个集群包含 `N=3` 个 `vmstorage` 节点，并且它们逐个重启（即滚动重启），那么在滚动重启期间，集群将只有 `N-1=2` 个健康的 `vmstorage` 节点。这意味着健康的 `vmstorage` 节点的负载相比滚动重启前至少增加了 `100%/(N-1)=50%`。例如，它们需要处理比平时多`50%`的数据。实际上，剩余的`vmstorage`节点的负载增加不止这些，因为它们需要注册从暂不可用的 `vmstorage` 节点重新路由过来的新时间序列。如果 `vmstorage` 节点在滚动重启前的可用资源（CPU、RAM、磁盘 IO）少于 50%，那么这可能导致集群过载和数据写入及查询的不稳定。
   滚动重启期间的负载增加可以通过增加集群中的 `vmstorage` 节点数量来减少。例如，如果 VictoriaMetrics 集群包含 `N=11` 个 `vmstorage` 节点，那么 `vmstorage` 节点滚动重启期间的负载增加将为 `100%/(N-1)=10%`。建议集群中至少有 8 个 `vmstorage` 节点。如果启用了多副本，建议的 `vmstorage` 节点数量最好乘以 `-replicationFactor`，详情请参见[复制和数据安全文档]({{< relref "./cluster.md#replication" >}})。
 - **时间序列 Hash**。接收到的时间序列由 `vminsert` 在配置的 `vmstorage` 节点之间一致性 Hash。作为分片 Key，`vminsert` 使用时间序列名称和 Label，并遵循它们的顺序。如果时间序列中的 Label 顺序不断变化，可能导致每次 hash 的结果不一样，进而导致可用 `vmstorage` 之间的时间序列分布不均。系统期望客户端负责 Label 的顺序始终保持一致（如 `Prometheus` 或 `vmagent` 在采集时保证）。如果无法保证这一点，请为 `vminsert` 设置 `-sortLabels=true` 启动参数。但排序可能会增加 `vminsert` 的 CPU 消耗。
