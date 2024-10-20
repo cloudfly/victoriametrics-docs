@@ -159,161 +159,76 @@ curl 'http://localhost:8442/internal/force_merge?partition_prefix=2022_01'
     VictoriaMetrics 的[官方 Grafana 仪表板]({{< relref "./cluster.md#monitoring" >}})包含一个 Slow inserts 图表，该图表显示数据写入期间`storage/tsid`缓存的缓存未命中百分比。如果 Slow inserts 图表在超过`10`分钟的时间内显示的值大于`5%`，那么很可能是当前的[活动时间序列](../faq.md#什么是what-is-active-timeseries)数量无法适应 `storage/tsid` 缓存。
 
     这个问题有如下几个解决办法：
+    - **增加主机的可用内存**，直到 `slow inserts` 百分比低于 5%。如果运行的是 VictoriaMetrics 集群版本，则需要增加 `vmstorage` 节点的总可用内存。这可以通过两种方式实现：增加每个现有 `vmstorage` 节点的可用内存，或向集群添加更多 `vmstorage` 节点。
+    - **减少活动时间序列的数量**。VictoriaMetrics 的[官方 Grafana 仪表板](https://docs.victoriametrics.com/#monitoring)包含一个显示活动时间序列数量的图表。VictoriaMetrics 的最新版本提供了[基数探索器](https://docs.victoriametrics.com/#cardinality-explorer)，可以帮助确定和修复[高基数]({{< relref "../faq.md#what-is-high-cardinality" >}})的来源。
+
+
+1. [高替换率]({{< relref "../faq.md#what-is-high-churn-rate" >}})，例如，当旧的时间序列以高频率被新的时间序列替换时。VictoriaMetrics 遇到新时间序列的样本时，需要在内部索引（即 `indexdb`）中注册时间序列，以便在后续选择查询中快速定位。注册新时间序列的过程比向已注册的时间序列添加新样本的过程慢一个数量级。因此，在[高替换率]({{< relref "../faq.md#what-is-high-churn-rate" >}})下，VictoriaMetrics 可能比预期的工作速度慢。  
+    VictoriaMetrics 的[官方 Grafana 仪表板](https://docs.victoriametrics.com/#monitoring)提供了 `Churn rate` 图表，显示了过去 24 小时内注册的新时间序列的平均数量。如果这个数字超过了[活动时间序列]({{< relref "../faq.md#what-is-an-active-time-series" >}})的数量，则需要确定和修复[高替换率]({{< relref "../faq.md#what-is-high-churn-rate" >}})的来源。
+
+1. 资源短缺，[VictoriaMetrics 官方 Grafana 仪表板](https://docs.victoriametrics.com/#monitoring) 包含 `resource usage` 图表，显示内存使用情况、CPU 使用情况、磁盘 IO 使用情况和可用磁盘大小。确保 VictoriaMetrics 有足够的可用资源，以便优雅地处理潜在的工作负载峰值，具体建议如下：
+
+    如果 VictoriaMetrics 组件的可用资源较少，那么在工作负载稍微增加后可能会导致显著的性能下降。例如：
+    - 如果可用 CPU 百分比接近 0，那么当数据摄取率稍微增加时，VictoriaMetrics 可能会在数据摄取过程中经历任意长的延迟。
+    - 如果可用内存百分比达到 0，那么运行 VictoriaMetrics 组件的操作系统可能没有足够的内存用于 [页面缓存](https://en.wikipedia.org/wiki/Page_cache)。VictoriaMetrics 依赖页面缓存来快速查询最近摄取的数据。如果操作系统没有足够的可用内存用于页面缓存，那么它需要从磁盘重新读取请求的数据。这可能会显著增加磁盘读取 IO 并减慢查询和数据摄取的速度。
+    - 如果可用磁盘空间低于 20%，那么 VictoriaMetrics 无法对传入数据执行最佳的后台合并。这会导致磁盘上的数据文件数量增加，进而减慢数据写入和查询速度。详情请参见[这些文档]({{< relref "./dbengine.md#storage" >}})。
+
+    建议保持以下资源使用率：
+    - 50% 的空闲 CPU
+    - 50% 的空闲内存
+    - 20% 的空闲磁盘空间
     
+6. 如果你运行的是 VictoriaMetrics 的集群版本，请确保 `vminsert` 和 `vmstorage` 组件位于同一网络内，并且它们之间的网络延迟较小。`vminsert` 将接收到的数据打包成批量数据包，并逐个发送给 `vmstorage`。它会等待 `vmstorage` 返回 `ack` 响应后再发送下一个数据包。如果 `vminsert` 和 `vmstorage` 之间的网络延迟较高（例如，它们运行在不同的数据中心），这可能会成为数据写入速度的限制因素。
+   [VictoriaMetrics 集群版本的官方 Grafana 仪表板]({{< relref "./cluster.md#monitoring" >}}) 包含 `vminsert` 组件的 `connection saturation` 图表。如果该图表达到 100%（1 秒），那么很可能是 `vminsert` 和 `vmstorage` 之间的网络延迟问题。另一个可能导致 `vminsert` 和 `vmstorage` 之间连接饱和度达到 100% 的问题是 `vmstorage` 节点的资源短缺。在这种情况下，你需要增加 `vmstorage` 节点的可用资源（CPU、RAM、磁盘 IO），或者向集群中添加更多的 `vmstorage` 节点。
+7. 资源被其他服务抢占。确保 VictoriaMetrics 组件运行在没有其他资源密集型应用程序的环境中。这些应用程序可能会抢占 VictoriaMetrics 组件所需的 RAM、CPU、磁盘 IO 和网络带宽。这类问题很难通过 [VictoriaMetrics 集群版本的官方 Grafana 仪表板]({{< relref "./cluster.md#monitoring" >}}) 捕捉到，正确的诊断需要检查运行 VictoriaMetrics 的实例上的资源使用情况。
+8. 如果你在单节点 VictoriaMetrics 或 `vmstorage` 有足够的空闲 CPU 和 RAM ，那么请增加单节点 VictoriaMetrics 或 `vmstorage` 上 `-cacheExpireDuration` 启动参数的值，使其大于时间序列的写入样本之间的间隔（即 `scrape_interval`）。有关更多详细信息，请参见[此评论](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/3976#issuecomment-1476883183)。
+9. 如果你看到 VictoriaMetrics 组件的 CPU 使用率持续处在反常高位，请检查相应 [Grafana 仪表板](https://grafana.com/orgs/victoriametrics) 中 `Resource usage` 部分的 `CPU spent on GC` 面板。如果 GC 占用的 CPU 时间百分比很高，那么可以通过将 [GOGC](https://tip.golang.org/doc/gc-guide#GOGC) 环境变量更改为更高的值来减少组件的 CPU 使用率，其代价是内存开销更大。默认情况下，VictoriaMetrics 组件使用 `GOGC=30`。尝试使用 `GOGC=100` 运行 VictoriaMetrics 组件，看看是否有助于降低 CPU 使用率。
 
-*   To increase the available memory on the host where VictoriaMetrics runs until `slow inserts` percentage will become lower than 5%. If you run VictoriaMetrics cluster, then you need increasing total available memory at `vmstorage` nodes. This can be done in two ways: either to increase the available memory per each existing `vmstorage` node or to add more `vmstorage` nodes to the cluster.
-    
-*   To reduce the number of active time series. The [official Grafana dashboards for VictoriaMetrics](https://docs.victoriametrics.com/#monitoring) contain a graph showing the number of active time series. Recent versions of VictoriaMetrics provide [cardinality explorer](https://docs.victoriametrics.com/#cardinality-explorer), which can help determining and fixing the source of [high cardinality](https://docs.victoriametrics.com/faq/#what-is-high-cardinality).
-    
-
-3.  [High churn rate](https://docs.victoriametrics.com/faq/#what-is-high-churn-rate), e.g. when old time series are substituted with new time series at a high rate. When VictoriaMetrics encounters a sample for new time series, it needs to register the time series in the internal index (aka `indexdb`), so it can be quickly located on subsequent select queries. The process of registering new time series in the internal index is an order of magnitude slower than the process of adding new sample to already registered time series. So VictoriaMetrics may work slower than expected under [high churn rate](https://docs.victoriametrics.com/faq/#what-is-high-churn-rate).
-    
-    The [official Grafana dashboards for VictoriaMetrics](https://docs.victoriametrics.com/#monitoring) provides `Churn rate` graph, which shows the average number of new time series registered during the last 24 hours. If this number exceeds the number of [active time series](https://docs.victoriametrics.com/faq/#what-is-an-active-time-series), then you need to identify and fix the source of [high churn rate](https://docs.victoriametrics.com/faq/#what-is-high-churn-rate). The most commons source of high churn rate is a label, which frequently changes its value. Try avoiding such labels. The [cardinality explorer](https://docs.victoriametrics.com/#cardinality-explorer) can help identifying such labels.
-    
-4.  Resource shortage. The [official Grafana dashboards for VictoriaMetrics](https://docs.victoriametrics.com/#monitoring) contain `resource usage` graphs, which show memory usage, CPU usage, disk IO usage and free disk size. Make sure VictoriaMetrics has enough free resources for graceful handling of potential spikes in workload according to the following recommendations:
-    
-    If VictoriaMetrics components have lower amounts of free resources, then this may lead to significant performance degradation after workload increases slightly. For example:
-    
-
-*   If the percentage of free CPU is close to 0, then VictoriaMetrics may experience arbitrary long delays during data ingestion when it cannot keep up with slightly increased data ingestion rate.
-    
-*   If the percentage of free memory reaches 0, then the Operating System where VictoriaMetrics components run, may have no enough memory for [page cache](https://en.wikipedia.org/wiki/Page_cache). VictoriaMetrics relies on page cache for quick queries over recently ingested data. If the operating system has no enough free memory for page cache, then it needs to re-read the requested data from disk. This may significantly increase disk read IO and slow down both queries and data ingestion.
-    
-*   If free disk space is lower than 20%, then VictoriaMetrics is unable to perform optimal background merge of the incoming data. This leads to increased number of data files on disk, which, in turn, slows down both data ingestion and querying. See [these docs](https://docs.victoriametrics.com/#storage) for details.
-    
-*   50% of free CPU
-    
-*   50% of free memory
-    
-*   20% of free disk space
-    
-
-6.  If you run cluster version of VictoriaMetrics, then make sure `vminsert` and `vmstorage` components are located in the same network with small network latency between them. `vminsert` packs incoming data into batch packets and sends them to `vmstorage` on-by-one. It waits until `vmstorage` returns back `ack` response before sending the next packet. If the network latency between `vminsert` and `vmstorage` is high (for example, if they run in different datacenters), then this may become limiting factor for data ingestion speed.
-    
-    The [official Grafana dashboard for cluster version of VictoriaMetrics](https://docs.victoriametrics.com/cluster-victoriametrics/#monitoring) contain `connection saturation` graph for `vminsert` components. If this graph reaches 100% (1s), then it is likely you have issues with network latency between `vminsert` and `vmstorage`. Another possible issue for 100% connection saturation between `vminsert` and `vmstorage` is resource shortage at `vmstorage` nodes. In this case you need to increase amounts of available resources (CPU, RAM, disk IO) at `vmstorage` nodes or to add more `vmstorage` nodes to the cluster.
-    
-7.  Noisy neighbor. Make sure VictoriaMetrics components run in an environments without other resource-hungry apps. Such apps may steal RAM, CPU, disk IO and network bandwidth, which is needed for VictoriaMetrics components. Issues like this are very hard to catch via [official Grafana dashboard for cluster version of VictoriaMetrics](https://docs.victoriametrics.com/cluster-victoriametrics/#monitoring) and proper diagnosis would require checking resource usage on the instances where VictoriaMetrics runs.
-    
-8.  If you see `TooHighSlowInsertsRate` [alert](https://docs.victoriametrics.com/#monitoring) when single-node VictoriaMetrics or `vmstorage` has enough free CPU and RAM, then increase `-cacheExpireDuration` command-line flag at single-node VictoriaMetrics or at `vmstorage` to the value, which exceeds the interval between ingested samples for the same time series (aka `scrape_interval`). See [this comment](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/3976#issuecomment-1476883183) for more details.
-    
-9.  If you see constant and abnormally high CPU usage of VictoriaMetrics component, check `CPU spent on GC` panel on the corresponding [Grafana dashboard](https://grafana.com/orgs/victoriametrics) in `Resource usage` section. If percentage of CPU time spent on garbage collection is high, then CPU usage of the component can be reduced at the cost of higher memory usage by changing [GOGC](https://tip.golang.org/doc/gc-guide#GOGC) environment variable to higher values. By default VictoriaMetrics components use `GOGC=30`. Try running VictoriaMetrics components with `GOGC=100` and see whether this helps reducing CPU usage. Note that higher `GOGC` values may increase memory usage.
-
-
-根据参考内容，以下是提高 VictoriaMetrics 性能的一些解决方案：
-
-1. **增加主机的可用内存**，直到 `slow inserts` 百分比低于 5%。如果运行的是 VictoriaMetrics 集群版本，则需要增加 `vmstorage` 节点的总可用内存。这可以通过两种方式实现：增加每个现有 `vmstorage` 节点的可用内存，或向集群添加更多 `vmstorage` 节点。
-
-2. **减少活动时间序列的数量**。VictoriaMetrics 的[官方 Grafana 仪表板](https://docs.victoriametrics.com/#monitoring)包含一个显示活动时间序列数量的图表。VictoriaMetrics 的最新版本提供了[基数探索器](https://docs.victoriametrics.com/#cardinality-explorer)，可以帮助确定和修复[高基数](https://docs.victoriametrics.com/faq/#what-is-high-cardinality)的来源。
-
-3. **高替换率**，例如，当旧的时间序列以高频率被新的时间序列替换时。VictoriaMetrics 遇到新时间序列的样本时，需要在内部索引（即 `indexdb`）中注册时间序列，以便在后续选择查询中快速定位。注册新时间序列的过程比向已注册的时间序列添加新样本的过程慢一个数量级。因此，在[高替换率](https://docs.victoriametrics.com/faq/#what-is-high-churn-rate)下，VictoriaMetrics 可能比预期的工作速度慢。VictoriaMetrics 的[官方 Grafana 仪表板](https://docs.victoriametrics.com/#monitoring)提供了 `Churn rate` 图表，显示了过去 24 小时内注册的新时间序列的平均数量。如果这个数字超过了[活动时间序列](https://docs.victoriametrics.com/faq/#what-is-an-active-time-series)的数量，则需要确定和修复[高替换率](https://docs.victoriametrics.com/faq/#what-is-high-churn-rate)的来源。
-
-4. 资源短缺
-
-[VictoriaMetrics 官方 Grafana 仪表板](https://docs.victoriametrics.com/#monitoring) 包含 `resource usage` 图表，显示内存使用情况、CPU 使用情况、磁盘 IO 使用情况和可用磁盘大小。确保 VictoriaMetrics 有足够的可用资源，以便优雅地处理潜在的工作负载峰值，具体建议如下：
-
-如果 VictoriaMetrics 组件的可用资源较少，那么在工作负载稍微增加后可能会导致显著的性能下降。例如：
-
-- 如果可用 CPU 百分比接近 0，那么当数据摄取率稍微增加时，VictoriaMetrics 可能会在数据摄取过程中经历任意长的延迟。
-- 如果可用内存百分比达到 0，那么运行 VictoriaMetrics 组件的操作系统可能没有足够的内存用于 [页面缓存](https://en.wikipedia.org/wiki/Page_cache)。VictoriaMetrics 依赖页面缓存来快速查询最近摄取的数据。如果操作系统没有足够的可用内存用于页面缓存，那么它需要从磁盘重新读取请求的数据。这可能会显著增加磁盘读取 IO 并减慢查询和数据摄取的速度。
-- 如果可用磁盘空间低于 20%，那么 VictoriaMetrics 无法对传入数据执行最佳的后台合并。这会导致磁盘上的数据文件数量增加，进而减慢数据摄取和查询速度。详情请参见[这些文档](https://docs.victoriametrics.com/#storage)。
-
-建议保持以下资源使用率：
-
-- 50% 的可用 CPU
-- 50% 的可用内存
-- 20% 的可用磁盘空间
-
-6. 如果你运行的是 VictoriaMetrics 的集群版本，请确保 `vminsert` 和 `vmstorage` 组件位于同一网络中，并且它们之间的网络延迟较小。`vminsert` 将接收到的数据打包成批量数据包，并逐个发送给 `vmstorage`。它会等待 `vmstorage` 返回 `ack` 响应后再发送下一个数据包。如果 `vminsert` 和 `vmstorage` 之间的网络延迟较高（例如，它们运行在不同的数据中心），这可能会成为数据摄取速度的限制因素。
-
-   [VictoriaMetrics 集群版本的官方 Grafana 仪表板](https://docs.victoriametrics.com/cluster-victoriametrics/#monitoring) 包含 `vminsert` 组件的 `connection saturation` 图表。如果该图表达到 100%（1 秒），那么很可能是 `vminsert` 和 `vmstorage` 之间的网络延迟问题。另一个可能导致 `vminsert` 和 `vmstorage` 之间连接饱和度达到 100% 的问题是 `vmstorage` 节点的资源短缺。在这种情况下，你需要增加 `vmstorage` 节点的可用资源（CPU、RAM、磁盘 IO），或者向集群中添加更多的 `vmstorage` 节点。
-
-7. 噪声邻居。确保 VictoriaMetrics 组件运行在没有其他资源密集型应用程序的环境中。这些应用程序可能会抢占 VictoriaMetrics 组件所需的 RAM、CPU、磁盘 IO 和网络带宽。这类问题很难通过 [VictoriaMetrics 集群版本的官方 Grafana 仪表板](https://docs.victoriametrics.com/cluster-victoriametrics/#monitoring) 捕捉到，正确的诊断需要检查运行 VictoriaMetrics 的实例上的资源使用情况。
-
-8. 如果你在单节点 VictoriaMetrics 或 `vmstorage` 有足够的空闲 CPU 和 RAM 时看到 `TooHighSlowInsertsRate` [警报](https://docs.victoriametrics.com/#monitoring)，那么请增加单节点 VictoriaMetrics 或 `vmstorage` 上 `-cacheExpireDuration` 启动参数的值，使其超过相同时间序列的摄取样本之间的间隔（即 `scrape_interval`）。有关更多详细信息，请参见[此评论](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/3976#issuecomment-1476883183)。
-
-9. 如果你看到 VictoriaMetrics 组件的 CPU 使用率持续且异常地高，请检查相应 [Grafana 仪表板](https://grafana.com/orgs/victoriametrics) 中 `Resource usage` 部分的 `CPU spent on GC` 面板。如果垃圾回收占用的 CPU 时间百分比很高，那么可以通过将 [GOGC](https://tip.golang.org/doc/gc-guide#GOGC) 环境变量更改为更高的值来减少组件的 CPU 使用率，代价是更高的内存使用率。默认情况下，VictoriaMetrics 组件使用 `GOGC=30`。尝试使用 `GOGC=100` 运行 VictoriaMetrics 组件，看看是否有助于降低 CPU 使用率。请注意，更高的 `GOGC` 值可能会增加内存使用量。
-
-    
 
 ## 慢查询
 
-一些查询可能比其他查询需要更多的时间和资源（CPU、RAM、网络带宽）。如果查询执行时间超过传递给 `-search.logSlowQueryDuration` 启动参数的持续时间（默认 5 秒），VictoriaMetrics 会记录慢查询。
+一些查询可能比其他查询消耗更多的时间和资源（CPU、RAM、网络带宽）。如果查询执行时间超过 `-search.logSlowQueryDuration` 启动参数设定的持续时间（默认 5 秒），VictoriaMetrics 会视其为慢查询并记录到日志里。
 
 VictoriaMetrics 提供了 [VMUI 的 `top queries` 页面](https://docs.victoriametrics.com/#top-queries)，显示执行时间最长的查询。
 
 以下是提高慢查询性能的解决方案：
-
-- **增加 VictoriaMetrics 的 CPU 和内存**，以便更快地执行慢查询。如果你使用的是 VictoriaMetrics 的集群版本，那么将 `vmselect` 节点迁移到具有更多 CPU 和 RAM 的机器上应该有助于提高慢查询的速度。查询性能始终受处理查询的单个 `vmselect` 节点资源的限制。例如，如果 `vmselect` 上的 2 个 vCPU 核心不足以快速处理查询，那么将 `vmselect` 迁移到具有 4 个 vCPU 核心的机器上应该可以将重查询性能提高最多 2 倍。如果 [VictoriaMetrics 官方 Grafana 仪表板](https://docs.victoriametrics.com/cluster-victoriametrics/#monitoring) 上的 `concurrent select` 图表接近限制，则应优先向集群添加更多 `vmselect` 节点。有时增加更多的 `vmstorage` 节点也可以帮助提高慢查询的速度。
-
+- **增加 VictoriaMetrics 的 CPU 和内存**。如果你使用的是 VictoriaMetrics 的集群版本，那么将 `vmselect` 节点迁移到具有更多 CPU 和 RAM 资源的机器上应该有助于提高慢查询的速度。查询性能始终受处理查询的单个 `vmselect` 节点资源的限制。例如，如果`vmselect`上的 2 核心 CPU 不能快速处理查询，那么将 `vmselect` 迁移到具有 4 核 CPU 的机器上应该可以将重查询性能提高最多 2 倍。如果 [VictoriaMetrics 官方 Grafana 仪表板]({{< relref "./cluster.md#monitoring" >}}) 上的 `concurrent select` 图表达到了限制，则应优先向集群添加更多`vmselect`节点。有时增加更多的`vmstorage`节点也可以帮助提高慢查询的速度。
 - **重写慢查询，使其变得更快**。不幸的是，仅通过查看查询很难确定它是否慢。
+  实践中慢查询的主要来源是使用了过大回溯窗口的 [告警和记录规则](https://docs.victoriametrics.com/vmalert/#rules)。这些查询经常用于 SLI/SLO 计算，例如 [Sloth](https://github.com/slok/sloth)。  
+  举个例子，`avg_over_time(up[30d]) > 0.99` 需要每次执行时读取和处理过去 30 天内 `up` [时间序列]({{< relref "../concepts.md#timeseries" >}}) 的所有 [原始样本]({{< relref "../concepts.md#samples" >}})。如果此查询频繁执行，则可能占用大量的 CPU、磁盘读取 IO、网络带宽和 RAM。可以通过以下方式优化此类查询：
+    - **减少方括号中的回溯窗口**。例如，`avg_over_time(up[10d])` 在 VictoriaMetrics 上所需的计算资源最多比 `avg_over_time(up[30d])` 少 3 倍。
+    - **增加告警和记录规则的评估间隔**，使其执行频率降低。例如，将 [vmalert]({{< relref "../components/vmalert.md" >}}) 上 `-evaluationInterval` 启动参数的值从 `1m` 增加到 `2m` 应该可以将 VictoriaMetrics 的计算资源使用量减少 2 倍。
 
-  实践中慢查询的主要来源是具有长回溯窗口的 [告警和记录规则](https://docs.victoriametrics.com/vmalert/#rules)。这些查询经常用于 SLI/SLO 计算，例如 [Sloth](https://github.com/slok/sloth)。
-
-  例如，`avg_over_time(up[30d]) > 0.99` 需要每次执行时读取和处理过去 30 天内 `up` [时间序列](https://docs.victoriametrics.com/keyconcepts/#time-series) 的所有 [原始样本](https://docs.victoriametrics.com/keyconcepts/#raw-samples)。如果此查询频繁执行，则可能占用大量的 CPU、磁盘读取 IO、网络带宽和 RAM。可以通过以下方式优化此类查询：
-
-  另一个慢查询的来源是 [子查询](https://docs.victoriametrics.com/metricsql/#subqueries) 的不当使用。如果你不清楚它们的工作原理，建议避免使用子查询。很容易在不知情的情况下创建子查询。例如，`rate(sum(some_metric))` 根据 [MetricsQL 查询的隐式转换规则](https://docs.victoriametrics.com/metricsql/#implicit-query-conversions) 被隐式转换为以下子查询：
-
+  另一个慢查询的来源是 [子查询]({{< relref "../query/metricsql/_index.md#subqueries" >}}) 使用不当。如果你不清楚它们的工作原理，建议避免使用子查询。用户很容易在不知情的情况下创建子查询。例如，`rate(sum(some_metric))` 根据 [MetricsQL 查询的隐式转换规则]({{< relref "../query/metricsql/_index.md#conversions" >}}) 被隐式转换为以下子查询：
   ```
-  rate(   sum(     default\_rollup(some\_metric\[1i\])   )\[1i:1i\] )
+    rate(
+    sum(
+        default_rollup(some_metric[1i])
+    )[1i:1i]
+    )
   ```
+  这个查询可能不会返回预期的结果。相反，应该使用 `sum(rate(some_metric))`。详情请参见[这篇文章](https://www.robustperception.io/rate-then-sum-never-sum-then-rate)。
 
-  这个查询可能不会返回预期的结果。相反，应使用 `sum(rate(some_metric))`。详情请参见[这篇文章](https://www.robustperception.io/rate-then-sum-never-sum-then-rate)。
-
-  VictoriaMetrics 提供了 [查询跟踪](https://docs.victoriametrics.com/#query-tracing) 功能，可以帮助确定慢查询的来源。另请参见[这篇文章](https://valyala.medium.com/how-to-optimize-promql-and-metricsql-queries-85a1b75bf986)，解释了如何确定和优化慢查询。
-
-- **减少方括号中的回溯窗口**。例如，`avg_over_time(up[10d])` 在 VictoriaMetrics 上所需的计算资源最多比 `avg_over_time(up[30d])` 少 3 倍。
-
-- **增加告警和记录规则的评估间隔**，使其执行频率降低。例如，将 [vmalert](https://docs.victoriametrics.com/vmalert/) 上 `-evaluationInterval` 启动参数的值从 `1m` 增加到 `2m` 应该可以将 VictoriaMetrics 的计算资源使用量减少 2 倍。
-    
+  VictoriaMetrics 提供了 [查询跟踪]({{< relref "../query/metricsql/_index.md#tracing" >}}) 功能，可以帮助确定慢查询的来源。另请参见[这篇文章](https://valyala.medium.com/how-to-optimize-promql-and-metricsql-queries-85a1b75bf986)，解释了如何确定和优化慢查询。
 
 ## OOM(Out of memory)
 
-There are the following most common sources of out of memory (aka OOM) crashes in VictoriaMetrics:
-
-1.  Improper command-line flag values. Inspect command-line flags passed to VictoriaMetrics components. If you don’t understand clearly the purpose or the effect of some flags - remove them from the list of flags passed to VictoriaMetrics components. Improper command-line flags values may lead to increased memory and CPU usage. The increased memory usage increases chances for OOM crashes. VictoriaMetrics is optimized for running with default flag values (e.g. when they aren’t set explicitly).
-    
-    For example, it isn’t recommended tuning cache sizes in VictoriaMetrics, since it frequently leads to OOM exceptions. [These docs](https://docs.victoriametrics.com/#cache-tuning) refer command-line flags, which aren’t recommended to tune. If you see that VictoriaMetrics needs increasing some cache sizes for the current workload, then it is better migrating to a host with more memory instead of trying to tune cache sizes manually.
-    
-2.  Unexpected heavy queries. The query is considered as heavy if it needs to select and process millions of unique time series. Such query may lead to OOM exception, since VictoriaMetrics needs to keep some of per-series data in memory. VictoriaMetrics provides [various settings](https://docs.victoriametrics.com/#resource-usage-limits), which can help limit resource usage. For more context, see [How to optimize PromQL and MetricsQL queries](https://valyala.medium.com/how-to-optimize-promql-and-metricsql-queries-85a1b75bf986). VictoriaMetrics also provides [query tracer](https://docs.victoriametrics.com/#query-tracing) to help identify the source of heavy query.
-    
-3.  Lack of free memory for processing workload spikes. If VictoriaMetrics components use almost all the available memory under the current workload, then it is recommended migrating to a host with bigger amounts of memory. This would protect from possible OOM crashes on workload spikes. It is recommended to have at least 50% of free memory for graceful handling of possible workload spikes. See [capacity planning for single-node VictoriaMetrics](https://docs.victoriametrics.com/#capacity-planning) and [capacity planning for cluster version of VictoriaMetrics](https://docs.victoriametrics.com/cluster-victoriametrics/#capacity-planning).
 VictoriaMetrics 中最常见的内存不足（即 OOM）崩溃来源如下：
-
-1. **不当的启动参数值**。检查传递给 VictoriaMetrics 组件的启动参数。如果你不清楚某些参数的用途或效果，请将它们从传递给 VictoriaMetrics 组件的参数列表中移除。不当的启动参数值可能导致内存和 CPU 使用量增加。内存使用量的增加会增加 OOM 崩溃的几率。VictoriaMetrics 已针对默认参数值进行了优化（例如，当它们未被显式设置时）。
-
-    例如，不建议调整 VictoriaMetrics 中的缓存大小，因为这经常会导致 OOM 异常。[这些文档](https://docs.victoriametrics.com/#cache-tuning)提到了一些不建议调整的启动参数。如果你发现 VictoriaMetrics 需要增加某些缓存大小以适应当前工作负载，那么最好迁移到具有更多内存的主机，而不是尝试手动调整缓存大小。
-2. **意外的重查询**。如果查询需要选择和处理数百万个唯一时间序列，则该查询被认为是重查询。这样的查询可能导致 OOM 异常，因为 VictoriaMetrics 需要在内存中保留一些每个系列的数据。VictoriaMetrics 提供了[各种设置](https://docs.victoriametrics.com/#resource-usage-limits)，可以帮助限制资源使用。更多背景信息，请参见[如何优化 PromQL 和 MetricsQL 查询](https://valyala.medium.com/how-to-optimize-promql-and-metricsql-queries-85a1b75bf986)。VictoriaMetrics 还提供了[查询跟踪器](https://docs.victoriametrics.com/#query-tracing)，以帮助识别重查询的来源。
-3. **处理工作负载峰值时缺乏可用内存**。如果 VictoriaMetrics 组件在当前工作负载下使用了几乎所有可用内存，那么建议迁移到具有更大内存的主机。这将防止在工作负载峰值时可能发生的 OOM 崩溃。建议至少有 50% 的可用内存，以优雅地处理可能的工作负载峰值。请参见[单节点 VictoriaMetrics 的容量规划](https://docs.victoriametrics.com/#capacity-planning)和[集群版本 VictoriaMetrics 的容量规划](https://docs.victoriametrics.com/cluster-victoriametrics/#capacity-planning)。
-
+1. **不当的启动参数值**。检查传递给 VictoriaMetrics 组件的启动参数。如果你不清楚某些参数的用途或效果，请将它们从运行参数中移除。不当的启动参数值可能导致内存和 CPU 使用量增加。内存使用量的增加会增加 OOM 崩溃的几率。VictoriaMetrics 已针对默认参数值进行了优化。
+    例如，不建议调整 VictoriaMetrics 中的缓存大小，因为这经常会导致 OOM 异常。[这些文档]({{< relref "./single.md#cache-tuning" >}})提到了一些不建议调整的启动参数。如果你发现 VictoriaMetrics 需要增加某些缓存大小以适应当前工作负载，那么最好迁移到具有更多内存的主机，而不是尝试手动调整缓存大小。
+2. **意外的重查询**。如果查询需要选择和处理数百万个 timeseries，则该查询被认为是重查询。这样的查询可能导致 OOM 异常，因为 VictoriaMetrics 需要在内存中保留一些 timeseries 的数据。VictoriaMetrics 提供了[各种设置]({{< relref "./single.md#limitation" >}})，可以帮助限制资源使用。更多背景信息，请参见[如何优化 PromQL 和 MetricsQL 查询](https://valyala.medium.com/how-to-optimize-promql-and-metricsql-queries-85a1b75bf986)。VictoriaMetrics 还提供了[查询跟踪器](../query/metricsql/_index.md/#tracing)，以帮助识别重查询的来源。
+3. **缺少内存处理突发的工作负载**。如果 VictoriaMetrics 组件在当前流量压力下使用了几乎所有可用内存，那么建议迁移到具有更大内存的主机。这将防止在突发流量抖动时可能发生的 OOM 情况。建议至少有 50% 的可用内存，以优雅地处理可能的流量波动。请参见[单节点 VictoriaMetrics 的容量规划]({{< relref "./single.md#capacity" >}})和[集群版本 VictoriaMetrics 的容量规划]({{< relref "./cluster.md#capacity" >}})。
 
 
 ## 集群抖动
 
-VictoriaMetrics cluster may become unstable if there is no enough free resources (CPU, RAM, disk IO, network bandwidth) for processing the current workload.
-
-The most common sources of cluster instability are:
-
-*   Workload spikes. For example, if the number of active time series increases by 2x while the cluster has no enough free resources for processing the increased workload, then it may become unstable. VictoriaMetrics provides various configuration settings, which can be used for limiting unexpected workload spikes. See [these docs](https://docs.victoriametrics.com/cluster-victoriametrics/#resource-usage-limits) for details.
-    
-*   Various maintenance tasks such as rolling upgrades or rolling restarts during configuration changes. For example, if a cluster contains `N=3` `vmstorage` nodes and they are restarted one-by-one (aka rolling restart), then the cluster will have only `N-1=2` healthy `vmstorage` nodes during the rolling restart. This means that the load on healthy `vmstorage` nodes increases by at least `100%/(N-1)=50%` comparing to the load before rolling restart. E.g. they need to process 50% more incoming data and to return 50% more data during queries. In reality, the load on the remaining `vmstorage` nodes increases even more because they need to register new time series, which were re-routed from temporarily unavailable `vmstorage` node. If `vmstorage` nodes had less than 50% of free resources (CPU, RAM, disk IO) before the rolling restart, then it can lead to cluster overload and instability for both data ingestion and querying.
-    
-    The workload increase during rolling restart can be reduced by increasing the number of `vmstorage` nodes in the cluster. For example, if VictoriaMetrics cluster contains `N=11` `vmstorage` nodes, then the workload increase during rolling restart of `vmstorage` nodes would be `100%/(N-1)=10%`. It is recommended to have at least 8 `vmstorage` nodes in the cluster. The recommended number of `vmstorage` nodes should be multiplied by `-replicationFactor` if replication is enabled - see [replication and data safety docs](https://docs.victoriametrics.com/cluster-victoriametrics/#replication-and-data-safety) for details.
-    
-*   Time series sharding. Received time series [are consistently sharded](https://docs.victoriametrics.com/cluster-victoriametrics/#architecture-overview) by `vminsert` between configured `vmstorage` nodes. As a sharding key `vminsert` is using time series name and labels, respecting their order. If the order of labels in time series is constantly changing, this could cause wrong sharding calculation and result in un-even and sub-optimal time series distribution across available vmstorages. It is expected that metrics pushing client is responsible for consistent labels order (like `Prometheus` or `vmagent` during scraping). If this can’t be guaranteed, set `-sortLabels=true` cmd-line flag to `vminsert`. Please note, sorting may increase CPU usage for `vminsert`.
-    
-
-The obvious solution against VictoriaMetrics cluster instability is to make sure cluster components have enough free resources for graceful processing of the increased workload. See [capacity planning docs](https://docs.victoriametrics.com/cluster-victoriametrics/#capacity-planning) and [cluster resizing and scalability docs](https://docs.victoriametrics.com/cluster-victoriametrics/#cluster-resizing-and-scalability) for details.
-
-VictoriaMetrics 集群可能会在没有足够的可用资源（CPU、RAM、磁盘 IO、网络带宽）来处理当前工作负载时变得不稳定。
+VictoriaMetrics 集群可能会在没有足够的可用资源（CPU、RAM、磁盘 IO、网络带宽）来处理当前流量压力时变得不稳定。
 
 集群不稳定的最常见原因有：
 
-- **工作负载峰值**。例如，如果活动时间序列的数量增加了 2 倍，而集群没有足够的可用资源来处理增加的工作负载，那么它可能会变得不稳定。VictoriaMetrics 提供了各种配置设置，可用于限制意外的工作负载峰值。详情请参见[这些文档](https://docs.victoriametrics.com/cluster-victoriametrics/#resource-usage-limits)。
-  
-- **各种维护任务**，如滚动升级或配置更改期间的滚动重启。例如，如果一个集群包含 `N=3` 个 `vmstorage` 节点，并且它们逐个重启（即滚动重启），那么在滚动重启期间，集群将只有 `N-1=2` 个健康的 `vmstorage` 节点。这意味着健康的 `vmstorage` 节点的负载相比滚动重启前至少增加了 `100%/(N-1)=50%`。例如，它们需要处理多 50% 的传入数据，并在查询期间返回多 50% 的数据。实际上，剩余的 `vmstorage` 节点的负载增加更多，因为它们需要注册从暂时不可用的 `vmstorage` 节点重新路由的新时间序列。如果 `vmstorage` 节点在滚动重启前的可用资源（CPU、RAM、磁盘 IO）少于 50%，那么这可能导致集群过载和数据摄取及查询的不稳定。
+- **突发流量波动**。例如，如果活动时间序列的数量增加了 2 倍，而集群没有足够的可用资源来处理增加的 timeseries，那么它可能会变得不稳定。VictoriaMetrics 提供了各种配置设置，可用于限制意外的突发流量。详情请参见[这些文档]({{< relref "./cluser.md#limitation" >}})。
+- **各种维护任务**，如滚动升级或配置更改时的组件重启。例如，如果一个集群包含 `N=3` 个 `vmstorage` 节点，并且它们逐个重启（即滚动重启），那么在滚动重启期间，集群将只有 `N-1=2` 个健康的 `vmstorage` 节点。这意味着健康的 `vmstorage` 节点的负载相比滚动重启前至少增加了 `100%/(N-1)=50%`。例如，它们需要处理比平时多`50%`的数据。实际上，剩余的`vmstorage`节点的负载增加不止这些，因为它们需要注册从暂不可用的 `vmstorage` 节点重新路由过来的新时间序列。如果 `vmstorage` 节点在滚动重启前的可用资源（CPU、RAM、磁盘 IO）少于 50%，那么这可能导致集群过载和数据写入及查询的不稳定。
+  滚动重启期间的负载增加可以通过增加集群中的 `vmstorage` 节点数量来减少。例如，如果 VictoriaMetrics 集群包含 `N=11` 个 `vmstorage` 节点，那么 `vmstorage` 节点滚动重启期间的负载增加将为 `100%/(N-1)=10%`。建议集群中至少有 8 个 `vmstorage` 节点。如果启用了多副本，建议的 `vmstorage` 节点数量最好乘以 `-replicationFactor`，详情请参见[复制和数据安全文档]({{< relref "./cluster.md#replication" >}})。
+- **时间序列 Hash**。接收到的时间序列由 `vminsert` 在配置的 `vmstorage` 节点之间一致性 Hash。作为分片 Key，`vminsert` 使用时间序列名称和 Label，并遵循它们的顺序。如果时间序列中的 Label 顺序不断变化，可能导致每次 hash 的结果不一样，进而导致可用 `vmstorage` 之间的时间序列分布不均。系统期望客户端负责 Label 的顺序始终保持一致（如 `Prometheus` 或 `vmagent` 在采集时保证）。如果无法保证这一点，请为 `vminsert` 设置 `-sortLabels=true` 启动参数。但排序可能会增加 `vminsert` 的 CPU 消耗。
 
-  滚动重启期间的工作负载增加可以通过增加集群中的 `vmstorage` 节点数量来减少。例如，如果 VictoriaMetrics 集群包含 `N=11` 个 `vmstorage` 节点，那么 `vmstorage` 节点滚动重启期间的工作负载增加将为 `100%/(N-1)=10%`。建议集群中至少有 8 个 `vmstorage` 节点。如果启用了复制，建议的 `vmstorage` 节点数量应乘以 `-replicationFactor`，详情请参见[复制和数据安全文档](https://docs.victoriametrics.com/cluster-victoriametrics/#replication-and-data-safety)。
-
-- **时间序列分片**。接收到的时间序列由 `vminsert` 在配置的 `vmstorage` 节点之间一致分片。作为分片键，`vminsert` 使用时间序列名称和标签，遵循它们的顺序。如果时间序列中的标签顺序不断变化，这可能导致错误的分片计算，并导致可用 `vmstorage` 之间的时间序列分布不均和次优。期望指标推送客户端负责一致的标签顺序（如 `Prometheus` 或 `vmagent` 在抓取期间）。如果无法保证这一点，请为 `vminsert` 设置 `-sortLabels=true` 启动参数。请注意，排序可能会增加 `vminsert` 的 CPU 使用率。
-
-针对 VictoriaMetrics 集群不稳定的明显解决方案是确保集群组件有足够的可用资源来优雅地处理增加的工作负载。详情请参见[容量规划文档](https://docs.victoriametrics.com/cluster-victoriametrics/#capacity-planning)和[集群调整和可扩展性文档](https://docs.victoriametrics.com/cluster-victoriametrics/#cluster-resizing-and-scalability)。
+针对 VictoriaMetrics 集群不稳定的明显解决方案是确保集群组件有足够的可用资源来优雅地处理增加的工作负载。详情请参见[容量规划文档]({{< relref "./cluster.md#capacity" >}})和[集群调整和可扩展性文档]({{< relref "./cluster.md#resize" >}})。
