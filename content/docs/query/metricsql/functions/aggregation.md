@@ -1,5 +1,18 @@
 ---
 title: 聚合统计
+date: 2024-10-28T14:33:16+08:00
+keywords:
+- metricsql
+- aggregation
+- any
+- avg
+- topk
+- bottomk
+- limitk 
+- max
+- min
+- median
+- count
 description: MetricsQL 支持的聚合函数列表及介绍，比如 sum，avg 等等
 weight: 3
 ---
@@ -17,207 +30,181 @@ weight: 3
 
 支持的聚合函数列表：
 
-### any [#](https://docs.victoriametrics.com/metricsql/#any)
-`any(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns a single series per `group_labels`out of time series returned by `q`.
+### any
+`any(q) by (group_labels)` 从`q`返回的 timeseries 中，根据 `group_labels` 返回任意一个 timeseries。
 
-See also [group](https://docs.victoriametrics.com/metricsql/#group).
+另请参阅 [group](#group)。
 
-### avg [#](https://docs.victoriametrics.com/metricsql/#avg)
-`avg(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns the average value per `group_labels`for time series returned by `q`. The aggregate is calculated individually per each group of points with the same timestamp.
+### avg
+`avg(q) by (group_labels)` 根据 `group_labels` 返回的 timeseries 的平均值。该聚合是针对每组具有相同时间戳的数据点单独计算的。
 
-This function is supported by PromQL.
+此函数 PromQL 也支持。
 
-### bottomk [#](https://docs.victoriametrics.com/metricsql/#bottomk)
-`bottomk(k, q)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns up to `k`points with the smallest values across all the time series returned by `q`. The aggregate is calculated individually per each group of points with the same timestamp.
+### bottomk
+`bottomk(k, q)`返回`q`返回的所有 timeseries 中值最小的 `k` 个 timeseries。该聚合是针对每组具有相同时间戳的数据点单独计算的。
 
-This function is supported by PromQL.
+此函数 PromQL 也支持。
 
-See also [topk](https://docs.victoriametrics.com/metricsql/#topk), [bottomk_min](https://docs.victoriametrics.com/metricsql/#bottomk_min) and [#bottomk_last](https://docs.victoriametrics.com/metricsql/#bottomk_last).
+另请参阅 [topk](#topk)、[bottomk_min](#bottomk_min) 和 [bottomk_last](#bottomk_last)。
 
-### bottomk_avg [#](https://docs.victoriametrics.com/metricsql/#bottomk_avg)
-`bottomk_avg(k, q, "other_label=other_value")`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns up to `k`time series from `q`with the smallest averages. If an optional `other_label=other_value`arg is set, then the sum of the remaining time series is returned with the given label. For example, `bottomk_avg(3, sum(process_resident_memory_bytes) by (job), "job=other")`would return up to 3 time series with the smallest averages plus a time series with `{job="other"}`label with the sum of the remaining series if any.
+### bottomk_avg
+`bottomk_avg(k, q, "other_label=other_value")`返回`q`中平均值最小的`k`个 timeseries。如果设置了可选参数`other_label=other_value`，则返回具有给定Label 的剩余 timeseries 总和。例如，`bottomk_avg(3, sum(process_resident_memory_bytes) by (job), "job=other")` 将返回最多`3`条平均值最小的 timeseries，加上一个带有 `{job="other"}` Label 的 timeseries 时间序列，该 series 包含剩余序列的总和（如果有的话）。
 
-See also [topk_avg](https://docs.victoriametrics.com/metricsql/#topk_avg).
+另请参阅 [topk_avg](#topk_avg)。
 
-### bottomk_last [#](https://docs.victoriametrics.com/metricsql/#bottomk_last)
-`bottomk_last(k, q, "other_label=other_value")`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns up to `k`time series from `q`with the smallest last values. If an optional `other_label=other_value`arg is set, then the sum of the remaining time series is returned with the given label. For example, `bottomk_max(3, sum(process_resident_memory_bytes) by (job), "job=other")`would return up to 3 time series with the smallest maximums plus a time series with `{job="other"}`label with the sum of the remaining series if any.
+### bottomk_last
+`bottomk_last(k, q, "other_label=other_value")`返回`q`中最后值最小的`k`个 timeseries。如果设置了可选参数 `other_label=other_value`，则返回具有给定 Label 的剩余 timeseries的总和。例如，`bottomk_max(3, sum(process_resident_memory_bytes) by (job), "job=other")` 将返回最多`3`个最大值最小的timeseries，加上一个带有`{job="other"}`Label的 timeseries，该 series 包含剩余序列的总和（如果有的话）。
 
-See also [topk_last](https://docs.victoriametrics.com/metricsql/#topk_last).
+另请参阅 [topk_last](#topk_last)。
 
-### bottomk_max [#](https://docs.victoriametrics.com/metricsql/#bottomk_max)
-`bottomk_max(k, q, "other_label=other_value")`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns up to `k`time series from `q`with the smallest maximums. If an optional `other_label=other_value`arg is set, then the sum of the remaining time series is returned with the given label. For example, `bottomk_max(3, sum(process_resident_memory_bytes) by (job), "job=other")`would return up to 3 time series with the smallest maximums plus a time series with `{job="other"}`label with the sum of the remaining series if any.
+### bottomk_max
+`bottomk_max(k, q, "other_label=other_value")`返回`q`中最大值最小的`k`个 timeseries。如果设置了可选参数 `other_label=other_value`，则返回具有给定 Label 的剩余 timeseries 的总和。例如，`bottomk_max(3, sum(process_resident_memory_bytes) by (job), "job=other")` 将返回最多`3`个最大值最小的 timeseries ，加上一个带有 `{job="other"}` 标签的 timeseries ，该 series 包含剩余序列的总和（如果有的话）。
 
-See also [topk_max](https://docs.victoriametrics.com/metricsql/#topk_max).
+另请参阅 [topk_max](#topk_max)。
 
-### bottomk_median [#](https://docs.victoriametrics.com/metricsql/#bottomk_median)
-`bottomk_median(k, q, "other_label=other_value")`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns up to `k`time series from `q`with the smallest medians. If an optional`other_label=other_value`arg is set, then the sum of the remaining time series is returned with the given label. For example, `bottomk_median(3, sum(process_resident_memory_bytes) by (job), "job=other")`would return up to 3 time series with the smallest medians plus a time series with `{job="other"}`label with the sum of the remaining series if any.
+### bottomk_median
+`bottomk_median(k, q, "other_label=other_value")`返回`q`中中位数最小的最多 `k` 个 timeseries 。如果设置了可选参数 `other_label=other_value`，则返回具有给定标签的剩余 timeseries 的总和。例如，`bottomk_median(3, sum(process_resident_memory_bytes) by (job), "job=other")` 将返回最多`3`个中位数最小的 timeseries ，加上一个带有 `{job="other"}` 标签的 timeseries ，该序列包含剩余序列的总和（如果有的话）。
 
-See also [topk_median](https://docs.victoriametrics.com/metricsql/#topk_median).
+另请参阅 [topk_median](#topk_median)。
 
-### bottomk_min [#](https://docs.victoriametrics.com/metricsql/#bottomk_min)
-`bottomk_min(k, q, "other_label=other_value")`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns up to `k`time series from `q`with the smallest minimums. If an optional `other_label=other_value`arg is set, then the sum of the remaining time series is returned with the given label. For example, `bottomk_min(3, sum(process_resident_memory_bytes) by (job), "job=other")`would return up to 3 time series with the smallest minimums plus a time series with `{job="other"}`label with the sum of the remaining series if any.
+### bottomk_min
+`bottomk_min(k, q, "other_label=other_value")`返回`q`中最小值最小的最多 `k` 个 timeseries 。如果设置了可选参数 `other_label=other_value`，则返回具有给定标签的剩余 timeseries 的总和。例如，`bottomk_min(3, sum(process_resident_memory_bytes) by (job), "job=other")` 将返回最多`3`个最小值最小的 timeseries ，加上一个带有 `{job="other"}` 标签的 timeseries ，该序列包含剩余序列的总和（如果有的话）。
 
-See also [topk_min](https://docs.victoriametrics.com/metricsql/#topk_min).
+另请参阅 [topk_min](#topk_min)。
 
-### count [#](https://docs.victoriametrics.com/metricsql/#count)
-`count(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns the number of non-empty points per `group_labels`for time series returned by `q`. The aggregate is calculated individually per each group of points with the same timestamp.
+### count
+`count(q) by (group_labels)`返回`q`返回的 timeseries 中每个`group_labels`的非空点的数量。该聚合是针对每组具有相同时间戳的点单独计算的。
 
-This function is supported by PromQL.
+此函数 PromQL 也支持。
 
-### count_values [#](https://docs.victoriametrics.com/metricsql/#count_values)
-`count_values("label", q)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which counts the number of points with the same value and stores the counts in a time series with an additional `label`, which contains each initial value. The aggregate is calculated individually per each group of points with the same timestamp.
+### count_values
+`count_values("label", q)`计算具有相同值的点的数量，并将计数存储在一个带有额外`label`的 timeseries 中，该 Label 包含每个初始值。该聚合是针对每组具有相同时间戳的点单独计算的。
 
-This function is supported by PromQL.
+此函数 PromQL 也支持。
 
-See also [count_values_over_time](https://docs.victoriametrics.com/metricsql/#count_values_over_time) and [label_match](https://docs.victoriametrics.com/metricsql/#label_match).
+另请参阅 [count_values_over_time]({{< relref "./rollup.md#count_values_over_time" >}}) 和 [label_match]({{< relref "./label.md#label_match" >}})。
 
-### distinct [#](https://docs.victoriametrics.com/metricsql/#distinct)
-`distinct(q)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which calculates the number of unique values per each group of points with the same timestamp.
+### distinct
+`distinct(q)`计算每组具有相同时间戳的点的唯一值的数量。类似于 SQL 中的`COUNT(DISTINCT(value))`
 
-See also [distinct_over_time](https://docs.victoriametrics.com/metricsql/#distinct_over_time).
+另请参阅 [distinct_over_time]({{< relref "./rollup.md#distinct_over_time" >}})。
 
-### geomean [#](https://docs.victoriametrics.com/metricsql/#geomean)
-`geomean(q)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which calculates geometric mean per each group of points with the same timestamp.
+### geomean
+`geomean(q)`计算每组具有相同时间戳的点的几何平均值。
 
-### group [#](https://docs.victoriametrics.com/metricsql/#group)
-`group(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns `1`per each `group_labels`for time series returned by `q`.
+### group
+`group(q) by (group_labels)`为`q`返回的 timeseries 中每个`group_labels`返回值恒为`1`的timeseries。
 
-This function is supported by PromQL. See also [any](https://docs.victoriametrics.com/metricsql/#any).
+此函数 PromQL 也支持。另请参阅 [any](#any)。
 
-### histogram [#](https://docs.victoriametrics.com/metricsql/#histogram)
-`histogram(q)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which calculates [VictoriaMetrics histogram](https://valyala.medium.com/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350) per each group of points with the same timestamp. Useful for visualizing big number of time series via a heatmap. See [this article](https://medium.com/@valyala/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350) for more details.
+### histogram
+`histogram(q)`计算每组具有相同时间戳的点的 [VictoriaMetrics 直方图](https://valyala.medium.com/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350)。对于通过热图可视化大量 timeseries 时非常有用。更多详情请参阅[这篇文章](https://medium.com/@valyala/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350)。
 
-See also [histogram_over_time](https://docs.victoriametrics.com/metricsql/#histogram_over_time) and [histogram_quantile](https://docs.victoriametrics.com/metricsql/#histogram_quantile).
+另请参阅 [histogram_over_time]({{< relref "./rollup.md#histogram_over_time" >}}) 和 [histogram_quantile]({{< relref "./rollup.md#histogram_quantile" >}})。
 
-### limitk [#](https://docs.victoriametrics.com/metricsql/#limitk)
-`limitk(k, q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns up to `k`time series per each `group_labels`out of time series returned by `q`. The returned set of time series remain the same across calls.
+### limitk
+`limitk(k, q) by (group_labels)`从`q`返回的 timeseries 中为每个`group_labels`挑选最多 `k` 个 timeseries 返回。返回的时间序列集在多次调用中保持不变。
 
-See also [limit_offset](https://docs.victoriametrics.com/metricsql/#limit_offset).
+另请参阅 [limit_offset](#limit_offset)。
 
-### mad [#](https://docs.victoriametrics.com/metricsql/#mad)
-`mad(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns the [Median absolute deviation](https://en.wikipedia.org/wiki/Median_absolute_deviation) per each `group_labels`for all the time series returned by `q`. The aggregate is calculated individually per each group of points with the same timestamp.
+### mad
+`mad(q) by (group_labels)` 计算`q`返回的所有 timeseries 中每个 `group_labels` 的[中位数绝对偏差](https://en.wikipedia.org/wiki/Median_absolute_deviation)。该聚合是针对每组具有相同时间戳的点单独计算的。
 
-See also [range_mad](https://docs.victoriametrics.com/metricsql/#range_mad), [mad_over_time](https://docs.victoriametrics.com/metricsql/#mad_over_time), [outliers_mad](https://docs.victoriametrics.com/metricsql/#outliers_mad) and [stddev](https://docs.victoriametrics.com/metricsql/#stddev).
+另请参阅 [range_mad](#range_mad)、[mad_over_time]({{< relref "./rollup.md#mad_over_time" >}})、[outliers_mad](#outliers_mad) 和 [stddev](#stddev)。
 
-### max [#](https://docs.victoriametrics.com/metricsql/#max)
-`max(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns the maximum value per each `group_labels`for all the time series returned by `q`. The aggregate is calculated individually per each group of points with the same timestamp.
+### max
+`max(q) by (group_labels)`为`q`返回的所有 timeseries 中每个`group_labels`统计出最大值。该聚合是针对每组具有相同时间戳的点单独计算的。
 
-This function is supported by PromQL.
+此函数 PromQL 也支持。
 
-### median [#](https://docs.victoriametrics.com/metricsql/#median)
-`median(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns the median value per each `group_labels`for all the time series returned by `q`. The aggregate is calculated individually per each group of points with the same timestamp.
+### median
+`median(q) by (group_labels)`为`q`返回的所有 timeseries 中每个 `group_labels`统计出中位数。该聚合是针对每组具有相同时间戳的点单独计算的。
 
-### min [#](https://docs.victoriametrics.com/metricsql/#min)
-`min(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns the minimum value per each `group_labels`for all the time series returned by `q`. The aggregate is calculated individually per each group of points with the same timestamp.
+### min
+`min(q) by (group_labels)`为`q`返回的所有 timeseries 中每个 `group_labels`统计出最小值。该聚合是针对每组具有相同时间戳的点单独计算的。
 
-This function is supported by PromQL.
+此函数 PromQL 也支持。
 
-### mode [#](https://docs.victoriametrics.com/metricsql/#mode)
-`mode(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns [mode](https://en.wikipedia.org/wiki/Mode_(statistics)) per each `group_labels`for all the time series returned by `q`. The aggregate is calculated individually per each group of points with the same timestamp.
+### mode
+`mode(q) by (group_labels)`为`q`返回的所有 timeseries 中每个`group_labels`计算出[众数](https://en.wikipedia.org/wiki/Mode_(statistics))。该聚合是针对每组具有相同时间戳的点单独计算的。
 
-### outliers_iqr [#](https://docs.victoriametrics.com/metricsql/#outliers_iqr)
-`outliers_iqr(q)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns time series from `q`with at least a single point outside e.g. [Interquartile range outlier bounds](https://en.wikipedia.org/wiki/Interquartile_range) `[q25-1.5*iqr .. q75+1.5*iqr]`comparing to other time series at the given point, where:
+### quantile
+`quantile(phi, q) by (group_labels)`计算`q`返回的所有 timeseries 中每个`group_labels`的`phi`分位数。`phi`必须在`[0...1]`范围内。该聚合是针对每组具有相同时间戳的点单独计算的。
 
-+ `iqr`is an [Interquartile range](https://en.wikipedia.org/wiki/Interquartile_range) calculated independently per each point on the graph across `q`series.
-+ `q25`and `q75`are 25th and 75th [percentiles](https://en.wikipedia.org/wiki/Percentile) calculated independently per each point on the graph across `q`series.
+此函数 PromQL 也支持。
 
-The `outliers_iqr()`is useful for detecting anomalous series in the group of series. For example, `outliers_iqr(temperature) by (country)`returns per-country series with anomalous outlier values comparing to the rest of per-country series.
+另请参阅 [quantiles](#quantiles) 和 [histogram_quantile](#histogram_quantile)。
 
-See also [outliers_mad](https://docs.victoriametrics.com/metricsql/#outliers_mad), [outliersk](https://docs.victoriametrics.com/metricsql/#outliersk) and [outlier_iqr_over_time](https://docs.victoriametrics.com/metricsql/#outlier_iqr_over_time).
+### quantiles
+`quantiles("phiLabel", phi1, ..., phiN, q)`计算`q`返回的所有 timeseries 中的`phi*`分位数，并将它们返回在带有`{phiLabel="phi*"}`Label的 timeseries 中。`phi*`必须在`[0...1]`范围内。该聚合是针对每组具有相同时间戳的点单独计算的。
 
-### outliers_mad [#](https://docs.victoriametrics.com/metricsql/#outliers_mad)
-`outliers_mad(tolerance, q)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns time series from `q`with at least a single point outside [Median absolute deviation](https://en.wikipedia.org/wiki/Median_absolute_deviation) (aka MAD) multiplied by `tolerance`. E.g. it returns time series with at least a single point below `median(q) - mad(q)`or a single point above `median(q) + mad(q)`.
+另请参阅 [quantile](#quantile)。
 
-See also [outliers_iqr](https://docs.victoriametrics.com/metricsql/#outliers_iqr), [outliersk](https://docs.victoriametrics.com/metricsql/#outliersk) and [mad](https://docs.victoriametrics.com/metricsql/#mad).
+### share
+`share(q) by (group_labels)`返回`q`返回的每个时间戳的每个非负点的份额，范围为`[0..1]`，结果中每个`group_labels`的份额总和等于 1。
 
-### outliersk [#](https://docs.victoriametrics.com/metricsql/#outliersk)
-`outliersk(k, q)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns up to `k`time series with the biggest standard deviation (aka outliers) out of time series returned by `q`.
+此函数对于将[直方图桶]({{< relref "concepts.md#histogram" >}})份额归一化到`[0..1]`范围内非常有用：
 
-See also [outliers_iqr](https://docs.victoriametrics.com/metricsql/#outliers_iqr) and [outliers_mad](https://docs.victoriametrics.com/metricsql/#outliers_mad).
-
-### quantile [#](https://docs.victoriametrics.com/metricsql/#quantile)
-`quantile(phi, q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which calculates `phi`-quantile per each `group_labels`for all the time series returned by `q`. `phi`must be in the range `[0...1]`. The aggregate is calculated individually per each group of points with the same timestamp.
-
-This function is supported by PromQL.
-
-See also [quantiles](https://docs.victoriametrics.com/metricsql/#quantiles) and [histogram_quantile](https://docs.victoriametrics.com/metricsql/#histogram_quantile).
-
-### quantiles [#](https://docs.victoriametrics.com/metricsql/#quantiles)
-`quantiles("phiLabel", phi1, ..., phiN, q)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which calculates `phi*`-quantiles for all the time series returned by `q`and return them in time series with `{phiLabel="phi*"}`label. `phi*`must be in the range `[0...1]`. The aggregate is calculated individually per each group of points with the same timestamp.
-
-See also [quantile](https://docs.victoriametrics.com/metricsql/#quantile).
-
-### share [#](https://docs.victoriametrics.com/metricsql/#share)
-`share(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns shares in the range `[0..1]`for every non-negative points returned by `q`per each timestamp, so the sum of shares per each `group_labels`equals 1.
-
-This function is useful for normalizing [histogram bucket](https://docs.victoriametrics.com/keyconcepts/#histogram) shares into `[0..1]`range:
-
-```plain
+```plain {filename=MetricsQL}
 share(
   sum(
     rate(http_request_duration_seconds_bucket[5m])
   ) by (le, vmrange)
 )
 ```
+另请参阅 [range_normalize](#range_normalize)。
 
-<font style="color:rgb(187, 187, 187);">MetricsQL</font>
+### stddev
+`stddev(q) by (group_labels)`计算`q`返回的所有 timeseries 中每个 `group_labels` 的标准偏差。该聚合是针对每组具有相同时间戳的点单独计算的。
 
-<font style="color:rgb(255, 255, 255);background-color:rgb(233, 70, 0);">Copy</font>
+此函数 PromQL 也支持。
 
-See also [range_normalize](https://docs.victoriametrics.com/metricsql/#range_normalize).
+### stdvar
+`stdvar(q) by (group_labels)`计算`q`返回的所有 timeseries 中每个 `group_labels` 的标准方差。该聚合是针对每组具有相同时间戳的点单独计算的。
 
-### stddev [#](https://docs.victoriametrics.com/metricsql/#stddev)
-`stddev(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which calculates standard deviation per each `group_labels`for all the time series returned by `q`. The aggregate is calculated individually per each group of points with the same timestamp.
+此函数 PromQL 也支持。
 
-This function is supported by PromQL.
+### sum
+`sum(q) by (group_labels)`返回`q`返回的所有 timeseries 中每个 `group_labels` 的总和。该聚合是针对每组具有相同时间戳的点单独计算的。
 
-### stdvar [#](https://docs.victoriametrics.com/metricsql/#stdvar)
-`stdvar(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which calculates standard variance per each `group_labels`for all the time series returned by `q`. The aggregate is calculated individually per each group of points with the same timestamp.
+此函数 PromQL 也支持。
 
-This function is supported by PromQL.
+### sum2
+`sum2(q) by (group_labels)`计算`q`返回的所有 timeseries 中每个 `group_labels` 的平方和。该聚合是针对每组具有相同时间戳的点单独计算的。
 
-### sum [#](https://docs.victoriametrics.com/metricsql/#sum)
-`sum(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns the sum per each `group_labels`for all the time series returned by `q`. The aggregate is calculated individually per each group of points with the same timestamp.
+### topk
+`topk(k, q)`返回`q`返回的所有 timeseries 中值最大的前`k`个点。该聚合是针对每组具有相同时间戳的点单独计算的。
 
-This function is supported by PromQL.
+此函数 PromQL 也支持。
 
-### sum2 [#](https://docs.victoriametrics.com/metricsql/#sum2)
-`sum2(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which calculates the sum of squares per each `group_labels`for all the time series returned by `q`. The aggregate is calculated individually per each group of points with the same timestamp.
+另请参阅 [bottomk](#bottomk)、[topk_max](#topk_max) 和 [topk_last](#topk_last)。
 
-### topk [#](https://docs.victoriametrics.com/metricsql/#topk)
-`topk(k, q)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns up to `k`points with the biggest values across all the time series returned by `q`. The aggregate is calculated individually per each group of points with the same timestamp.
+### topk_avg
+`topk_avg(k, q, "other_label=other_value")`返回`q`中**平均值**最大的前`k`个时间序列。如果设置了可选的`other_label=other_value`参数，则返回带有给定 Label 的剩余 timeseries 的总和。例如，`topk_avg(3, sum(process_resident_memory_bytes) by (job), "job=other")` 将返回平均值最大的前`3`个 timeseries，和一个带有 `{job="other"}` Label 的 timeseries，其中包含剩余序列的总和（如果有的话）。
 
-This function is supported by PromQL.
+另请参阅 [bottomk_avg](#bottomk_avg)。
 
-See also [bottomk](https://docs.victoriametrics.com/metricsql/#bottomk), [topk_max](https://docs.victoriametrics.com/metricsql/#topk_max) and [topk_last](https://docs.victoriametrics.com/metricsql/#topk_last).
+### topk_last
+`topk_last(k, q, "other_label=other_value")`返回`q`中**最后值**最大的前`k`个时间序列。如果设置了可选的`other_label=other_value`参数，则返回带有给定标签的剩余 timeseries 的总和。例如，`topk_max(3, sum(process_resident_memory_bytes) by (job), "job=other")` 将返回最大值最大的前`3`个 timeseries，加上一个带有`{job="other"}` Label 的 timeseries，其中包含剩余序列的总和（如果有的话）。
 
-### topk_avg [#](https://docs.victoriametrics.com/metricsql/#topk_avg)
-`topk_avg(k, q, "other_label=other_value")`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns up to `k`time series from `q`with the biggest averages. If an optional `other_label=other_value`arg is set, then the sum of the remaining time series is returned with the given label. For example, `topk_avg(3, sum(process_resident_memory_bytes) by (job), "job=other")`would return up to 3 time series with the biggest averages plus a time series with `{job="other"}`label with the sum of the remaining series if any.
+另请参阅 [bottomk_last](#bottomk_last)。
 
-See also [bottomk_avg](https://docs.victoriametrics.com/metricsql/#bottomk_avg).
+### topk_max
+`topk_max(k, q, "other_label=other_value")`返回`q`中**最大值**最大的前`k`个时间序列。如果设置了可选的`other_label=other_value`参数，则返回带有给定标签的剩余 timeseries 的总和。例如，`topk_max(3, sum(process_resident_memory_bytes) by (job), "job=other")` 将返回最大值最大的前`3`个 timeseries ，加上一个带有`{job="other"}` Label 的 timeseries，其中包含剩余序列的总和（如果有的话）。
 
-### topk_last [#](https://docs.victoriametrics.com/metricsql/#topk_last)
-`topk_last(k, q, "other_label=other_value")`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns up to `k`time series from `q`with the biggest last values. If an optional `other_label=other_value`arg is set, then the sum of the remaining time series is returned with the given label. For example, `topk_max(3, sum(process_resident_memory_bytes) by (job), "job=other")`would return up to 3 time series with the biggest maximums plus a time series with `{job="other"}`label with the sum of the remaining series if any.
+另请参阅 [bottomk_max](#bottomk_max)。
 
-See also [bottomk_last](https://docs.victoriametrics.com/metricsql/#bottomk_last).
+### topk_median
+`topk_median(k, q, "other_label=other_value")`返回 `q` 中**中位数**最大的前`k`个时间序列。如果设置了可选的`other_label=other_value`参数，则返回带有给定标签的剩余 timeseries 的总和。例如，`topk_median(3, sum(process_resident_memory_bytes) by (job), "job=other")`将返回中位数最大的前`3`个时间序列，加上一个带有`{job="other"}` Label 的 timeseries，其中包含剩余序列的总和（如果有的话）。
 
-### topk_max [#](https://docs.victoriametrics.com/metricsql/#topk_max)
-`topk_max(k, q, "other_label=other_value")`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns up to `k`time series from `q`with the biggest maximums. If an optional `other_label=other_value`arg is set, then the sum of the remaining time series is returned with the given label. For example, `topk_max(3, sum(process_resident_memory_bytes) by (job), "job=other")`would return up to 3 time series with the biggest maximums plus a time series with `{job="other"}`label with the sum of the remaining series if any.
+另请参阅 [bottomk_median](https://docs.victoriametrics.com/metricsql/#bottomk_median)。
 
-See also [bottomk_max](https://docs.victoriametrics.com/metricsql/#bottomk_max).
+### topk_min
+`topk_min(k, q, "other_label=other_value")`返回`q`中**最小值**最大的前`k`个时间序列。如果设置了可选的`other_label=other_value`参数，则返回带有给定标签的剩余 timeseries 的总和。例如，`topk_min(3, sum(process_resident_memory_bytes) by (job), "job=other")`将返回最小值最大的前`3`个时间序列，加上一个带有`{job="other"}` Label 的 timeseries，其中包含剩余序列的总和（如果有的话）。
 
-### topk_median [#](https://docs.victoriametrics.com/metricsql/#topk_median)
-`topk_median(k, q, "other_label=other_value")`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns up to `k`time series from `q`with the biggest medians. If an optional `other_label=other_value`arg is set, then the sum of the remaining time series is returned with the given label. For example, `topk_median(3, sum(process_resident_memory_bytes) by (job), "job=other")`would return up to 3 time series with the biggest medians plus a time series with `{job="other"}`label with the sum of the remaining series if any.
+另请参阅 [bottomk_min](https://docs.victoriametrics.com/metricsql/#bottomk_min)。
 
-See also [bottomk_median](https://docs.victoriametrics.com/metricsql/#bottomk_median).
+### zscore
+`zscore(q) by (group_labels)`返回 `q` 返回的所有 timeseries 中每个 `group_labels` 的[z-score](https://en.wikipedia.org/wiki/Standard_score) 值。该聚合是针对每组具有相同时间戳的点单独计算的。此函数对于检测相关时间序列组中的异常值非常有用。
 
-### topk_min [#](https://docs.victoriametrics.com/metricsql/#topk_min)
-`topk_min(k, q, "other_label=other_value")`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns up to `k`time series from `q`with the biggest minimums. If an optional `other_label=other_value`arg is set, then the sum of the remaining time series is returned with the given label. For example, `topk_min(3, sum(process_resident_memory_bytes) by (job), "job=other")`would return up to 3 time series with the biggest minimums plus a time series with `{job="other"}`label with the sum of the remaining series if any.
-
-See also [bottomk_min](https://docs.victoriametrics.com/metricsql/#bottomk_min).
-
-### zscore [#](https://docs.victoriametrics.com/metricsql/#zscore)
-`zscore(q) by (group_labels)`is [aggregate function](https://docs.victoriametrics.com/metricsql/#aggregate-functions), which returns [z-score](https://en.wikipedia.org/wiki/Standard_score) values per each `group_labels`for all the time series returned by `q`. The aggregate is calculated individually per each group of points with the same timestamp. This function is useful for detecting anomalies in the group of related time series.
-
-See also [zscore_over_time](https://docs.victoriametrics.com/metricsql/#zscore_over_time), [range_trim_zscore](https://docs.victoriametrics.com/metricsql/#range_trim_zscore) and [outliers_iqr](https://docs.victoriametrics.com/metricsql/#outliers_iqr).
-
+另请参阅 [zscore_over_time]({{< relref "./rollup.md#zscore_over_time" >}})、[range_trim_zscore]({{< relref "./transmit.md#range_trim_zscore" >}})。

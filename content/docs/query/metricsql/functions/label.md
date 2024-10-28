@@ -1,5 +1,15 @@
 ---
 title: 操作 Label
+date: 2024-10-28T14:33:06+08:00
+description: MetricsQL 中操作 Label 的一些函数，比如 label_replace, alias 等
+keywords:
+- alias
+- label_replace
+- label_match
+- label_join
+- label_del
+- label
+- metricsql
 weight: 2
 ---
 
@@ -7,7 +17,7 @@ Label 操作函数对选定的 Rollup 计算结果进行 Label 转换。
 
 附加细节：
 
-+ 如果 Label 操作函数直接应用于`series_selector`，那么在执行 Label 转换之前，会自动应用[`default_rollup`](./rollup.md#default_rollup)函数。例如，`alias(temperature, "foo")`会被隐式转换为`alias(default_rollup(temperature), "foo")`。
++ 如果 Label 操作函数直接应用于`series_selector`，那么在执行 Label 转换之前，会自动应用[`default_rollup`]({{< relref "./rollup.md#default_rollup" >}})函数。例如，`alias(temperature, "foo")`会被隐式转换为`alias(default_rollup(temperature), "foo")`。
 
 请参阅[隐式查询转换]({{< relref "../_index.md#conversion" >}})。
 

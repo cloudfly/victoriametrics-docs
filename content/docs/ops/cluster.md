@@ -1,6 +1,13 @@
 ---
 title: 集群版本
+date: 2024-10-28T14:36:32+08:00
 description: VictoriaMetrics 集群版本的相关功能介绍。比如多租户、多副本、分布式机制等等
+keywords:
+- 集群
+- 多副本
+- 高可用
+- 多租户
+- 分布式
 weight: 10
 ---
 

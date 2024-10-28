@@ -1,6 +1,10 @@
 ---
 title: "安装部署"
+date: 2024-10-28T14:36:57+08:00
 description: VictoriaMetrics 单机版和集群版的部署教程
+keywords:
+- 部署
+- 教程
 weight: 1
 ---
 

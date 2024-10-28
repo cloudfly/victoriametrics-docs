@@ -1,6 +1,14 @@
 ---
 title: MetricQL
+date: 2024-10-28T14:35:37+08:00
 description: 介绍 MetricQL 的一些关键特性，以及它和 PromQL 的主要区别
+keyworlds:
+- or
+- metricsql
+- graphite 过滤器
+- WITH
+- 语法
+- subquery
 weight: 1
 ---
 

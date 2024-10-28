@@ -1,6 +1,16 @@
 ---
 title: 汇总（Rollup）
+date: 2024-10-28T14:34:21+08:00
 description: MetricsQL 支持的 rollup 类函数列表及介绍，比如 rate，increase 等等
+keywords:
+- rate
+- irate
+- increase
+- delta
+- rollup
+- metricsql
+- zscore
+- over_time
 weight: 1
 ---
 
@@ -613,4 +623,5 @@ PromQL 也支持该函数。
 
 该函数通常应用于  [gauges]({{< relref "concepts.md#gauge" >}}).
 
-{{< doc-see-other zscore range_trim_zscore outlier_iqr_over_time >}}
+
+另请参阅 [zscore_over_time](#zscore_over_time)、[range_trim_zscore]({{< relref "./transmit.md#range_trim_zscore" >}})。
