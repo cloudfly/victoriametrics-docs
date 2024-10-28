@@ -1,559 +1,642 @@
 ---
 title: 数值转换
+date: 2024-10-28T20:08:09+08:00
 description: MetricsQL 支持的数值转换函数列表及介绍，比如 abs, ceil 等等
+keywords:
+- 转换函数
+- 时区
+- 时间函数
+- 无数据
+- 智能预测
 weight: 4
 ---
 
-**Transform functions** calculate transformations over [rollup results](https://docs.victoriametrics.com/metricsql/#rollup-functions). For example, `abs(delta(temperature[24h]))`calculates the absolute value for every point of every time series returned from the rollup `delta(temperature[24h])`.
+**Transform 函数** 对 [rollup 结果]({{< relref "./rollup.md" >}}) 做数值转换。例如，`abs(delta(temperature[24h]))` 计算从`delta(temperature[24h])` 返回的每条 timeseries 的每个数据点的绝对值。
 
-Additional details:
+## 一些细节
 
-+ If transform function is applied directly to a [series selector](https://docs.victoriametrics.com/keyconcepts/#filtering), then the [default_rollup()](https://docs.victoriametrics.com/metricsql/#default_rollup) function is automatically applied before calculating the transformations. For example, `abs(temperature)`is implicitly transformed to `abs(default_rollup(temperature))`.
-+ All the transform functions accept optional `keep_metric_names`modifier. If it is set, then the function doesn’t drop metric names from the resulting time series. See [these docs](https://docs.victoriametrics.com/metricsql/#keep_metric_names).
+- 如果 transform 函数直接应用于 [series selector]({{< relref "../../../concepts.md#filtering" >}})，则在计算转换之前会自动应用 [default_rollup()]({{< relref "./rollup.md#default_rollup" >}}) 函数。例如，`abs(temperature)`会被[隐式转换]({{< relref "../_index.md#conversion" >}})为 `abs(default_rollup(temperature))`。
+- 所有 transform 函数都可使用 `keep_metric_names` 修饰符。如果使用了，则函数不会从结果时间序列中删除 Metric 名称。请参阅[这些文档]({{< relref "../_index.md#keep_metric_name" >}})。
 
-See also [implicit query conversions](https://docs.victoriametrics.com/metricsql/#implicit-query-conversions).
+另请参阅[隐式查询转换]({{< relref "../_index.md#conversion" >}})。
 
-#### abs [#](https://docs.victoriametrics.com/metricsql/#abs)
-`abs(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the absolute value for every point of every time series returned by `q`.
+## 函数列表
 
-This function is supported by PromQL.
+### 内置数学函数
 
-#### absent [#](https://docs.victoriametrics.com/metricsql/#absent)
-`absent(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns 1 if `q`has no points. Otherwise, returns an empty result.
+内置数学函数是可以独立于查询`q`直接使用，自动返回期望数值，比如随机数。
 
-This function is supported by PromQL.
+#### pi
+`pi()` 返回[圆周率π](https://en.wikipedia.org/wiki/Pi).
 
-See also [absent_over_time](https://docs.victoriametrics.com/metricsql/#absent_over_time).
+这个函数 PromQL 中也支持。
 
-#### acos [#](https://docs.victoriametrics.com/metricsql/#acos)
-`acos(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns [inverse cosine](https://en.wikipedia.org/wiki/Inverse_trigonometric_functions) for every point of every time series returned by `q`.
+#### now
+`now()` 返回当前的时间戳，返回浮点数，单位秒。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+#### rand
+`rand(seed)`返回`[0...1]`范围的随机数。 可选参数`seed`代表随机种子。
 
-This function is supported by PromQL.
+{{< doc-see-other rand_normal rand_exponential >}}
 
-See also [asin](https://docs.victoriametrics.com/metricsql/#asin) and [cos](https://docs.victoriametrics.com/metricsql/#cos).
+#### rand_exponential
 
-#### acosh [#](https://docs.victoriametrics.com/metricsql/#acosh)
-`acosh(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns [inverse hyperbolic cosine](https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions#Inverse_hyperbolic_cosine) for every point of every time series returned by `q`.
+返回具有[指数分布](https://en.wikipedia.org/wiki/Exponential_distribution)的伪随机数。可选参数`seed`可以用作伪随机数生成器的种子。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+{{< doc-see-other rand rand_normal >}}
 
-This function is supported by PromQL.
+#### rand_normal
+`rand_normal(seed)`返回具有[正态分布](https://en.wikipedia.org/wiki/Normal_distribution)的伪随机数。可选参数`seed`可以用作伪随机数生成器的种子。
 
-See also [sinh](https://docs.victoriametrics.com/metricsql/#cosh).
+{{< doc-see-other rand rand_exponential >}}
 
-#### asin [#](https://docs.victoriametrics.com/metricsql/#asin)
-`asin(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns [inverse sine](https://en.wikipedia.org/wiki/Inverse_trigonometric_functions) for every point of every time series returned by `q`.
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+### 单一数值转换
 
-This function is supported by PromQL.
+#### abs
+`abs(q)`对`q`返回的每一个数值取绝对值。
 
-See also [acos](https://docs.victoriametrics.com/metricsql/#acos) and [sin](https://docs.victoriametrics.com/metricsql/#sin).
+这个函数 PromQL 中也支持。
 
-#### asinh [#](https://docs.victoriametrics.com/metricsql/#asinh)
-`asinh(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns [inverse hyperbolic sine](https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions#Inverse_hyperbolic_sine) for every point of every time series returned by `q`.
+#### ceil
+`ceil(q)`对`q`返回的每一个数值**向上取整**。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+这个函数 PromQL 中也支持。
 
-This function is supported by PromQL.
+{{< doc-see-other floor round >}}
 
-See also [sinh](https://docs.victoriametrics.com/metricsql/#sinh).
+#### floor
+`floor(q)`对`q`返回的每一个数值**向下取整**。
 
-#### atan [#](https://docs.victoriametrics.com/metricsql/#atan)
-`atan(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns [inverse tangent](https://en.wikipedia.org/wiki/Inverse_trigonometric_functions) for every point of every time series returned by `q`.
+这个函数 PromQL 中也支持。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+{{< doc-see-other ceil round >}}
 
-This function is supported by PromQL.
+#### round
+`round(q, nearest)`对`q`返回的每一个数值进行四舍五入。如果设置了`nearest`，则四舍五入到`nearest`的倍数。
 
-See also [tan](https://docs.victoriametrics.com/metricsql/#tan).
+这个函数 PromQL 中也支持。
 
-#### atanh [#](https://docs.victoriametrics.com/metricsql/#atanh)
-`atanh(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns [inverse hyperbolic tangent](https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions#Inverse_hyperbolic_tangent) for every point of every time series returned by `q`.
+{{< doc-see-other floor ceil >}}
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
 
-This function is supported by PromQL.
+#### clamp
+`clamp(q, min, max)` 使用给定的 `min` 和 `max` 值对 `q` 返回的每条 timeseries 的每个数值进行限制。小于`min`的换成`min`，大于`max`的值换成`max`。
 
-See also [tanh](https://docs.victoriametrics.com/metricsql/#tanh).
+这个函数 PromQL 中也支持。
 
-#### bitmap_and [#](https://docs.victoriametrics.com/metricsql/#bitmap_and)
-`bitmap_and(q, mask)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates bitwise `v & mask`for every `v`point of every time series returned from `q`.
+{{< doc-see-other clamp_min clamp_max >}}
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
 
-#### bitmap_or [#](https://docs.victoriametrics.com/metricsql/#bitmap_or)
-`bitmap_or(q, mask)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates bitwise `v | mask`for every `v`point of every time series returned from `q`.
+#### clamp_max
+`clamp_max(q, max)` 使用给定的`max`值对`q`返回的每条 timeseries 的每个数值进行限制。大于`max`的值换成`max`。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+这个函数 PromQL 中也支持。
 
-#### bitmap_xor [#](https://docs.victoriametrics.com/metricsql/#bitmap_xor)
-`bitmap_xor(q, mask)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates bitwise `v ^ mask`for every `v`point of every time series returned from `q`.
+{{< doc-see-other clamp clamp_min >}}
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+#### clamp_min
+`clamp_min(q, min)` 使用给定的`minx`值对`q`返回的每条 timeseries 的每个数值进行限制。小于`min`的换成`min`。
 
-#### buckets_limit [#](https://docs.victoriametrics.com/metricsql/#buckets_limit)
-`buckets_limit(limit, buckets)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which limits the number of [histogram buckets](https://valyala.medium.com/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350) to the given `limit`.
+这个函数 PromQL 中也支持。
 
-See also [prometheus_buckets](https://docs.victoriametrics.com/metricsql/#prometheus_buckets) and [histogram_quantile](https://docs.victoriametrics.com/metricsql/#histogram_quantile).
+{{< doc-see-other clamp clamp_max >}}
 
-#### ceil [#](https://docs.victoriametrics.com/metricsql/#ceil)
-`ceil(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which rounds every point for every time series returned by `q`to the upper nearest integer.
+#### deg
+`deg(q)`对`q`返回的每一个数值进行[弧度转换](https://en.wikipedia.org/wiki/Radian#Conversions)。
 
-This function is supported by PromQL.
+{{< doc-keep-metric-name >}}
 
-See also [floor](https://docs.victoriametrics.com/metricsql/#floor) and [round](https://docs.victoriametrics.com/metricsql/#round).
+这个函数 PromQL 中也支持。
 
-#### clamp [#](https://docs.victoriametrics.com/metricsql/#clamp)
-`clamp(q, min, max)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which clamps every point for every time series returned by `q`with the given `min`and `max`values.
+{{< doc-see-other rad >}}
 
-This function is supported by PromQL.
+#### rad
+`rad(q)`对`q`返回的每一个数值进行[角度转换](https://en.wikipedia.org/wiki/Radian#Conversions)。
 
-See also [clamp_min](https://docs.victoriametrics.com/metricsql/#clamp_min) and [clamp_max](https://docs.victoriametrics.com/metricsql/#clamp_max).
+{{< doc-keep-metric-name >}}
 
-#### clamp_max [#](https://docs.victoriametrics.com/metricsql/#clamp_max)
-`clamp_max(q, max)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which clamps every point for every time series returned by `q`with the given `max`value.
+这个函数 PromQL 中也支持。
 
-This function is supported by PromQL.
+{{< doc-see-other deg >}}
 
-See also [clamp](https://docs.victoriametrics.com/metricsql/#clamp) and [clamp_min](https://docs.victoriametrics.com/metricsql/#clamp_min).
+#### exp
+`exp(q)`对`q`返回的每一个数值`v`计算`e^v`。
 
-#### clamp_min [#](https://docs.victoriametrics.com/metricsql/#clamp_min)
-`clamp_min(q, min)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which clamps every point for every time series returned by `q`with the given `min`value.
+{{< doc-keep-metric-name >}}
 
-This function is supported by PromQL.
+这个函数 PromQL 中也支持。
 
-See also [clamp](https://docs.victoriametrics.com/metricsql/#clamp) and [clamp_max](https://docs.victoriametrics.com/metricsql/#clamp_max).
+{{< doc-see-other ln >}}
 
-#### cos [#](https://docs.victoriametrics.com/metricsql/#cos)
-`cos(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns `cos(v)`for every `v`point of every time series returned by `q`.
+#### sqrt
+`sqrt(q)`对`q`返回的每一个数值计算平方根。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+{{< doc-keep-metric-name >}}
 
-This function is supported by PromQL.
+这个函数 PromQL 中也支持。
 
-See also [sin](https://docs.victoriametrics.com/metricsql/#sin).
+#### sgn
+`sgn(q)`对`q`返回每个数据点`v`进行正负数判断。 
+- 如果`v>0`，返回`1`。
+- 如果`v<0`，返回`-1`。
+- 如果`v==0`，返回`0`。
 
-#### cosh [#](https://docs.victoriametrics.com/metricsql/#cosh)
-`cosh(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns [hyperbolic cosine](https://en.wikipedia.org/wiki/Hyperbolic_functions) for every point of every time series returned by `q`.
+{{< doc-keep-metric-name >}}
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+这个函数 PromQL 中也支持。
 
-This function is supported by PromQL.
 
-See also [acosh](https://docs.victoriametrics.com/metricsql/#acosh).
+### 位运算
 
-#### day_of_month [#](https://docs.victoriametrics.com/metricsql/#day_of_month)
-`day_of_month(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns the day of month for every point of every time series returned by `q`. It is expected that `q`returns unix timestamps. The returned values are in the range `[1...31]`.
+#### bitmap_and
+`bitmap_and(q, mask)` 使用从 `q` 返回的每条 timeseries 中每个点`v`计算按位**与**`v & mask`。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+{{< doc-keep-metric-name >}}
 
-This function is supported by PromQL.
+#### bitmap_or
+`bitmap_or(q, mask)` 使用从 `q` 返回的每条 timeseries 中每个点`v`计算按位**或**`v | mask`。
 
-See also [day_of_week](https://docs.victoriametrics.com/metricsql/#day_of_week) and [day_of_year](https://docs.victoriametrics.com/metricsql/#day_of_year).
+{{< doc-keep-metric-name >}}
 
-#### day_of_week [#](https://docs.victoriametrics.com/metricsql/#day_of_week)
-`day_of_week(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns the day of week for every point of every time series returned by `q`. It is expected that `q`returns unix timestamps. The returned values are in the range `[0...6]`, where `0`means Sunday and `6`means Saturday.
+#### bitmap_xor
+`bitmap_xor(q, mask)` 使用从 `q` 返回的每条 timeseries 中每个点`v`计算按位**异或**`v ^ mask`。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+{{< doc-keep-metric-name >}}
 
-This function is supported by PromQL.
 
-See also [day_of_month](https://docs.victoriametrics.com/metricsql/#day_of_month) and [day_of_year](https://docs.victoriametrics.com/metricsql/#day_of_year).
+### Histogram(直方图) {#histogram}
 
-#### day_of_year [#](https://docs.victoriametrics.com/metricsql/#day_of_year)
-`day_of_year(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns the day of year for every point of every time series returned by `q`. It is expected that `q`returns unix timestamps. The returned values are in the range `[1...365]`for non-leap years, and `[1 to 366]`in leap years.
+#### histogram_avg
+`histogram_avg(buckets)` 计算给定 `buckets` 的平均值。它可以用于计算跨多个 timeseries 的给定时间范围内的平均值。例如，`histogram_avg(sum(histogram_over_time(response_time_duration_seconds[5m])) by (vmrange,job))` 将返回过去 5 分钟内每个 `job` 的平均响应时间。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+#### histogram_quantile
+`histogram_quantile(phi, buckets)` 计算给定 [直方图桶](https://valyala.medium.com/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350) 上的 `phi`-[百分位数](https://en.wikipedia.org/wiki/Percentile)。`phi` 必须在 `[0...1]` 范围内。例如，`histogram_quantile(0.5, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))` 将返回过去 5 分钟内所有请求的中位请求持续时间。
 
-This function is supported by PromQL.
+该函数接受可选的第三个参数 - `boundsLabel`。在这种情况下，它返回具有给定 `boundsLabel` Label 的估计百分位数的 `lower` 和 `upper` 界限。详情请参见 [此问题](https://github.com/prometheus/prometheus/issues/5706)。
 
-See also [day_of_week](https://docs.victoriametrics.com/metricsql/#day_of_week) and [day_of_month](https://docs.victoriametrics.com/metricsql/#day_of_month).
+当在多个直方图上计算 [百分位数](https://en.wikipedia.org/wiki/Percentile) 时，所有输入直方图 **必须** 具有相同边界的桶，例如，它们必须具有相同的 `le` 或 `vmrange` Label 结合。否则，返回的结果可能无效。详情请参见 [此问题](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/3231)。
 
-#### days_in_month [#](https://docs.victoriametrics.com/metricsql/#days_in_month)
-`days_in_month(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns the number of days in the month identified by every point of every time series returned by `q`. It is expected that `q`returns unix timestamps. The returned values are in the range `[28...31]`.
+此函数由 PromQL 支持（不包括 `boundLabel` 参数）。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+{{< doc-see-other histogram_quantiles histogram_share quantile >}}
 
-This function is supported by PromQL.
+#### histogram_quantiles
+`histogram_quantiles("phiLabel", phi1, ..., phiN, buckets)`计算给定 [直方图桶](https://valyala.medium.com/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350)上的`phi*`分位数。参数`phi*`必须在`[0...1]`范围内。例如，`histogram_quantiles('le', 0.3, 0.5, sum(rate(http_request_duration_seconds_bucket[5m]) by (le))`。每个计算出的分位数在一个单独的时间序列中返回，并带有相应的 `{phiLabel="phi*"}` Label。
 
-#### deg [#](https://docs.victoriametrics.com/metricsql/#deg)
-`deg(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which converts [Radians to degrees](https://en.wikipedia.org/wiki/Radian#Conversions) for every point of every time series returned by `q`.
+{{< doc-see-other histogram_quantile >}}
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+#### buckets_limit
+`buckets_limit(limit, buckets)` 将 [直方图桶](https://valyala.medium.com/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350)的数量限制为给定的`limit`。
 
-This function is supported by PromQL.
+{{< doc-see-other prometheus_buckets histogram_quantile >}}
 
-See also [rad](https://docs.victoriametrics.com/metricsql/#rad).
+#### histogram_share
+`histogram_share(le, buckets)` 计算落在 `le` 以下的 `buckets` 的份额（范围 `[0...1]`）。此函数对于计算 SLI 和 SLO 很有用。这与 [histogram_quantile](https://docs.victoriametrics.com/metricsql/#histogram_quantile) 是相反的。
 
-#### drop_empty_series [#](https://docs.victoriametrics.com/metricsql/#drop_empty_series)
-`drop_empty_series(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which drops empty series from `q`.
+该函数接受可选的第三个参数 - `boundsLabel`。在这种情况下，它返回具有给定 `boundsLabel` Label 的估计份额的 `lower` 和 `upper` 界限。
 
-This function can be used when `default`operator should be applied only to non-empty series. For example, `drop_empty_series(temperature < 30) default 42`returns series, which have at least a single sample smaller than 30 on the selected time range, while filling gaps in the returned series with 42.
+#### histogram_stddev
+`histogram_stddev(buckets)` 计算给定 `buckets` 的标准偏差。
 
-On the other hand `(temperature < 30) default 40`returns all the `temperature`series, even if they have no samples smaller than 30, by replacing all the values bigger or equal to 30 with 40.
+#### histogram_stdvar
+`histogram_stdvar(buckets)` 计算给定 `buckets` 的标准方差。它可以用于计算跨多个时间序列的给定时间范围内的标准偏差。例如，`histogram_stdvar(sum(histogram_over_time(temperature[24])) by (vmrange,country))` 将返回每个国家在过去 24 小时内的温度标准偏差。
 
-#### end [#](https://docs.victoriametrics.com/metricsql/#end)
-`end()`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns the unix timestamp in seconds for the last point. It is known as `end`query arg passed to [/api/v1/query_range](https://docs.victoriametrics.com/keyconcepts/#range-query).
+#### prometheus_buckets
+`prometheus_buckets(buckets)` 将带有 `vmrange` 标签的 [VictoriaMetrics 直方图桶](https://valyala.medium.com/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350) 转换为带有 `le` 标签的 Prometheus 直方图桶。这对于在 Grafana 中构建热图可能很有用。
 
-See also [start](https://docs.victoriametrics.com/metricsql/#start), [time](https://docs.victoriametrics.com/metricsql/#time) and [now](https://docs.victoriametrics.com/metricsql/#now).
+{{< doc-see-other histogram_quantile buckets_limit >}}
 
-#### exp [#](https://docs.victoriametrics.com/metricsql/#exp)
-`exp(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the `e^v`for every point `v`of every time series returned by `q`.
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+### 滑动函数
 
-This function is supported by PromQL.
+`running_`开头的为s滑动函数，比如`running_avg`对于序列中的第`i`个数值，计算第`[1...i]`共`i`个数据点的均值。
+比如：
+| value | running_avg |
+| --- | --- |
+| 10 | 10(10/1) |
+| 20 | 15(30/2) |
+| 30 | 20(60/3) |
+| 40 | 25(100/4) |
+| 50 | 30(150/5) |
 
-See also [ln](https://docs.victoriametrics.com/metricsql/#ln).
+#### running_avg
+`running_avg(q)` 计算由 `q` 返回的每条时间序列的运行平均值。
 
-#### floor [#](https://docs.victoriametrics.com/metricsql/#floor)
-`floor(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which rounds every point for every time series returned by `q`to the lower nearest integer.
+#### running_max
+`running_avg(q)` 计算由 `q` 返回的每条时间序列的运行最大值。
 
-This function is supported by PromQL.
+#### running_min
+`running_avg(q)` 计算由 `q` 返回的每条时间序列的运行最小值。
 
-See also [ceil](https://docs.victoriametrics.com/metricsql/#ceil) and [round](https://docs.victoriametrics.com/metricsql/#round).
+#### running_sum
+`running_avg(q)` 计算由 `q` 返回的每条时间序列的运行加和。
 
-#### histogram_avg [#](https://docs.victoriametrics.com/metricsql/#histogram_avg)
-`histogram_avg(buckets)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the average value for the given `buckets`. It can be used for calculating the average over the given time range across multiple time series. For example, `histogram_avg(sum(histogram_over_time(response_time_duration_seconds[5m])) by (vmrange,job))`would return the average response time per each `job`over the last 5 minutes.
+### 排序
 
-#### histogram_quantile [#](https://docs.victoriametrics.com/metricsql/#histogram_quantile)
-`histogram_quantile(phi, buckets)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates `phi`-[percentile](https://en.wikipedia.org/wiki/Percentile) over the given [histogram buckets](https://valyala.medium.com/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350). `phi`must be in the range `[0...1]`. For example, `histogram_quantile(0.5, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))`would return median request duration for all the requests during the last 5 minutes.
+#### sort
+`sort(q)`使用`q`返回的每个 timeseries 里最后一个数据点，对 timeseries 进行升序排序。
 
-The function accepts optional third arg - `boundsLabel`. In this case it returns `lower`and `upper`bounds for the estimated percentile with the given `boundsLabel`label. See [this issue for details](https://github.com/prometheus/prometheus/issues/5706).
 
-When the [percentile](https://en.wikipedia.org/wiki/Percentile) is calculated over multiple histograms, then all the input histograms **must** have buckets with identical boundaries, e.g. they must have the same set of `le`or `vmrange`labels. Otherwise, the returned result may be invalid. See [this issue](https://github.com/VictoriaMetrics/VictoriaMetrics/issues/3231) for details.
+这个函数 PromQL 中也支持。
 
-This function is supported by PromQL (except of the `boundLabel`arg).
+{{< doc-see-other sort_desc sort_by_label >}}
 
-See also [histogram_quantiles](https://docs.victoriametrics.com/metricsql/#histogram_quantiles), [histogram_share](https://docs.victoriametrics.com/metricsql/#histogram_share) and [quantile](https://docs.victoriametrics.com/metricsql/#quantile).
+#### sort_desc
+`sort(q)`使用`q`返回的每个 timeseries 里最后一个数据点，对 timeseries 进行降序排序。
 
-#### histogram_quantiles [#](https://docs.victoriametrics.com/metricsql/#histogram_quantiles)
-`histogram_quantiles("phiLabel", phi1, ..., phiN, buckets)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the given `phi*`-quantiles over the given [histogram buckets](https://valyala.medium.com/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350). Argument `phi*`must be in the range `[0...1]`. For example, `histogram_quantiles('le', 0.3, 0.5, sum(rate(http_request_duration_seconds_bucket[5m]) by (le))`. Each calculated quantile is returned in a separate time series with the corresponding `{phiLabel="phi*"}`label.
+这个函数 PromQL 中也支持。
 
-See also [histogram_quantile](https://docs.victoriametrics.com/metricsql/#histogram_quantile).
+{{< doc-see-other sort sort_by_label >}}
 
-#### histogram_share [#](https://docs.victoriametrics.com/metricsql/#histogram_share)
-`histogram_share(le, buckets)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the share (in the range `[0...1]`) for `buckets`that fall below `le`. This function is useful for calculating SLI and SLO. This is inverse to [histogram_quantile](https://docs.victoriametrics.com/metricsql/#histogram_quantile).
+### 对数函数
 
-The function accepts optional third arg - `boundsLabel`. In this case it returns `lower`and `upper`bounds for the estimated share with the given `boundsLabel`label.
+#### ln
+`ln(q)`对`q`返回的每一个数据点都计算`ln(v)`并返回。
 
-#### histogram_stddev [#](https://docs.victoriametrics.com/metricsql/#histogram_stddev)
-`histogram_stddev(buckets)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates standard deviation for the given `buckets`.
+{{< doc-keep-metric-name >}}
 
-#### histogram_stdvar [#](https://docs.victoriametrics.com/metricsql/#histogram_stdvar)
-`histogram_stdvar(buckets)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates standard variance for the given `buckets`. It can be used for calculating standard deviation over the given time range across multiple time series. For example, `histogram_stdvar(sum(histogram_over_time(temperature[24])) by (vmrange,country))`would return standard deviation for the temperature per each country over the last 24 hours.
+这个函数 PromQL 中也支持。
 
-#### hour [#](https://docs.victoriametrics.com/metricsql/#hour)
-`hour(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns the hour for every point of every time series returned by `q`. It is expected that `q`returns unix timestamps. The returned values are in the range `[0...23]`.
+{{< doc-see-other exp log2 >}}
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+#### log2
+`log2(q)`对`q`返回的每一个数据点都计算`log2(v)`并返回。
 
-This function is supported by PromQL.
+{{< doc-keep-metric-name >}}
 
-#### interpolate [#](https://docs.victoriametrics.com/metricsql/#interpolate)
-`interpolate(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which fills gaps with linearly interpolated values calculated from the last and the next non-empty points per each time series returned by `q`.
+这个函数 PromQL 中也支持。
 
-See also [keep_last_value](https://docs.victoriametrics.com/metricsql/#keep_last_value) and [keep_next_value](https://docs.victoriametrics.com/metricsql/#keep_next_value).
+{{< doc-see-other log10 ln >}}
 
-#### keep_last_value [#](https://docs.victoriametrics.com/metricsql/#keep_last_value)
-`keep_last_value(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which fills gaps with the value of the last non-empty point in every time series returned by `q`.
+#### log10
+`log10(q)`对`q`返回的每一个数据点都计算`log10(v)`并返回。
 
-See also [keep_next_value](https://docs.victoriametrics.com/metricsql/#keep_next_value) and [interpolate](https://docs.victoriametrics.com/metricsql/#interpolate).
+{{< doc-keep-metric-name >}}
 
-#### keep_next_value [#](https://docs.victoriametrics.com/metricsql/#keep_next_value)
-`keep_next_value(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which fills gaps with the value of the next non-empty point in every time series returned by `q`.
+这个函数 PromQL 中也支持。
 
-See also [keep_last_value](https://docs.victoriametrics.com/metricsql/#keep_last_value) and [interpolate](https://docs.victoriametrics.com/metricsql/#interpolate).
+{{< doc-see-other log2 ln >}}
 
-#### limit_offset [#](https://docs.victoriametrics.com/metricsql/#limit_offset)
-`limit_offset(limit, offset, q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which skips `offset`time series from series returned by `q`and then returns up to `limit`of the remaining time series per each group.
 
-This allows implementing simple paging for `q`time series. See also [limitk](https://docs.victoriametrics.com/metricsql/#limitk).
+### 三角函数
 
-#### ln [#](https://docs.victoriametrics.com/metricsql/#ln)
-`ln(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates `ln(v)`for every point `v`of every time series returned by `q`.
+#### sin
+`sin(q)`对`q`返回的每一个数据点都计算`sin(v)`并返回。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+{{< doc-keep-metric-name >}}
 
-This function is supported by PromQL.
+{{< doc-see-other cos >}}
 
-See also [exp](https://docs.victoriametrics.com/metricsql/#exp) and [log2](https://docs.victoriametrics.com/metricsql/#log2).
+#### sinh
+`sinh(q)`对`q`返回的每一个数据点都计算[hyperbolic sine](https://en.wikipedia.org/wiki/Hyperbolic_functions)并返回。
 
-#### log2 [#](https://docs.victoriametrics.com/metricsql/#log2)
-`log2(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates `log2(v)`for every point `v`of every time series returned by `q`.
+{{< doc-keep-metric-name >}}
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+{{< doc-see-other cosh >}}
 
-This function is supported by PromQL.
+#### cos
+`cos(q)`对`q`返回的每一个数据点都计算`cos(v)`并返回。
 
-See also [log10](https://docs.victoriametrics.com/metricsql/#log10) and [ln](https://docs.victoriametrics.com/metricsql/#ln).
+{{< doc-keep-metric-name >}}
 
-#### log10 [#](https://docs.victoriametrics.com/metricsql/#log10)
-`log10(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates `log10(v)`for every point `v`of every time series returned by `q`.
+这个函数 PromQL 中也支持。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+{{< doc-see-other sin >}}
 
-This function is supported by PromQL.
+#### cosh
+`cosh(q)`对`q`返回的每一个数据点都计算[hyperbolic cosine](https://en.wikipedia.org/wiki/Hyperbolic_functions)并返回。
 
-See also [log2](https://docs.victoriametrics.com/metricsql/#log2) and [ln](https://docs.victoriametrics.com/metricsql/#ln).
+{{< doc-keep-metric-name >}}
 
-#### minute [#](https://docs.victoriametrics.com/metricsql/#minute)
-`minute(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns the minute for every point of every time series returned by `q`. It is expected that `q`returns unix timestamps. The returned values are in the range `[0...59]`.
+这个函数 PromQL 中也支持。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+{{< doc-see-other acosh >}}
 
-This function is supported by PromQL.
 
-#### month [#](https://docs.victoriametrics.com/metricsql/#month)
-`month(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns the month for every point of every time series returned by `q`. It is expected that `q`returns unix timestamps. The returned values are in the range `[1...12]`, where `1`means January and `12`means December.
+#### tan
+`tan(q)`对`q`返回的每一个数据点都计算`tan(v)`并返回。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
-
-This function is supported by PromQL.
-
-#### now [#](https://docs.victoriametrics.com/metricsql/#now)
-`now()`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns the current timestamp as a floating-point value in seconds.
-
-See also [time](https://docs.victoriametrics.com/metricsql/#time).
-
-#### pi [#](https://docs.victoriametrics.com/metricsql/#pi)
-`pi()`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns [Pi number](https://en.wikipedia.org/wiki/Pi).
-
-This function is supported by PromQL.
-
-#### rad [#](https://docs.victoriametrics.com/metricsql/#rad)
-`rad(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which converts [degrees to Radians](https://en.wikipedia.org/wiki/Radian#Conversions) for every point of every time series returned by `q`.
-
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
-
-This function is supported by PromQL.
-
-See also [deg](https://docs.victoriametrics.com/metricsql/#deg).
-
-#### prometheus_buckets [#](https://docs.victoriametrics.com/metricsql/#prometheus_buckets)
-`prometheus_buckets(buckets)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which converts [VictoriaMetrics histogram buckets](https://valyala.medium.com/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350) with `vmrange`labels to Prometheus histogram buckets with `le`labels. This may be useful for building heatmaps in Grafana.
-
-See also [histogram_quantile](https://docs.victoriametrics.com/metricsql/#histogram_quantile) and [buckets_limit](https://docs.victoriametrics.com/metricsql/#buckets_limit).
-
-#### rand [#](https://docs.victoriametrics.com/metricsql/#rand)
-`rand(seed)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns pseudo-random numbers on the range `[0...1]`with even distribution. Optional `seed`can be used as a seed for pseudo-random number generator.
-
-See also [rand_normal](https://docs.victoriametrics.com/metricsql/#rand_normal) and [rand_exponential](https://docs.victoriametrics.com/metricsql/#rand_exponential).
-
-#### rand_exponential [#](https://docs.victoriametrics.com/metricsql/#rand_exponential)
-`rand_exponential(seed)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns pseudo-random numbers with [exponential distribution](https://en.wikipedia.org/wiki/Exponential_distribution). Optional `seed`can be used as a seed for pseudo-random number generator.
-
-See also [rand](https://docs.victoriametrics.com/metricsql/#rand) and [rand_normal](https://docs.victoriametrics.com/metricsql/#rand_normal).
-
-#### rand_normal [#](https://docs.victoriametrics.com/metricsql/#rand_normal)
-`rand_normal(seed)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns pseudo-random numbers with [normal distribution](https://en.wikipedia.org/wiki/Normal_distribution). Optional `seed`can be used as a seed for pseudo-random number generator.
-
-See also [rand](https://docs.victoriametrics.com/metricsql/#rand) and [rand_exponential](https://docs.victoriametrics.com/metricsql/#rand_exponential).
-
-#### range_avg [#](https://docs.victoriametrics.com/metricsql/#range_avg)
-`range_avg(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the avg value across points per each time series returned by `q`.
-
-#### range_first [#](https://docs.victoriametrics.com/metricsql/#range_first)
-`range_first(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns the value for the first point per each time series returned by `q`.
-
-#### range_last [#](https://docs.victoriametrics.com/metricsql/#range_last)
-`range_last(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns the value for the last point per each time series returned by `q`.
-
-#### range_linear_regression [#](https://docs.victoriametrics.com/metricsql/#range_linear_regression)
-`range_linear_regression(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates [simple linear regression](https://en.wikipedia.org/wiki/Simple_linear_regression) over the selected time range per each time series returned by `q`. This function is useful for capacity planning and predictions.
-
-#### range_mad [#](https://docs.victoriametrics.com/metricsql/#range_mad)
-`range_mad(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the [median absolute deviation](https://en.wikipedia.org/wiki/Median_absolute_deviation) across points per each time series returned by `q`.
-
-See also [mad](https://docs.victoriametrics.com/metricsql/#mad) and [mad_over_time](https://docs.victoriametrics.com/metricsql/#mad_over_time).
-
-#### range_max [#](https://docs.victoriametrics.com/metricsql/#range_max)
-`range_max(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the max value across points per each time series returned by `q`.
-
-#### range_median [#](https://docs.victoriametrics.com/metricsql/#range_median)
-`range_median(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the median value across points per each time series returned by `q`.
-
-#### range_min [#](https://docs.victoriametrics.com/metricsql/#range_min)
-`range_min(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the min value across points per each time series returned by `q`.
-
-#### range_normalize [#](https://docs.victoriametrics.com/metricsql/#range_normalize)
-`range_normalize(q1, ...)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which normalizes values for time series returned by `q1, ...`into `[0 ... 1]`range. This function is useful for correlating time series with distinct value ranges.
-
-See also [share](https://docs.victoriametrics.com/metricsql/#share).
-
-#### range_quantile [#](https://docs.victoriametrics.com/metricsql/#range_quantile)
-`range_quantile(phi, q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns `phi`-quantile across points per each time series returned by `q`. `phi`must be in the range `[0...1]`.
-
-#### range_stddev [#](https://docs.victoriametrics.com/metricsql/#range_stddev)
-`range_stddev(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates [standard deviation](https://en.wikipedia.org/wiki/Standard_deviation) per each time series returned by `q`on the selected time range.
-
-#### range_stdvar [#](https://docs.victoriametrics.com/metricsql/#range_stdvar)
-`range_stdvar(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates [standard variance](https://en.wikipedia.org/wiki/Variance) per each time series returned by `q`on the selected time range.
-
-#### range_sum [#](https://docs.victoriametrics.com/metricsql/#range_sum)
-`range_sum(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the sum of points per each time series returned by `q`.
-
-#### range_trim_outliers [#](https://docs.victoriametrics.com/metricsql/#range_trim_outliers)
-`range_trim_outliers(k, q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which drops points located farther than `k*range_mad(q)`from the `range_median(q)`. E.g. it is equivalent to the following query: `q ifnot (abs(q - range_median(q)) > k*range_mad(q))`.
-
-See also [range_trim_spikes](https://docs.victoriametrics.com/metricsql/#range_trim_spikes) and [range_trim_zscore](https://docs.victoriametrics.com/metricsql/#range_trim_zscore).
-
-#### range_trim_spikes [#](https://docs.victoriametrics.com/metricsql/#range_trim_spikes)
-`range_trim_spikes(phi, q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which drops `phi`percent of biggest spikes from time series returned by `q`. The `phi`must be in the range `[0..1]`, where `0`means `0%`and `1`means `100%`.
-
-See also [range_trim_outliers](https://docs.victoriametrics.com/metricsql/#range_trim_outliers) and [range_trim_zscore](https://docs.victoriametrics.com/metricsql/#range_trim_zscore).
-
-#### range_trim_zscore [#](https://docs.victoriametrics.com/metricsql/#range_trim_zscore)
-`range_trim_zscore(z, q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which drops points located farther than `z*range_stddev(q)`from the `range_avg(q)`. E.g. it is equivalent to the following query: `q ifnot (abs(q - range_avg(q)) > z*range_avg(q))`.
-
-See also [range_trim_outliers](https://docs.victoriametrics.com/metricsql/#range_trim_outliers) and [range_trim_spikes](https://docs.victoriametrics.com/metricsql/#range_trim_spikes).
-
-#### range_zscore [#](https://docs.victoriametrics.com/metricsql/#range_zscore)
-`range_zscore(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates [z-score](https://en.wikipedia.org/wiki/Standard_score) for points returned by `q`, e.g. it is equivalent to the following query: `(q - range_avg(q)) / range_stddev(q)`.
-
-#### remove_resets [#](https://docs.victoriametrics.com/metricsql/#remove_resets)
-`remove_resets(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which removes counter resets from time series returned by `q`.
-
-#### round [#](https://docs.victoriametrics.com/metricsql/#round)
-`round(q, nearest)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which rounds every point of every time series returned by `q`to the `nearest`multiple. If `nearest`is missing then the rounding is performed to the nearest integer.
-
-This function is supported by PromQL.
-
-See also [floor](https://docs.victoriametrics.com/metricsql/#floor) and [ceil](https://docs.victoriametrics.com/metricsql/#ceil).
-
-#### ru [#](https://docs.victoriametrics.com/metricsql/#ru)
-`ru(free, max)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates resource utilization in the range `[0%...100%]`for the given `free`and `max`resources. For instance, `ru(node_memory_MemFree_bytes, node_memory_MemTotal_bytes)`returns memory utilization over [node_exporter](https://github.com/prometheus/node_exporter) metrics.
-
-#### running_avg [#](https://docs.victoriametrics.com/metricsql/#running_avg)
-`running_avg(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the running avg per each time series returned by `q`.
-
-#### running_max [#](https://docs.victoriametrics.com/metricsql/#running_max)
-`running_max(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the running max per each time series returned by `q`.
-
-#### running_min [#](https://docs.victoriametrics.com/metricsql/#running_min)
-`running_min(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the running min per each time series returned by `q`.
-
-#### running_sum [#](https://docs.victoriametrics.com/metricsql/#running_sum)
-`running_sum(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates the running sum per each time series returned by `q`.
-
-#### scalar [#](https://docs.victoriametrics.com/metricsql/#scalar)
-`scalar(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns `q`if `q`contains only a single time series. Otherwise, it returns nothing.
-
-This function is supported by PromQL.
-
-#### sgn [#](https://docs.victoriametrics.com/metricsql/#sgn)
-`sgn(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns `1`if `v>0`, `-1`if `v<0`and `0`if `v==0`for every point `v`of every time series returned by `q`.
-
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
-
-This function is supported by PromQL.
-
-#### sin [#](https://docs.victoriametrics.com/metricsql/#sin)
-`sin(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns `sin(v)`for every `v`point of every time series returned by `q`.
-
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+{{< doc-keep-metric-name >}}
 
 This function is supported by MetricsQL.
 
-See also [cos](https://docs.victoriametrics.com/metricsql/#cos).
+{{< doc-see-other atan >}}
 
-#### sinh [#](https://docs.victoriametrics.com/metricsql/#sinh)
-`sinh(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns [hyperbolic sine](https://en.wikipedia.org/wiki/Hyperbolic_functions) for every point of every time series returned by `q`.
+#### tanh
+`tanh(q)`对`q`返回的每一个数据点都计算[hyperbolic tangent](https://en.wikipedia.org/wiki/Hyperbolic_functions)并返回。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
-
-This function is supported by MetricsQL.
-
-See also [cosh](https://docs.victoriametrics.com/metricsql/#cosh).
-
-#### tan [#](https://docs.victoriametrics.com/metricsql/#tan)
-`tan(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns `tan(v)`for every `v`point of every time series returned by `q`.
-
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+{{< doc-keep-metric-name >}}
 
 This function is supported by MetricsQL.
 
-See also [atan](https://docs.victoriametrics.com/metricsql/#atan).
+{{< doc-see-other atanh >}}
 
-#### tanh [#](https://docs.victoriametrics.com/metricsql/#tanh)
-`tanh(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns [hyperbolic tangent](https://en.wikipedia.org/wiki/Hyperbolic_functions) for every point of every time series returned by `q`.
+#### acos
+`acos(q)`对`q`返回的每一个数据点都计算[inverse cosine](https://en.wikipedia.org/wiki/Inverse_trigonometric_functions)并返回。
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+{{< doc-keep-metric-name >}}
 
-This function is supported by MetricsQL.
+这个函数 PromQL 中也支持。
 
-See also [atanh](https://docs.victoriametrics.com/metricsql/#atanh).
+{{< doc-see-other asin cos >}}
 
-#### smooth_exponential [#](https://docs.victoriametrics.com/metricsql/#smooth_exponential)
-`smooth_exponential(q, sf)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which smooths points per each time series returned by `q`using [exponential moving average](https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average) with the given smooth factor `sf`.
+#### acosh
+`acosh(q)`对`q`返回的每一个数据点都计算[inverse hyperbolic cosine](https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions#Inverse_hyperbolic_cosine)并返回。
 
-#### sort [#](https://docs.victoriametrics.com/metricsql/#sort)
-`sort(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which sorts series in ascending order by the last point in every time series returned by `q`.
+{{< doc-keep-metric-name >}}
 
-This function is supported by PromQL.
+这个函数 PromQL 中也支持。
 
-See also [sort_desc](https://docs.victoriametrics.com/metricsql/#sort_desc) and [sort_by_label](https://docs.victoriametrics.com/metricsql/#sort_by_label).
+{{< doc-see-other sinh >}}
 
-#### sort_desc [#](https://docs.victoriametrics.com/metricsql/#sort_desc)
-`sort_desc(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which sorts series in descending order by the last point in every time series returned by `q`.
+#### asin
+`asin(q)`对`q`返回的每一个数据点都计算[inverse sine](https://en.wikipedia.org/wiki/Inverse_trigonometric_functions)并返回。
 
-This function is supported by PromQL.
+{{< doc-keep-metric-name >}}
 
-See also [sort](https://docs.victoriametrics.com/metricsql/#sort) and [sort_by_label](https://docs.victoriametrics.com/metricsql/#sort_by_label_desc).
+这个函数 PromQL 中也支持。
 
-#### sqrt [#](https://docs.victoriametrics.com/metricsql/#sqrt)
-`sqrt(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which calculates square root for every point of every time series returned by `q`.
+{{< doc-see-other acos sin >}}
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+#### asinh
+`asinh(q)`对`q`返回的每一个数据点都计算[inverse hyperbolic sine](https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions#Inverse_hyperbolic_sine)并返回。
 
-This function is supported by PromQL.
+{{< doc-keep-metric-name >}}
 
-#### start [#](https://docs.victoriametrics.com/metricsql/#start)
-`start()`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns unix timestamp in seconds for the first point.
+这个函数 PromQL 中也支持。
 
-It is known as `start`query arg passed to [/api/v1/query_range](https://docs.victoriametrics.com/keyconcepts/#range-query).
+{{< doc-see-other sinh >}}
 
-See also [end](https://docs.victoriametrics.com/metricsql/#end), [time](https://docs.victoriametrics.com/metricsql/#time) and [now](https://docs.victoriametrics.com/metricsql/#now).
+#### atan
+`atan(q)`对`q`返回的每一个数据点都计算[inverse tangent](https://en.wikipedia.org/wiki/Inverse_trigonometric_functions)并返回。
 
-#### step [#](https://docs.victoriametrics.com/metricsql/#step)
-`step()`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns the step in seconds (aka interval) between the returned points. It is known as `step`query arg passed to [/api/v1/query_range](https://docs.victoriametrics.com/keyconcepts/#range-query).
+{{< doc-keep-metric-name >}}
 
-See also [start](https://docs.victoriametrics.com/metricsql/#start) and [end](https://docs.victoriametrics.com/metricsql/#end).
+这个函数 PromQL 中也支持。
 
-#### time [#](https://docs.victoriametrics.com/metricsql/#time)
-`time()`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns unix timestamp for every returned point.
+{{< doc-see-other tan >}}
 
-This function is supported by PromQL.
+#### atanh
+`atanh(q)`对`q`返回的每一个数据点都计算[inverse hyperbolic tangent](https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions#Inverse_hyperbolic_tangent)并返回。
 
-See also [timestamp](https://docs.victoriametrics.com/metricsql/#timestamp), [now](https://docs.victoriametrics.com/metricsql/#now), [start](https://docs.victoriametrics.com/metricsql/#start) and [end](https://docs.victoriametrics.com/metricsql/#end).
+{{< doc-keep-metric-name >}}
 
-#### timezone_offset [#](https://docs.victoriametrics.com/metricsql/#timezone_offset)
-`timezone_offset(tz)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns offset in seconds for the given timezone `tz`relative to UTC. This can be useful when combining with datetime-related functions. For example, `day_of_week(time()+timezone_offset("America/Los_Angeles"))`would return weekdays for `America/Los_Angeles`time zone.
+这个函数 PromQL 中也支持。
 
-Special `Local`time zone can be used for returning an offset for the time zone set on the host where VictoriaMetrics runs.
+{{< doc-see-other tanh >}}
 
-See [the list of supported timezones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
+### 时间函数
 
-#### ttf [#](https://docs.victoriametrics.com/metricsql/#ttf)
-`ttf(free)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which estimates the time in seconds needed to exhaust `free`resources. For instance, `ttf(node_filesystem_avail_byte)`returns the time to storage space exhaustion. This function may be useful for capacity planning.
+#### start
+`start()`返回第一个数据点的 unix 时间戳，单位是**秒**。
 
-#### union [#](https://docs.victoriametrics.com/metricsql/#union)
-`union(q1, ..., qN)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns a union of time series returned from `q1`, …, `qN`. The `union`function name can be skipped - the following queries are equivalent: `union(q1, q2)`and `(q1, q2)`.
+它通常是指 [/api/v1/query_range]({{< relref "../../_index.md#range-query" >}})接口中的`start`查询参数。
 
-It is expected that each `q*`query returns time series with unique sets of labels. Otherwise, only the first time series out of series with identical set of labels is returned. Use [alias](https://docs.victoriametrics.com/metricsql/#alias) and [label_set](https://docs.victoriametrics.com/metricsql/#label_set) functions for giving unique labelsets per each `q*`query:
+{{< doc-see-other end time now >}}
 
-#### vector [#](https://docs.victoriametrics.com/metricsql/#vector)
-`vector(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns `q`, e.g. it does nothing in MetricsQL.
+#### end
+`end()`返回最后一个数据点的 unix 时间戳，单位是**秒**。
 
-This function is supported by PromQL.
+它通常是指 [/api/v1/query_range]({{< relref "../../_index.md#range-query" >}})接口中的`end`查询参数。
 
-#### year [#](https://docs.victoriametrics.com/metricsql/#year)
-`year(q)`is a [transform function](https://docs.victoriametrics.com/metricsql/#transform-functions), which returns the year for every point of every time series returned by `q`. It is expected that `q`returns unix timestamps.
+{{< doc-see-other start time now >}}
 
-Metric names are stripped from the resulting series. Add [keep_metric_names](https://docs.victoriametrics.com/metricsql/#keep_metric_names) modifier in order to keep metric names.
+#### step
+`step()`返回数据点之间的时间间隔，单位是**秒**。
+它通常是指 [/api/v1/query_range]({{< relref "../../_index.md#range-query" >}})接口中的`step`查询参数。
 
-This function is supported by PromQL.
+{{< doc-see-other start end >}}
 
+#### time
+`time()` 返回 unix 时间戳，单位**秒**。
+
+这个函数 PromQL 中也支持。
+
+{{< doc-see-other timestamp start now end >}}
+
+#### day_of_month
+`day_of_month(q)`期望`q`返回数据是 Unix 时间戳，然后计算每个数值代表的时间是月份中的第几天。其返回的值在 `[1...31]` 范围内。
+
+{{< doc-keep-metric-name >}}
+
+这个函数 PromQL 中也支持。
+
+{{< doc-see-other day_of_week day_of_year >}}
+
+#### day_of_week
+`day_of_week(q)`期望`q`返回数据是 Unix 时间戳，然后计算每个数值代表的时间是一周中的第几天。其返回的值在 `[1...7]` 范围内。
+
+{{< doc-keep-metric-name >}}
+
+这个函数 PromQL 中也支持。
+
+{{< doc-see-other day_of_month day_of_year >}}
+
+#### day_of_year
+`day_of_year(q)`期望`q`返回数据是 Unix 时间戳，然后计算每个数值代表的时间是一年中的第几天。其返回的值在 `[1...365]` 范围内，如果是闰年，取值范围就是`[1...366]`。
+
+{{< doc-keep-metric-name >}}
+
+这个函数 PromQL 中也支持。
+
+{{< doc-see-other day_of_week day_of_month >}}
+
+#### days_in_month
+`days_of_month(q)`期望`q`返回数据是 Unix 时间戳，然后计算每个数值代表的时间所属月总共有多少天。其返回的值在 `[28...31]` 范围内。
+
+{{< doc-keep-metric-name >}}
+
+这个函数 PromQL 中也支持。
+
+#### minute
+`minute(q)`期望`q`返回数据是 Unix 时间戳，然后计算每个数值代表的时间的分钟位。其返回的值在 `[0...59]` 范围内。
+
+{{< doc-keep-metric-name >}}
+
+这个函数 PromQL 中也支持。
+
+#### hour
+`hour(q)`期望`q`返回数据是 Unix 时间戳，然后计算每个数值代表的时间的小时位。其返回的值在 `[0...23]` 范围内。
+
+{{< doc-keep-metric-name >}}
+
+这个函数 PromQL 中也支持。
+
+#### month
+`hour(q)`期望`q`返回数据是 Unix 时间戳，然后计算每个数值代表的时间是一年中的第几月。其返回的值在 `[1...12]` 范围内。
+
+{{< doc-keep-metric-name >}}
+
+这个函数 PromQL 中也支持。
+
+#### year
+`hour(q)`期望`q`返回数据是 Unix 时间戳，然后计算每个数值代表的时间的年份。
+
+{{< doc-keep-metric-name >}}
+
+这个函数 PromQL 中也支持。
+
+#### now
+`now()` 返回当前的时间戳，返回浮点数，单位秒。
+
+#### timezone_offset
+`timezone_offset(tz)`返回给定时区`tz`相对于 UTC 的秒数偏移量。这在与日期时间相关的函数结合使用时非常有用。例如，`day_of_week(time()+timezone_offset("America/Los_Angeles"))`将返回`America/Los_Angeles`时区的星期几。
+
+特殊的`Local`时区可以用于返回 VictoriaMetrics 运行所在主机设置的时区偏移量。
+
+请阅读[时区列表](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)。
+
+
+### 向量计算函数
+
+向量计算函数应用于一个数组，即对每个 timeseries 的随时间变化的数据点，进行线性计算，比如方差，线性回归，z-score等。
+
+#### range_avg
+`range_avg(q)` 计算 `q` 返回的每个 timeseries 中各点的平均值。
+
+#### range_first
+`range_first(q)` 计算 `q` 返回的每个 timeseries 中各点的第一个值。
+
+#### range_last
+`range_last(q)` 计算 `q` 返回的每个 timeseries 中各点的最后一个值。
+
+#### range_sum
+`range_sum(q)` 计算 `q` 返回的每条 timeseries 中各点的总和。
+
+#### range_linear_regression
+`range_linear_regression(q)` 针对 `q` 返回的每条 timeseries，在选定的时间范围内计算[简单线性回归](https://en.wikipedia.org/wiki/Simple_linear_regression)。此函数对于容量规划和预测非常有用。
+
+#### range_mad
+`range_mad(q)` 计算 `q` 返回的每条 timeseries 中各点的[中位数绝对偏差](https://en.wikipedia.org/wiki/Median_absolute_deviation)。
+
+{{< doc-see-other mad mad_over_time >}}
+
+#### range_max
+`range_max(q)` 计算 `q` 返回的每条时间序列中各点的最大值。
+
+#### range_median
+`range_median(q)` 计算 `q` 返回的每条时间序列中各点的中位数。
+
+#### range_min
+`range_min(q)` 计算 `q` 返回的每条时间序列中各点的最小值。
+
+#### range_normalize
+`range_normalize(q1, ...)`将`q1, ...` 返回的 timeseries 的值归一化到 `[0 ... 1]` 范围内。此函数对于关联具有不同值范围的 timeseries 非常有用。
+
+{{< doc-see-other share >}}
+
+#### range_quantile
+`range_quantile(phi, q)` 返回`q`返回的每条 timeseries 中各点的`phi`分位数。`phi`的取值范围必须是`[0...1]`。
+
+#### range_stddev
+`range_stddev(q)` 计算选定时间范围内`q`返回的每条 tiemseries 的[标准差](https://en.wikipedia.org/wiki/Standard_deviation)。
+
+#### range_stdvar
+`range_stdvar(q)` 计算选定时间范围内`q`返回的每条 timeseries 的[方差](https://en.wikipedia.org/wiki/Variance)。
+
+#### range_trim_outliers
+`range_trim_outliers(k, q)` 删除距离 `range_median(q)` 超过 `k*range_mad(q)` 的点。例如，它等价于以下查询：`q ifnot (abs(q - range_median(q)) > k*range_mad(q))`。
+
+{{< doc-see-other range_trim_spikes range_trim_zscore >}}
+
+#### range_trim_spikes
+`range_trim_spikes(phi, q)` 删除 `q` 返回的时间序列中最大的 `phi`% 的尖峰。`phi` 必须在 `[0..1]` 范围内，其中 `0` 表示 `0%`，`1` 表示 `100%`。
+
+{{< doc-see-other range_trim_outliers range_trim_zscore >}}
+
+#### range_trim_zscore
+`range_trim_zscore(z, q)` 删除距离 `range_avg(q)` 超过 `z*range_stddev(q)` 的点。例如，它等价于以下查询：`q ifnot (abs(q - range_avg(q)) > z*range_avg(q))`。
+
+{{< doc-see-other range_trim_outliers range_trim_spikes >}}
+
+#### range_zscore
+`range_zscore(q)` 计算 `q` 返回的各点的[z-score](https://en.wikipedia.org/wiki/Standard_score)，例如，它等价于以下查询：`(q - range_avg(q)) / range_stddev(q)`。
+
+
+### 智能预测
+
+#### smooth_exponential
+`smooth_exponential(q, sf)` 使用给定的平滑因子`sf`对`q`返回的每条时间序列的点进行平滑处理，采用[指数移动平均](https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average)。
+
+{{< doc-see-other range_linear_regression >}}
+
+#### ru
+`ru(free, max)` 计算给定的 `free` 和 `max` 资源在 `[0%...100%]` 范围内的资源利用率。例如，`ru(node_memory_MemFree_bytes, node_memory_MemTotal_bytes)` 返回基于 [node_exporter](https://github.com/prometheus/node_exporter) 指标的内存利用率。
+
+#### ttf
+`ttf(free)` 估算耗尽 `free` 资源所需的时间（以秒为单位）。例如，`ttf(node_filesystem_avail_byte)` 返回存储空间耗尽所需的时间。此函数在容量规划中可能非常有用。
+
+该函数是根据历史数据点的增长速率，来估算出增长到`100%`需要多久。
+
+
+### 无数据判断转换
+
+#### scalar
+
+如果`q`值包含一个时间序列，`scalar(q)`则直接返回；否则返回空结果。
+
+这个函数 PromQL 中也支持。
+
+#### absent
+
+如果`q`没有返回数据，则`absent(q)`返回`1`。否则它返回空结果。
+
+这个函数 PromQL 中也支持。
+
+另请参阅 [absent_over_time]({{< relref "./rollup.md#absent_over_time" >}})
+
+#### union
+`union(q1, ..., qN)`返回`q1,…,qN`返回的 timeseries 的并集。`union`函数名可以省略，所以`union(q1, q2)`和`(q1, q2)`是等价的。
+
+期望每个`q*`查询返回的 timeseries 中的 Label 都是存在一定差异的。否则就只返回其中一条。可使用 [alias]({{< relref "./label.md#alias" >}}) 和 [label_set]({{< relref "./label.md#label_set" >}}) 函数为每个`q*`查询提供独一无二的 Label以避免出现重复：
+
+#### drop_empty_series
+`drop_empty_series(q)`删掉`q`返回的没有数值的 timeseries。
+
+此函数的一大用途是：只对非空序列使用`default`操作。例如，`drop_empty_series(temperature < 30) default 42`返回在选定时间范围内至少有一个 raw sample 小于30的序列，如果没有，就用`42`来补充序列中的空缺。
+
+否则，`(temperature < 30) default 40`返回所有的`temperature`序列，即使它们没有样本小于`30`，函数也会使用`40`作为替代值。
+
+#### vector
+`vector(q)` 返回 `q`，它在 MetricsQL 里什么都不做。
+
+这个函数 PromQL 中也支持。
+
+
+#### interpolate
+如果`q`返回的数值中存在空缺，`interpolate(q)`则使用空缺前后最接近的 2 个非空数据点进行线性计算，将线性结果值补充到空缺中。
+
+{{< doc-see-other keep_last_value keep_next_value >}}
+
+#### keep_last_value
+如果`q`返回的数值中存在空缺，`keep_last_value(q)`则将**空缺前**最接近的非空数据点，补充到空缺中。
+
+{{< doc-see-other keep_next_value interpolate >}}
+
+#### keep_next_value
+如果`q`返回的数值中存在空缺，`keep_last_value(q)`则将**空缺后**最接近的非空数据点，补充到空缺中。
+
+{{< doc-see-other keep_last_value interpolate >}}
+
+
+#### remove_resets
+`remove_resets(q)`纠正`q`返回的时间序列中 Counter 重置数据点。
+
+比如 Counter 类指标在递增过程中出现了归零，则`remove_resets`会将归零后的数据点都加上归零前的最后数据点，以保证结果中的数值是绝对递增的。
+
+### 其他
+
+#### limit_offset
+`limit_offset(limit, offset, q)` skips `offset`time series from series returned by `q`and then returns up to `limit`of the remaining time series per each group.
+
+`limit_offset(limit, offset, q)`对`q`返回的诸多 timeseries，跳过`offset`个 timeseries，然后返回后面的最多`limit`个 timeseries 数据。
+
+该函数主要用于对`q`返回的 timeseries 进行简单的分页。 
+
+{{< callout type="info" >}}
+分页并不会优化重查询，因为系统还是会对`q`做完整的计算，在计算结果中挑选`limit`条结果返回。主要的用途是缓解 Grafana 绘图压力，避免浏览器崩溃。
+{{< /callout >}}
+
+
+另请参阅 [limitk]({{< relref "./aggregation.md#limitk" >}})
