@@ -1,5 +1,6 @@
 ---
 title: 写入 API
+date: 2024-10-28T20:30:17+08:00
 description: VictoriaMetrics 的数据写入 API 文档说明和样例，方便进行日常参考。
 weight: 10
 ---

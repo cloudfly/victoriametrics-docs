@@ -1,5 +1,6 @@
 ---
 title: 单机版本
+date: 2024-10-28T20:28:47+08:00
 description: VictoriaMetrics 单机版本的相关功能介绍。主要包含 VictoriaMetrics 的通用存储能力，比如保存时间、备份、去重机制等等
 weight: 5
 ---

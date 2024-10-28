@@ -1,5 +1,6 @@
 ---
 title: PromQL 新手入门
+date: 2024-10-28T20:29:12+08:00
 description: PromQL 语法教学，它是使用 MetricsQL 的基础
 weight: 3
 ---

@@ -23,6 +23,9 @@ menu:
     params:
       type: search
 
+sitemap:
+  changeFreq: daily
+
 markup:
   goldmark:
     renderer:

@@ -1,5 +1,6 @@
 ---
 title: FAQ
+date: 2024-10-28T20:30:37+08:00
 decription: 运维 VictoriaMetrics 时经常为遇到的专业问题，比如高替换率、高基数、如何清理数据等等。
 weight: 100
 ---

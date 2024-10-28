@@ -1,5 +1,6 @@
 ---
 title: 查询 API
+date: 2024-10-28T20:28:59+08:00
 description: VictoriaMetrics 的数据查询 API 接口文档说明和样例，方便进行日常参考。
 weight: 5
 ---

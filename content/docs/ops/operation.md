@@ -1,5 +1,6 @@
 ---
 title: "日常运维"
+date: 2024-10-28T20:28:42+08:00
 description: 介绍 VictoriaMetrics 日常运维中一些常见问题的解法。比如处理机器故障，一机多盘，集群扩容等。
 weight: 20
 ---

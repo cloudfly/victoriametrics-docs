@@ -1,5 +1,6 @@
 ---
 title: Push vs Pull
+date: 2024-10-28T20:33:58+08:00
 description: 介绍监控系统领域常见的数据采集场景，Push 和 Pull 的区别，以及针对不同的使用场景给出了 Push 和 Pull 模型的对比和选择建议。
 weight: 5
 ---
@@ -13,15 +14,15 @@ VictoriaMetrics 支持当今监控应用的 2 种主流写入模式：Push 和 P
 
 客户端（应用程序）决定何时何地发送其指标。VictoriaMetrics支持以下数据摄取协议（也称为推送协议）：
 
-+ [Prometheus remote write API](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#prometheus-setup).
-+ [Prometheus text exposition format](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-import-data-in-prometheus-exposition-format).
-+ [DataDog protocol](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-send-data-from-datadog-agent).
-+ [InfluxDB line protocol](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-send-data-from-influxdb-compatible-agents-such-as-telegraf) over HTTP, TCP and UDP.
-+ [Graphite plaintext protocol](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-send-data-from-graphite-compatible-agents-such-as-statsd) with [tags](https://graphite.readthedocs.io/en/latest/tags.html#carbon).
-+ [OpenTSDB put message](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#sending-data-via-telnet-put-protocol).
-+ [HTTP OpenTSDB /api/put requests](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#sending-opentsdb-data-via-http-apiput-requests).
-+ [JSON line format](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-import-data-in-json-line-format).
-+ [Arbitrary CSV data](https://docs.victoriametrics.com/Single-server-VictoriaMetrics.html#how-to-import-csv-data).
++ [Prometheus remote write API]({{< relref "./api.md#remote-write" >}}).
++ [Prometheus text exposition format]({{< relref "./api.md#exposition-text-format-exposition" >}}).
++ [DataDog protocol]({{< relref "./api.md#datadog-agent" >}}).
++ [InfluxDB line protocol]({{< relref "./api.md#influxdb" >}}) over HTTP, TCP and UDP.
++ [Graphite plaintext protocol]({{< relref "./api.md#graphite" >}}) with [tags](https://graphite.readthedocs.io/en/latest/tags.html#carbon).
++ [OpenTSDB put message]({{< relref "./api.md#opentsdb" >}}).
++ [HTTP OpenTSDB /api/put requests]({{< relref "./api.md#opentsdb" >}}).
++ [JSON line format]({{< relref "./api.md#json" >}}).
++ [Arbitrary CSV data]({{< relref "./api.md#csv" >}}).
 
 所有协议都与VictoriaMetrics[数据模型](https://www.victoriametrics.com.cn/victoriametrics/he-xin-gai-nian)完全兼容，可以在生产环境中使用。我们建议使用[github.com/VictoriaMetrics/metrics](https://github.com/VictoriaMetrics/metrics)包将应用程序指标推送到VictoriaMetrics。还可以使用已经存在的与上述协议兼容的客户端，例如`Telegraf`用的 InfluxDB line protocol。
 

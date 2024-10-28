@@ -1,5 +1,6 @@
 ---
 title: 基本用法
+date: 2024-10-28T20:16:10+08:00
 description: 介绍 MetricQL 的一些基本用法，用一些简单的样例由浅入深
 weight: 1
 ---

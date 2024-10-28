@@ -1,5 +1,6 @@
 ---
 title: VictoriaMetrics 中文手册
+date: 2024-10-28T20:30:42+08:00
 keywords:
 - victoriametrics
 - prometheus
