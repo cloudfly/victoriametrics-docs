@@ -1,6 +1,6 @@
 ---
 title: VictoriaMetrics 中文手册
-date: 2024-10-28T20:30:42+08:00
+date: 2024-10-29T19:15:48+08:00
 keywords:
 - victoriametrics
 - prometheus
@@ -26,7 +26,7 @@ layout: hextra-home
 </div>
 
 <div class="hx-mb-6">
-{{< hextra/hero-button text="现在开始" link="docs" >}}
+{{< hextra/hero-button text="开始学习" link="docs" >}}
 </div>
 
 <div class="hx-mt-6"></div>

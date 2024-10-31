@@ -1,7 +1,8 @@
 ---
 title: mmap 让 Go 程序更慢
-date: 2024-10-28T14:35:55+08:00
+date: 2024-10-31T09:45:48+08:00
 description: 本文介绍了 mmap 和 缺页中断的原理和概念，又结合 Go 语言运行时机制，来分析为什么 mmap 在 Go 程序里不建议使用。
+weight: 2
 ---
 
 > 该文章是 VictoriaMetrics 作者写的，
