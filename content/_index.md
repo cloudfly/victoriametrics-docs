@@ -1,6 +1,6 @@
 ---
 title: VictoriaMetrics 中文手册
-date: 2024-10-29T19:15:48+08:00
+date: 2024-11-01T18:45:18+08:00
 keywords:
 - victoriametrics
 - prometheus
@@ -51,5 +51,10 @@ layout: hextra-home
     link="/docs/ops/operation"
     title="日常运维指南"
     subtitle="介绍了对 VictoriaMetrics 日常运维中常见问题的解决方法"
+  >}}
+  {{< hextra/feature-card
+    link="/docs/articles/mmap-slowdown-go"
+    title="优质技术文章"
+    subtitle="TSDB 领域的优质技术内容"
   >}}
 {{< /hextra/feature-grid >}}
