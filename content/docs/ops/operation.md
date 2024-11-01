@@ -1,6 +1,6 @@
 ---
 title: "日常运维"
-date: 2024-10-28T20:28:42+08:00
+date: 2024-11-01T17:44:20+08:00
 description: 介绍 VictoriaMetrics 日常运维中一些常见问题的解法。比如处理机器故障，一机多盘，集群扩容等。
 weight: 20
 ---
@@ -210,14 +210,14 @@ VictoriaMetrics 提供了 [VMUI 的 `top queries` 页面](https://docs.victoriam
   ```
   这个查询可能不会返回预期的结果。相反，应该使用 `sum(rate(some_metric))`。详情请参见[这篇文章](https://www.robustperception.io/rate-then-sum-never-sum-then-rate)。
 
-  VictoriaMetrics 提供了 [查询跟踪]({{< relref "../query/metricsql/_index.md#tracing" >}}) 功能，可以帮助确定慢查询的来源。另请参见[这篇文章](https://valyala.medium.com/how-to-optimize-promql-and-metricsql-queries-85a1b75bf986)，解释了如何确定和优化慢查询。
+  VictoriaMetrics 提供了 [查询跟踪]({{< relref "./single.md#tracing" >}}) 功能，可以帮助确定慢查询的来源。另请参见[这篇文章](https://valyala.medium.com/how-to-optimize-promql-and-metricsql-queries-85a1b75bf986)，解释了如何确定和优化慢查询。
 
 ## OOM(Out of memory)
 
 VictoriaMetrics 中最常见的内存不足（即 OOM）崩溃来源如下：
 1. **不当的启动参数值**。检查传递给 VictoriaMetrics 组件的启动参数。如果你不清楚某些参数的用途或效果，请将它们从运行参数中移除。不当的启动参数值可能导致内存和 CPU 使用量增加。内存使用量的增加会增加 OOM 崩溃的几率。VictoriaMetrics 已针对默认参数值进行了优化。
     例如，不建议调整 VictoriaMetrics 中的缓存大小，因为这经常会导致 OOM 异常。[这些文档]({{< relref "./single.md#cache-tuning" >}})提到了一些不建议调整的启动参数。如果你发现 VictoriaMetrics 需要增加某些缓存大小以适应当前工作负载，那么最好迁移到具有更多内存的主机，而不是尝试手动调整缓存大小。
-2. **意外的重查询**。如果查询需要选择和处理数百万个 timeseries，则该查询被认为是重查询。这样的查询可能导致 OOM 异常，因为 VictoriaMetrics 需要在内存中保留一些 timeseries 的数据。VictoriaMetrics 提供了[各种设置]({{< relref "./single.md#limitation" >}})，可以帮助限制资源使用。更多背景信息，请参见[如何优化 PromQL 和 MetricsQL 查询](https://valyala.medium.com/how-to-optimize-promql-and-metricsql-queries-85a1b75bf986)。VictoriaMetrics 还提供了[查询跟踪器](../query/metricsql/_index.md/#tracing)，以帮助识别重查询的来源。
+2. **意外的重查询**。如果查询需要选择和处理数百万个 timeseries，则该查询被认为是重查询。这样的查询可能导致 OOM 异常，因为 VictoriaMetrics 需要在内存中保留一些 timeseries 的数据。VictoriaMetrics 提供了[各种设置]({{< relref "./single.md#limitation" >}})，可以帮助限制资源使用。更多背景信息，请参见[如何优化 PromQL 和 MetricsQL 查询](https://valyala.medium.com/how-to-optimize-promql-and-metricsql-queries-85a1b75bf986)。VictoriaMetrics 还提供了[查询跟踪器]({{< relref "./single.md#trace" >}})，以帮助识别重查询的来源。
 3. **缺少内存处理突发的工作负载**。如果 VictoriaMetrics 组件在当前流量压力下使用了几乎所有可用内存，那么建议迁移到具有更大内存的主机。这将防止在突发流量抖动时可能发生的 OOM 情况。建议至少有 50% 的可用内存，以优雅地处理可能的流量波动。请参见[单节点 VictoriaMetrics 的容量规划]({{< relref "./single.md#capacity" >}})和[集群版本 VictoriaMetrics 的容量规划]({{< relref "./cluster.md#capacity" >}})。
 
 
