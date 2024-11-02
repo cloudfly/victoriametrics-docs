@@ -1,6 +1,6 @@
 ---
 title: 改进 Gorilla 压缩算法
-date: 2024-10-31T16:40:33+08:00
+date: 2024-11-02T20:49:24+08:00
 description: 本文介绍了 VictoriaMetrics 所使用的时序压缩算法，介绍了 Gorilla 算法的基本原理，已经 VictoriaMetrics 对它做了哪些改进。
 weight: 1
 ---
@@ -86,7 +86,7 @@ Counter 可以通过[`delta-encoding`](https://en.wikipedia.org/wiki/Delta_encod
 
 上述方案相比原始的 Gorilla 算法为浮点值提供了更好的压缩比。但是通过对编码后的数据进一步使用通用压缩算法，可以进一步提高压缩比率。通用压缩算法如 [zstd](https://github.com/facebook/zstd) 擅长压缩重复率高的低熵数据。在对时间序列数据应用类似 Gorilla 的编码后，数据就会变得重复率高，即低熵。唯一的缺点是通用压缩会增加 CPU 用量。但相对与时间序列数据库代码的其他模块所消耗的 CPU 用量，这点增加是可以忽略的。
 
-## 结论
+## 结论 {#conclusion}
 
 Facebook 开源的 Gorilla 压缩算法的压缩比可通过以下几个简单的方法提升：
 - 对浮点数乘以`10^X`，将其转换成整数。

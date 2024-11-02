@@ -97,7 +97,7 @@ VictoriaMetrics 还支持其他很多种数据写入协议，更多内容请参�
 
 
 ## 数据查询
-VictoriaMetrics 提供了 HTTP 接口来处理查询请求。这些接口会被各种联合使用，比如 [Grafana](https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben#grafana-setup)。这些 API 通用会被 [VMUI]({{{< relref "components/vmui" >}}) （用来查看并绘制请求数据的用户界面）使用。
+VictoriaMetrics 提供了 HTTP 接口来处理查询请求。这些接口会被各种联合使用，比如 [Grafana](https://www.victoriametrics.com.cn/victoriametrics/dan-ji-ban-ben#grafana-setup)。这些 API 通用会被 [VMUI]({{< relref "./components/vmui" >}}) （用来查看并绘制请求数据的用户界面）使用。
 
 我们可以使用上面提到的`/api/v1/export`将原始写入数据导出查看，但这通常仅用于问题排查，而非正式使用。
 
@@ -224,7 +224,7 @@ VictoriaMetrics 团队为核心组件准备了一系列的 [Grafana Dashboard](h
 建议阅读下面几篇内容：
 
 + [多副本和数据可靠性]({{< relref "ops/single.md#replication" >}})
-+ [Why replication doesn't save from disaster?](https://valyala.medium.com/speeding-up-backups-for-big-time-series-databases-533c1a927883)
++ [为什么多副本无法完美解决数据可靠性]({{< relref "./articles/speeding-backup-for-tsdb.md#replication-not-perfact" >}})
 + [数据备份]({{< relref "ops/single.md#backup" >}})
 
 ### 配置限制

@@ -1,7 +1,9 @@
 ---
 title: 数据写入
-date: 2024-10-28T20:30:11+08:00
+date: 2024-11-02T19:08:53+08:00
 weight: 6
+sidebar:
+  open: true
 ---
 
 VictoriaMetrics 能够发现Prometheus兼容的目标地址并采集数据（通过 [PULL]({{< relref "./model.md#pull" >}}) 模式）。此外，VictoriaMetrics 可以接收使用下面这些常见的数据写入协议的数据（通过[PUSH]({{< relref "./model.md#push" >}})模式）

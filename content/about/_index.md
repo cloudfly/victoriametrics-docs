@@ -1,6 +1,6 @@
 ---
 title: ""
-date: 2024-09-28T19:11:04+08:00
+date: 2024-11-02T19:23:18+08:00
 toc: false
 description: VictoriaMetrics 中文手册以及作者的相关介绍
 excludeSearch: true
@@ -32,5 +32,5 @@ kk
 ## 联系方式
 
 {{< cards >}}
-  {{< card link="/about" image="./wechat.jpg" title="加好友备注：VictoriaMetrics" subtitle="邮箱：chenyunfei.cs@gmail.com" >}}
+  {{< card link="/about" image="./wechat.jpg" title="加好友备注：vm" subtitle="邮箱：chenyunfei.cs@gmail.com" >}}
 {{< /cards >}}
