@@ -1,15 +1,13 @@
 ---
 title: 写入 API
-date: 2024-10-28T20:30:17+08:00
+date: 2024-11-03T12:28:00+08:00
 description: VictoriaMetrics 的数据写入 API 文档说明和样例，方便进行日常参考。
 weight: 10
 ---
 
-## 单机版和集群版的区别
-
 集群版和单机版在 API URL 上的主要区别，就是集群版在 URL Path 上对查询和写入都增加了前缀，用`insert`和`select`区分了查询和写入 Path，同时支持了租户。
 
-写入 API 的 URL 格式为:
+集群版写入 API 的 URL 格式为:
 
 ```
 http://<vminsert>:8480/insert/<accountID>/<suffix>
@@ -104,7 +102,7 @@ curl -d 'metric_name{foo="bar"} 123' -X POST http://<vminsert>:8480/insert/0/pro
 
 ### Remote Write
 
-`prometheus` and `prometheus/api/v1/write` - 处理 Prometheus Remote Write 数据
+`prometheus`和`prometheus/api/v1/write`两个接口都可以处理 Prometheus Remote Write 数据
 
 {{< tabs items="单机版,集群版" >}}
   {{< tab >}}
@@ -390,11 +388,12 @@ curl -d 'measurement,tag1=value1,tag2=value2 field1=123,field2=1.23' -X POST htt
 
 VictoriaMetrics 对接收到的 InfluxDB 数据做了如下转换：
 
-- 除非 InfluxDB 行中已经存在`db`label 内容，否则 url 中的`db`参数会被注入到数据 Label 中。`db`是用于表示数据库的默认 Label 名，可以通过`-influxDBLabel`参数修改`db`的 Label 名称。如果要实现严格的数据隔离，请阅读[多租户相关信息]({{< relref "../ops/cluster.md#tenant" >}})。
-- Influx Field 名字会被追加上`{measurement}{separator}`前缀，作为 Metric 名称， 其中`{separator}`默认是下划线`_`。可以使用`-influxMeasurementFieldSeparator`参数自定义。如果`{measurement}`为空或者使用了`-influxSkipMeasurement`参数，则直接使用 InfluxDB 的 Field 名称作为 Metric 名称。 `-influxSkipSingleField`。
+- 除非 InfluxDB 行中已经存在名为`db`的 Label 了，否则 url 中的`db`参数会被注入到数据 Label 中。`db`是用于表示数据库的默认 Label 名，可以通过`-influxDBLabel`启动参数将`db`替换成其他名称。  
+  VictoriaMetrics 是没有数据库概念的，如果要实现严格的数据隔离，请阅读[多租户相关信息]({{< relref "../ops/cluster.md#tenant" >}})。
+- Influx Field 名字会被追加上`{measurement}{separator}`前缀，然后作为 Metric 名称， 其中`{separator}`默认是下划线`_`。可以使用`-influxMeasurementFieldSeparator`参数自定义。如果`{measurement}`为空或者使用了`-influxSkipMeasurement`参数，则直接使用 InfluxDB 的 Field 名称作为 Metric 名称。 `-influxSkipSingleField`表示如果一行数据里只有一个 field，则直接使用 measurement 作为 Metric 名称。
 - Influx Field 值会被作为 Timeseries 的值。
 - Influx Tags 会被作为 Prometheus Labels.
-- 如果设置了`-usePromCompatibleNaming`参数，则所有的 Metric 名和 Label 名 都会被格式化成 Prometheus兼容的明明规则，并使用下划线`_`代替非法字符。例如如果 Metric 名或 Label 名是`foo.bar-baz/1`，则会被格式化成`foo_bar_baz_1`。
+- 如果设置了`-usePromCompatibleNaming`参数，则所有的 Metric 名和 Label 名 都会被格式化成 Prometheus 兼容的命名规则，并使用下划线`_`代替非法字符。例如如果 Metric 名或 Label 名是`foo.bar-baz/1`，则会被格式化成`foo_bar_baz_1`。
 
 例如，下面是一行 InfluxDB 协议的数据：
 
@@ -408,8 +407,6 @@ foo,tag1=value1,tag2=value2 field1=12,field2=40
 foo_field1{tag1="value1", tag2="value2"} 12
 foo_field2{tag1="value1", tag2="value2"} 40
 ```
-
-
 
 使用 `/api/v1/export` 接口查询数据，会返回如下内容：
 
@@ -503,14 +500,12 @@ echo "foo.bar.baz;tag1=value1;tag2=value2 123 `date +%s`" | nc -N localhost 2003
 - 对于没有匹配`a-zA-Z0-9:_.`的字符，统一转换成下划线`_`
 - VictoriaMetrics 将数据写入时间作为时序数据的时间
 
-An arbitrary number of lines delimited by \n (aka newline char) can be sent in one go. After that the data may be read via /api/v1/export endpoint:
+任意数量的数据可使用`\n`作为分割，一次性发送进来。然后在通过`/api/v1/export`接口查询数据：
 
 ```sh
 curl -G 'http://localhost:8428/api/v1/export' -d 'match=foo.bar.baz'
 ```
-The /api/v1/export endpoint should return the following response:
 
 ```json
 {"metric":{"__name__":"foo.bar.baz","tag1":"value1","tag2":"value2"},"values":[123],"timestamps":[1560277406000]}
 ```
-Graphite relabeling can be used if the imported Graphite data is going to be queried via MetricsQL.

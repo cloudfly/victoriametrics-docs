@@ -1,6 +1,6 @@
 ---
 title: 单机版本
-date: 2024-10-28T20:28:47+08:00
+date: 2024-11-03T21:46:35+08:00
 description: VictoriaMetrics 单机版本的相关功能介绍。主要包含 VictoriaMetrics 的通用存储能力，比如保存时间、备份、去重机制等等
 weight: 5
 ---
@@ -10,9 +10,11 @@ weight: 5
 
 ### 容量规划 {#capacity}
 
-VictoriaMetrics 在我们的[案例研究](https://docs.victoriametrics.com/CaseStudies.html)中表明，与其他解决方案（Prometheus、Thanos、Cortex、TimescaleDB、InfluxDB、QuestDB和M3DB）相比，在生产环境对CPU、RAM和存储空间的资源消耗都更少。
+我们的[案例研究](https://docs.victoriametrics.com/CaseStudies.html)表明 VictoriaMetrics 与其他解决方案（Prometheus、Thanos、Cortex、TimescaleDB、InfluxDB、QuestDB和M3DB）相比，在生产环境对CPU、RAM和存储空间的资源消耗都更少。
 
-VictoriaMetrics 的容量与可用资源呈线性关系。所需的 CPU 和 RAM 数量高度依赖于数据量 - [活跃时间序列]({{< relref "../faq.md#what-is-an-active-time-series" >}})的数量、指标[替换率]({{< relref "../faq.md#what-is-high-churn-rate" >}})、查询类型、查询每秒请求数等等。建议根据[故障排除](#troubleshooting)文档，为您的生产数据搭建一个测试 VictoriaMetrics，并反复地调整 CPU 和 RAM 资源，直到其稳定运行。根据我们的[案例研究](https://docs.victoriametrics.com/CaseStudies.html)，单机版 VictoriaMetrics 可以完美地处理以下生产数据量：
+VictoriaMetrics 的容量与可用资源呈线性关系。所需的 CPU 和 RAM 数量高度依赖于数据量 - [活跃时间序列]({{< relref "../faq.md#what-is-an-active-time-series" >}})的数量、指标[替换率]({{< relref "../faq.md#what-is-high-churn-rate" >}})、查询类型、查询每秒请求数等等。
+
+建议根据[故障排除](#troubleshooting)文档，为您的生产数据搭建一个测试 VictoriaMetrics，并反复地调整 CPU 和 RAM 资源，直到其稳定运行。根据我们的[案例研究](https://docs.victoriametrics.com/CaseStudies.html)，单机版 VictoriaMetrics 可以完美地处理以下数据量：
 
 + 写入速率: 150万/秒+ 的样本数。
 + 活跃 time series 总量: 5000万+
@@ -136,7 +138,7 @@ VictoriaMetrics 在`/api/v1/status/active_queries`接口中展示当前正在执
 
 例如，以下命令指示 VictoriaMetrics 将`/metrics`里的指标推送到`https://maas.victoriametrics.com/api/v1/import/prometheus`，并使用`user:pass`基本身份验证。在将指标发送到远程存储之前，会添加`instance="foobar"`和`job="vm"`标签给所有的指标：
 
-```plain
+```sh
 /path/to/victoria-metrics \
   -pushmetrics.url=https://user:pass@maas.victoriametrics.com/api/v1/import/prometheus \
   -pushmetrics.extraLabel='instance="foobar"' \

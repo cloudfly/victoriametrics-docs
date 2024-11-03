@@ -1,6 +1,6 @@
 ---
 title: 核心概念
-date: 2024-10-28T20:30:31+08:00
+date: 2024-11-03T19:37:32+08:00
 description: 介绍监控指标领域的一些基本概念，有助于对 VictoriaMetrics 进行更深入的了解；无论是使用还是维护一个监控系统，这些基本概念都开发者而言都是必须的。
 weight: 1
 ---
@@ -83,12 +83,14 @@ requests_total{path="/", code="200"} 123 4567890
 
 + `requests_total{path="/", code="200"}`用于标识给定样本的相关 timeseries。 
 + `123`是一个样本值。 
-+ `4567890`是可选的样本时间戳。如果缺失，则数据被存储到VictoriaMetrics中时使用数据库的当前时间戳。
++ `4567890`是可选的样本时间戳。如果缺失，则默认是数据被存储到 VictoriaMetrics 中时的时间。
+
+
 
 ### Timeseries resolution（时间序列粒度） {#resolution}
 分辨率是 [timeseries](#timeseries) 的 [samples](#samples) 之间的最小间隔。考虑以下示例：
 
-```scheme
+```
 ----------------------------------------------------------------------
 |              <time series>                 | <value> | <timestamp> |
 | requests_total{path="/health", code="200"} |    1    |  1676297640 |
@@ -103,6 +105,37 @@ requests_total{path="/", code="200"} 123 4567890
 在 [Pull 模式]({{< relref "write/model.md#pull" >}})中，分辨率等于抓取间隔，并由监控系统（服务器）控制。对于 [Push 模式]({{< relref "write/model.md#push" >}})，分辨率是样本时间戳之间的间隔，并由客户端（指标收集器）控制。
 
 尽量保持时间序列的分辨率一致，因为某些 [MetricsQL]({{< relref "query/metricsql" >}}) 函数可能期望如此，以免计算出『奇怪』的结果。
+
+
+## 数据查询
+
+### Timeseries filter（指标过滤器）
+
+指标过滤器是查询语句的最基本元素，用于从数据库中过滤 timeseries，可以类比 SQL 中的 where 条件。
+
+{{% include "snippets/metricsql-filter.md" %}}
+
+### Sample（样本）
+
+我们使用 MetricsQL 从 VictoriaMetrics 中查询出的结果数据点，通常称之为样本（即`sample`）或数据点（point）。它和 raw sample 的区别是：查询结果对数据执行了[`rollup`]({{< relref "./query/metricsql/functions/rollup.md" >}})，对 raw sample 中的 timestamp 进行了取整对齐或补充。
+
+这与常规数据库的查询逻辑不同，你只有使用[导出接口]({{< relref "./query/api.md#apiv1export" >}})才能获得写入的原始明细数据，即 raw sample；查询接口返回的数据都是经过汇总对齐的，并不是原始数据点。更多细节可阅读[这篇文档]({{< relref "./query/_index.md#range-query" >}})。
+
+### Lookbehind window（回溯窗口） {#lookbehind}
+
+系统在执行 [MetricsQL]({{< relref "./query/metricsql/_index.md" >}}) 语句查询数据时，经常会用到 [rollup 函数]({{< relref "./query/metricsql/functions/rollup.md" >}})。
+此类函数都需要一个时间维度上的回溯窗口，比如[`increase`]({{< relref "./query/metricsql//functions/rollup.md#increase" >}})计算在一个 timeseries 在某个时间范围内的增量，那就必须在语句中指定出明确时间范围。
+
+这个时间范围就是回溯窗口，通常在中括号`[]`内声明。比如：
+
+```
+increase(requests_total[3m])
+```
+这里的`3m`就是回溯窗口，告诉 VictoriaMetrics 汇总出`requests_total`指标的 raw sample 值在 **3 分钟**内的增加量。
+
+有时因为用户并不清楚某指标的[样本粒度](#resolution)，可能会给出错误的回溯窗口；比如`increase(requests_total[1s])`，要求汇总`requests_total`指标`1s`内的增量，但数据库的 raw sample 粒度是 30 秒一个数据点，在在1秒的时间范围内可能一条数据都没有，无法给出结果。  
+
+所以 VictoriaMetrics 允许用户不指定回溯窗口，而是[自动计算]({{< relref "./query/metricsql/_index.md#conversion" >}})。
 
 ## Metric 类型 {#metrics}
 在 VictoriaMetrics 内部，并 metric type 的概念。此概念存在是为了帮助用户理解度量是如何测量的。有四种常见的度量类型。
