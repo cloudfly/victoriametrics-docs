@@ -45,8 +45,8 @@ params:
       path: /logo-victoriametrics.svg
       dark: /logo-victoriametrics-dark.svg
       link: /
-      width: 160
-      height: 80
+      width: 32
+      height: 32
   search:
     enable: true
     type: flexsearch
