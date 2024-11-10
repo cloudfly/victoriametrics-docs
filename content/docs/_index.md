@@ -1,6 +1,6 @@
 ---
 title: "VictoriaMetrics 中文手册"
-date: 2024-11-10T12:56:27+08:00
+date: 2024-11-10T12:57:28+08:00
 ---
 
 ## VictoriaMetrics 是什么？
@@ -12,7 +12,7 @@ VictoriaMetrics 提供二进制发布版、Docker镜像、Snap软件包和[源�
 了解更多关于 VictoriaMetrics 的[核心概念]({{< relref "./concepts.md" >}})，并按照[快速开始]({{< relref "./quickstart.md" >}})获得更好的体验。
 
 
-## 可观测有时什么？（非官方）
+## 可观测又是什么？（非官方）
 
 可观测性（Observability）是一种通过分析系统外部输出结果推断及衡量系统内部状态的能力。在互联网技术领域内，这里的外部输出结果通常指的就是 Log、Metric、Trace、Event。
 
