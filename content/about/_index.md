@@ -1,6 +1,6 @@
 ---
 title: ""
-date: 2024-11-06T18:43:09+08:00
+date: 2024-11-12T11:04:28+08:00
 toc: false
 description: VictoriaMetrics 中文手册以及作者的相关介绍
 excludeSearch: true
@@ -23,13 +23,15 @@ cascade:
 ## 关于作者
 本人在可观测方向工作了也快十年了，亲身经历了该方向技术的快速演变发展，走过很多弯路，掉过不少坑。数据存储问题一直是这个方向的一大技术难题，从最早期用 MySQL + Redis 或 Mongo 或 Graphite，到后来 TSDB 领域出现了 InfluxDB、Prometheus、OpenTSDB 等基于 LSM Tree 或列式存储的数据库方案，再到后来出现了 Thanos，M3DB 等针对 Prometheus 的开源分布式解决方案，到现在还出现很多使用 Clickhouse 作为时序数据存储方案。  
 可是当我们遇到真正的大数据量时，这些系统表现总是有些差强人意，有时候不得不付出高昂的维护成本或二次开发，才能让系统勉强稳定。
-
+ 
 2022 年初接触到了 VictoriaMetrics ，其性能、稳定性以及代码质量都让我很是佩服，作者 [valyala](https://github.com/valyala) 早期也开发了 [fasthttp](https://github.com/valyala/fasthttp) 等知名的 Go 开发库，技术功底相当扎实。  
 VictoriaMetrics 几乎彻底地把我从 5千万 QPS 的高压需求中解脱了出来；在存储技术上它参考了 Clickhouse 的 MergeTree，然后针对 timeseries 领域做了诸多针对性优化。在阅读其源码时，也发现了很多共鸣的设计理念。
 之前有朋友创业，向我咨询 K8S 监控的解决方案。一番探讨后，他表示没想到这个方向水还挺深，这些踩坑经验还是很宝贵的。后来想着分享出来也不错。
 
+<!--
 ## 联系方式
 
 {{< cards >}}
   {{< card link="/about" image="./wechat.jpg" title="加好友备注：vm" subtitle="邮箱：chenyunfei.cs@gmail.com" >}}
 {{< /cards >}}
+-->
