@@ -63,7 +63,7 @@ params:
     width: wide
 
   comments:
-    enable: false
+    enable: true
     type: giscus
     giscus:
       repo: victoriametrics-docs
