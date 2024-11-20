@@ -1,6 +1,6 @@
 ---
 title: ""
-date: 2024-11-12T11:41:09+08:00
+date: 2024-11-20T16:50:06+08:00
 toc: false
 description: VictoriaMetrics 中文手册以及作者的相关介绍
 excludeSearch: true
@@ -20,6 +20,8 @@ cascade:
 
 此外，对官方文档的结构也会进行重新排版，因为本人近两年经常翻阅官方文档，感觉其文档结构比较混乱；来来回回翻阅了数十次还是经常找不到想要的内容，每次只能靠搜索。  
 
+一些内容还在校准当中，欢迎在页面的最下方评论，给出宝贵的建议。如果对这个方向有兴趣，也欢迎加好友交流。
+
 ## 关于作者
 本人在可观测方向工作了也快十年了，亲身经历了该方向技术的快速演变发展，走过很多弯路，掉过不少坑。数据存储问题一直是这个方向的一大技术难题，从最早期用 MySQL + Redis 或 Mongo 或 Graphite，到后来 TSDB 领域出现了 InfluxDB、Prometheus、OpenTSDB 等基于 LSM Tree 或列式存储的数据库方案，再到后来出现了 Thanos，M3DB 等针对 Prometheus 的开源分布式解决方案，到现在还出现很多使用 Clickhouse 作为时序数据存储方案。  
 可是当我们遇到真正的大数据量时，这些系统表现总是有些差强人意，有时候不得不付出高昂的维护成本或二次开发，才能让系统勉强稳定。
@@ -30,6 +32,9 @@ VictoriaMetrics 几乎彻底地把我从 5千万 QPS 的高压需求中解脱了
 
 ## 联系方式
 
+如果对这个方向感兴趣的话，欢迎加微信交流。
+
 {{< cards >}}
   {{< card link="/about" image="./wechat.jpg" title="加好友备注：vm" subtitle="邮箱：chenyunfei.cs@gmail.com" >}}
 {{< /cards >}}
+
