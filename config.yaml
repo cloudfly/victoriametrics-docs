@@ -1,5 +1,5 @@
 baseURL: https://victoriametrics.com.cn/
-languageCode: zh-cn
+languageCode: zh-CN
 title: VictoriaMetrics 中文手册
 description: "VictoriaMetrics 的中文文档手册，大部分内容翻译子官方文档；对文档内容进行了重新排版，更适合中国人的阅读习惯。仅保留了开源的内容，剔除了企业版相关内容。"
 
@@ -68,8 +68,8 @@ params:
     giscus:
       repo: victoriametrics-docs
       repoId: R_kgDOM4cSJQ
-      category: General
-      categoryId: DIC_kwDOM4cSJc4Ci4Hu
+      category: Announcements
+      categoryId: DIC_kwDOM4cSJc4Ci4Ht
   footer:
     displayCopyright: true
     displayPoweredBy: false
