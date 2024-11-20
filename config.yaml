@@ -66,7 +66,7 @@ params:
     enable: true
     type: giscus
     giscus:
-      repo: victoriametrics-docs
+      repo: cloudfly/victoriametrics-docs
       repoId: R_kgDOM4cSJQ
       category: Announcements
       categoryId: DIC_kwDOM4cSJc4Ci4Ht
@@ -74,7 +74,7 @@ params:
     displayCopyright: true
     displayPoweredBy: false
   theme:
-    default: system
+    default: light
     displayToggle: true
 
 defaultContentLanguage: zh-cn
