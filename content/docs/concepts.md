@@ -1,6 +1,6 @@
 ---
 title: 核心概念
-date: 2024-11-03T19:37:32+08:00
+date: 2024-12-27T17:34:08+08:00
 description: 介绍监控指标领域的一些基本概念，有助于对 VictoriaMetrics 进行更深入的了解；无论是使用还是维护一个监控系统，这些基本概念都开发者而言都是必须的。
 weight: 1
 ---
@@ -138,7 +138,7 @@ increase(requests_total[3m])
 所以 VictoriaMetrics 允许用户不指定回溯窗口，而是[自动计算]({{< relref "./query/metricsql/_index.md#conversion" >}})。
 
 ## Metric 类型 {#metrics}
-在 VictoriaMetrics 内部，并 metric type 的概念。此概念存在是为了帮助用户理解度量是如何测量的。有四种常见的度量类型。
+在 VictoriaMetrics 内部，并没有 metric type 的概念。此概念存在是为了帮助用户理解度量是如何测量的。有四种常见的度量类型。
 
 ### Counter（计数器）
 `Counter`是一种用于统计某些事件的发生次数的 Metric。它的值是累加的，随着时间增加或保持不变，在一般情况下不会减少。唯一的例外是当计数器重置为零时，例如`计数器重置`。当暴露 Counter 指标的服务重新启动时，可能会发生`计数器重置`。因此，`Counter`指标显示了自服务启动以来观察到的事件数量。
@@ -199,7 +199,7 @@ histogram_quantile(0.99, sum(increase(vm_rows_read_per_query_bucket[1h])) by (vm
 
 这个查询的执行逻辑如下：
 
-+ 增加`(vm_rows_read_per_query_bucket[1h])`计算每个桶每个实例在过去一小时内的事件数量。
++ `increase(vm_rows_read_per_query_bucket[1h])`计算每个桶每个实例在过去一小时内的事件数量。
 + `sum(...)`按`(vmrange)`计算相同`vmrange`值的每个实例桶的事件总数。
 + `histogram_quantile(0.99, ...)`在步骤 2 返回的`vmrange`桶上计算第 99 百分位数。
 
