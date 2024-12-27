@@ -1,6 +1,6 @@
 ---
 title: "日常运维"
-date: 2024-11-01T17:44:20+08:00
+date: 2024-12-27T17:46:13+08:00
 description: 介绍 VictoriaMetrics 日常运维中一些常见问题的解法。比如处理机器故障，一机多盘，集群扩容等。
 weight: 20
 ---
@@ -19,7 +19,7 @@ weight: 20
 4. 等待整个集群趋于平稳后，升级重启剩余的`vminsert`组件，期间如果出现了集群抖动，需要暂缓升级步骤，等待集群平稳。
 5. 若集群短期无法回稳，要么等待更长时间（最多2个小时），要么直接回滚。
 
-**上述的`2,3`步骤一定不能反**，如果新 vmstorage 只在 vminsert 里，vmselect 里没有，那么写入到新 vmstorage 实例的数据会被无法查到，直到 vmselect 组件上也追加上这个新实例。
+**`2,3`步骤为扩容步骤，缩容时则反过来，要先更新 vminsert 再更新 vmselect**，如果新 vmstorage 只在 vminsert 里，vmselect 里没有，那么写入到新 vmstorage 实例的数据会被无法查到，直到 vmselect 组件上也追加上这个新实例。
 
 升级`vminsert`之所以需要缓慢重启，是因为`storageNode`列表变化会导致部分 timeseries 存储位置发生变化，比如之前存储在`A`Node上，重启后存储在`B`Node上。  
 `B`节点上瞬间出现大量新 timeseries 时，会严重影响其性能，而且如果达到了`-storage.maxHourlySeries`或`-storage.maxDailySeries`限制，节点`B`可能会拒绝接收迁移过来的新 timeseries。
