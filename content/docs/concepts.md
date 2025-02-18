@@ -1,6 +1,6 @@
 ---
 title: 核心概念
-date: 2024-12-27T17:34:08+08:00
+date: 2025-02-18T11:25:47+08:00
 description: 介绍监控指标领域的一些基本概念，有助于对 VictoriaMetrics 进行更深入的了解；无论是使用还是维护一个监控系统，这些基本概念都开发者而言都是必须的。
 weight: 1
 ---
@@ -189,33 +189,32 @@ vm_rows_read_per_query_sum 15582
 vm_rows_read_per_query_count 11
 ```
 
-其中`vm_rows_read_per_query_bucket{vmrange="4.084e+02...4.642e+02"} 2`这一行表示自上次VictoriaMetrics启动以来，vmrange的值在`(408.4 - 464.2]`区间的查询有2个。
+其中`vm_rows_read_per_query_bucket{vmrange="4.084e+02...4.642e+02"} 2`这一行表示自 VictoriaMetrics 启动以来，指标值在`(408.4 - 464.2]`区间的查询次数是`2`。
 
-以`_bucket`后缀结尾的计数器可以使用`histogram_quantile`函数估算观测测量值的任意百分位数。例如，以下查询返回在过去一小时内每个查询读取的行数的估算第99百分位数（见方括号中的 1h）：
+以`_bucket`后缀结尾的计数器可以使用`histogram_quantile`函数估算观测指标的百分位数。例如，下方查询估算并返回在过去一小时内（见`[1h]`）每个查询读取的数据量的`99%`分位数（比如返回值是`100`，表示`99%`的查询读取数据量是小于等于`100`的）：
 
 ```sql
-histogram_quantile(0.99, sum(increase(vm_rows_read_per_query_bucket[1h])) by (vmrange))
+histogram_quantile(0.99, increase(vm_rows_read_per_query_bucket[1h]))
 ```
 
 这个查询的执行逻辑如下：
 
-+ `increase(vm_rows_read_per_query_bucket[1h])`计算每个桶每个实例在过去一小时内的事件数量。
-+ `sum(...)`按`(vmrange)`计算相同`vmrange`值的每个实例桶的事件总数。
-+ `histogram_quantile(0.99, ...)`在步骤 2 返回的`vmrange`桶上计算第 99 百分位数。
++ `increase(vm_rows_read_per_query_bucket[1h])`计算每个桶每个实例在过去一小时内的查询请求量。
++ `histogram_quantile(0.99, ...)`在返回的`vmrange`桶上计算第 99 百分位数。
 
-histogram 类型还暴露了额外两个附加计数器，以`_sum`和`_count`后缀结尾。
+histogram 类型还输出了额外两个 Counter 指标，指标名以`_sum`和`_count`后缀。
 
-`vm_rows_read_per_query_sum`是所有观测到的测量值的总和，例如自上次VictoriaMetrics启动以来由所有查询服务的行数之和。
+`vm_rows_read_per_query_sum`是所有观测到的指标值的总和，例如自 VictoriaMetrics 启动以来由所有查询请求读取的数据量总和。
 
-`vm_rows_read_per_query_count`是观测到的事件总数，例如自上次VictoriaMetrics启动以来观测到的查询总数。
+`vm_rows_read_per_query_count`是观测到的事件总数，例如自 VictoriaMetrics 启动以来观测到的查询总次数。
 
-这些计数器允许在特定回溯窗口内计算平均测量值。例如，以下查询计算最近5分钟（方括号中为5m）每个查询读取行数的平均值：
+使用这 2 个 Counter 指标可以计算特定回溯窗口内的平均值。例如，以下查询计算最近 5 分钟（见`[5m]`）平均每个查询读取数据量：
 
 ```sql
 increase(vm_rows_read_per_query_sum[5m]) / increase(vm_rows_read_per_query_count[5m])
 ```
 
-使用 [github.com/VictoriaMetrics/metrics](https://github.com/VictoriaMetrics/metrics) 包，可以通过以下方式在Go应用程序中使用`vm_rows_read_per_query`直方图：
+使用 [github.com/VictoriaMetrics/metrics](https://github.com/VictoriaMetrics/metrics) 库，可以通过以下方式在 Go 代码中使用`vm_rows_read_per_query`直方图：
 
 ```go
 // define the histogram
@@ -223,26 +222,28 @@ rowsReadPerQuery := metrics.NewHistogram(`vm_rows_read_per_query`)
 
 // use the histogram during processing
 for _, query := range queries {
+    // 输出 vm_rows_read_per_query_count 代表 Update 被调用的累加次数
+    // 输出 vm_rows_read_per_query_sum 代表所有传递给 Update 的参数值 len(query.Rows) 的累加总和
     rowsReadPerQuery.Update(float64(len(query.Rows)))
 }
 ```
 
 我们来看看每次调用`rowsReadPerQuery.Update`时，会发生什么：
 
-+ 计数器`vm_rows_read_per_query_sum`的值将增加`query.Rows`表达式的长度；
++ 计数器`vm_rows_read_per_query_sum`的值将增加`query.Rows`的长度；
 + 计数器`vm_rows_read_per_query_count`增加`1`；
 + 只有在观察到的值在`vmrange`定义的范围（桶）内时，计数器`vm_rows_read_per_query_bucket`才会递增。
 
-这样一组计数器指标可以在[Grafana中绘制热力图](https://grafana.com/docs/grafana/latest/visualizations/heatmap/)并计算[分位数](https://prometheus.io/docs/practices/histograms/#quantiles)：
+这样一组计数器指标可以在[Grafana中绘制热力图](https://grafana.com/docs/grafana/latest/visualizations/heatmap/)，也可以计算[分位数](https://prometheus.io/docs/practices/histograms/#quantiles)：
 
 ![](histogram.png)
 
-Grafana对带有vmrange标签的桶不理解，因此在构建Grafana中的热力图之前，必须使用[prometheus_buckets](https://www.victoriametrics.com.cn/victoriametrics/shu-ju-cha-xun/metricql)函数将带有`vmrange`标签的桶转换为带有`le`标签的桶。
+Grafana 并不认识`vmrange`标签桶，因此在构建 Grafana 中的热力图之前，必须使用[prometheus_buckets](https://www.victoriametrics.com.cn/victoriametrics/shu-ju-cha-xun/metricql)函数将`vmrange` Label 的桶转换为带有`le` Label 的桶。
 
-histogram 通常用于测量延迟分布、元素大小（例如批处理大小）等。VictoriaMetrics支持两种直方图实现：
+histogram 通常用于测量延迟分布、元素大小（例如批处理大小）等。VictoriaMetrics 支持两种直方图实现：
 
 + Prometheus Histogram。[大多数客户端库](https://prometheus.io/docs/instrumenting/clientlibs/)都支持这种经典的 Histogram 实现方式。Prometheus Histogram 要求用户静态定义范围（bucket）。
-+ VictoriaMetrics Histogram 由 [VictoriaMetrics/metrics](https://github.com/VictoriaMetrics/metrics) 工具库支持。Victoriametrics Histogram 会自动处理桶边界，因此用户无需考虑它们。
++ VictoriaMetrics Histogram 由 [VictoriaMetrics/metrics](https://github.com/VictoriaMetrics/metrics) 工具库支持。Victoriametrics Histogram 会自动处理桶边界，用户无需考虑它们。
 
 我们建议您在开始使用直方图之前阅读以下文章：
 
@@ -252,7 +253,7 @@ histogram 通常用于测量延迟分布、元素大小（例如批处理大小�
 4. [Improving histogram usability for Prometheus and Grafana](https://valyala.medium.com/improving-histogram-usability-for-prometheus-and-grafana-bc7e5df0e350)
 
 ### Summary（摘要）
-Summary 与 Histogram 非常相似，用于计算[分位数](https://prometheus.io/docs/practices/histograms/#quantiles)。主要区别在于 Summary 是在客户端进行计算的，因此指标公开格式已经包含了预定义的分位数：
+Summary 与 Histogram 非常相似，用于计算[分位数](https://prometheus.io/docs/practices/histograms/#quantiles)。主要区别在于 Summary 是在客户端进行计算的，因此指标输出时就已经包含了预定义的分位数：
 
 
 ```scheme
@@ -269,10 +270,11 @@ Summary 的可视化非常直观：
 
 ![](summary.png)
 
-这种方法使得 Summary 更易于使用，但与 Histogram 相比也存在显著的限制：
+这种统计方法使 Summary 更易于使用，但相较于 Histogram 也存在一些明显的限制：
 
-+ 无法计算多个 Summary 指标的分位数，例如`sum(go_gc_duration_seconds{quantile="0.75"})`、`avg(go_gc_duration_seconds{quantile="0.75"})`或`max(go_gc_duration_seconds{quantile="0.75"})`不会返回从应用程序的多个实例收集到的`go_gc_duration_seconds`指标的预期第75百分位数。有关详细信息，请[参阅本文](https://latencytipoftheday.blogspot.de/2014/06/latencytipoftheday-you-cant-average.html)。
-+ 无法计算除已经预先计算过的分位数之外的其他分位数。
++ 无法计算多个 Summary 指标的分位数，例如`sum(go_gc_duration_seconds{quantile="0.75"})`、`avg(go_gc_duration_seconds{quantile="0.75"})`或`max(go_gc_duration_seconds{quantile="0.75"})`不会得到集群中多个实例收集到的`go_gc_duration_seconds`指标的预期P75值，也就是说每个实例的分位数在 Exporter 内已经计算好了，如果我们要想获得多个实例（一个集群）的整体分位数就做不到了。有关详细信息，请[参阅本文](https://latencytipoftheday.blogspot.de/2014/06/latencytipoftheday-you-cant-average.html)。
++ 无法计算除已经预先计算过的分位数之外的其他分位数，比如上述样例中，我们无法得到指标的 P99 分位值。
 + 无法针对在任意时间范围内收集到的测量值计算分位数。通常，Summary 分位数是在固定时间范围内（如最近5分钟）计算出来的。
+
 
 Summary 通常用于跟踪延迟、元素大小（例如批处理大小）等预定义百分比。
